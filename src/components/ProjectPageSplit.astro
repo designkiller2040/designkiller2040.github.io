@@ -547,8 +547,7 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
   }
 
   /*
-   * Second screen: the stills in a 2x2 grid on the right (columns 11-16 and
-   * 19-24), sitting low in the window.
+   * Phone fallback base for the stills (the desktop row is below).
    */
   .shots {
     width: 100vw;
@@ -569,6 +568,25 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
   }
   .shot:nth-child(even) {
     grid-column: 19 / -1;
+  }
+  /*
+   * Desktop: the stills sit in one row instead, a little below the middle
+   * of the window, and slide in one by one as you scroll. Each is 188 design
+   * px wide (about 300px on alona's MacBook) with 55 between them.
+   */
+  @media (min-width: 768px) {
+    .shots {
+      display: flex;
+      align-items: flex-start;
+      gap: calc(55 * var(--rm));
+      width: auto;
+      padding: 45vh var(--margin) 0 0;
+      padding-top: 45svh;
+    }
+    .shot {
+      flex: none;
+      width: calc(188 * var(--rm));
+    }
   }
 
   /* The film, over everything. */
