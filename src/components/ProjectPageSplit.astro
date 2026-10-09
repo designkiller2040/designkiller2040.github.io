@@ -373,7 +373,11 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     grid-column: 13 / -1;
     align-self: end;
     justify-self: end;
-    width: calc(150 * var(--rm));
+    /* 10% smaller than the homepage menu (text, line height and width, so
+       titles wrap in the same places). */
+    --text: calc(8.8 * 0.9 * var(--rm));
+    --line: calc(10.6 * 0.9 * var(--rm));
+    width: calc(150 * 0.9 * var(--rm));
     /* Grows upwards as far as just under the header. */
     max-height: calc(100% - 70 * var(--rm));
     margin-bottom: var(--margin);
@@ -396,7 +400,7 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     margin-top: calc(45 * var(--rm));
   }
   .group-label {
-    margin: 0 0 calc(3.5 * var(--rm));
+    margin: 0 0 calc(3.5 * 0.9 * var(--rm));
     font-size: var(--text);
     line-height: var(--line);
     font-style: italic;
