@@ -74,7 +74,7 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
         </dl>
       </div>
 
-      <!-- All projects, like the homepage menu; this one is highlighted. -->
+      <!-- All projects, exactly like the homepage menu. -->
       <nav class="list" aria-label="Projects">
         {
           groups.map((g) => (
@@ -83,11 +83,7 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
               <ul>
                 {g.items.map((p) => (
                   <li>
-                    <a
-                      href={`/work/${p.slug}/`}
-                      class:list={{ current: p.slug === project.slug }}
-                      aria-current={p.slug === project.slug ? 'page' : undefined}
-                    >
+                    <a href={`/work/${p.slug}/`} aria-current={p.slug === project.slug ? 'page' : undefined}>
                       {menuLabel(p)}
                     </a>
                   </li>
@@ -337,8 +333,9 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
   .info {
     position: fixed;
     inset: 0;
-    z-index: 2;
     color: #fff;
+    /* No z-index here or on .scroll: in Chrome, a z-index on either stops the
+       difference blend from reaching the image. DOM order keeps this on top. */
     mix-blend-mode: difference;
     pointer-events: none;
     font-weight: 500;
@@ -365,39 +362,34 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     white-space: nowrap;
   }
 
-  /* The project list: its three groups spread from the top line to the bottom. */
+  /*
+   * The project list: the same as the homepage menu (src/pages/index.astro):
+   * same width, text, spacing and hover colour, sitting at the bottom right.
+   */
   .list {
     grid-row: 1;
     grid-column: 13 / -1;
+    align-self: end;
     justify-self: end;
     width: calc(150 * var(--rm));
-    height: 100%;
-    padding-bottom: var(--margin);
-    display: flex;
-    flex-direction: column;
+    max-height: calc(100% - var(--from-top));
+    margin-bottom: var(--margin);
     overflow-y: auto;
     scrollbar-width: none;
     text-align: right;
+    --tracking: -0.06em;
     pointer-events: auto;
     /* Fades out in place during the first fifth of the scroll. */
     opacity: calc(1 - min(1, var(--p) * 5));
-  }
-  /* The space above the list. It gives way first when the window is short,
-     so the list moves up rather than getting cut off. */
-  .list::before {
-    content: '';
-    flex: 0 1 var(--from-top);
-  }
-  /* Spare room goes between the groups, with a small gap at least. */
-  .list .group + .group {
-    margin-top: auto;
-    padding-top: calc(8.8 * var(--rm));
   }
   .list::-webkit-scrollbar {
     display: none;
   }
   :global(html.list-gone) .list {
     pointer-events: none;
+  }
+  .group + .group {
+    margin-top: calc(8.8 * var(--rm));
   }
   .group-label {
     margin: 0 0 calc(3.5 * var(--rm));
@@ -411,22 +403,17 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     margin: 0;
     padding: 0;
   }
-  /* Hover, and the project you're on: white text on a red box. */
-  .list a {
-    padding: 0 0.2em;
-    margin: 0 -0.2em;
-    -webkit-box-decoration-break: clone;
-    box-decoration-break: clone;
+  .list li {
+    font-size: var(--text);
+    line-height: var(--line);
+    font-weight: 500;
   }
   .list a:hover,
-  .list a:focus-visible,
-  .list a.current {
-    background: #ea3323;
+  .list a:focus-visible {
+    color: var(--hover);
     outline: none;
   }
-  .col p {
-    margin: 0;
-  }
+
   .about .text {
     margin-top: calc(50 * var(--rm));
     text-align: justify;
@@ -458,7 +445,6 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
 
   .scroll {
     position: relative;
-    z-index: 1;
   }
 
   /* The window-sized stage that holds the sliding track. */
