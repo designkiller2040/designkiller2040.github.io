@@ -344,6 +344,21 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
   .info {
     --from-top: calc(174 * var(--rm));
   }
+  /*
+   * All text on this page: 8.2 design px with 9.4 line height, which is 13px
+   * on 15px on alona's 14" MacBook, scaling with the window like the rest.
+   */
+  .top,
+  .info {
+    --text: calc(8.2 * var(--rm));
+    --line: calc(9.4 * var(--rm));
+    font-size: var(--text);
+    line-height: var(--line);
+  }
+  .top :global(.header) {
+    font-size: var(--text);
+    line-height: var(--line);
+  }
   .col {
     grid-row: 1;
     grid-column: 1 / 13;
@@ -373,10 +388,7 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     grid-column: 13 / -1;
     align-self: end;
     justify-self: end;
-    /* Text 10% smaller than the homepage menu. Width 151 design px: 240px
-       on screen on alona's 14" MacBook. */
-    --text: calc(8.8 * 0.9 * var(--rm));
-    --line: calc(10.6 * 0.9 * var(--rm));
+    /* Width 151 design px: 240px on screen on alona's 14" MacBook. */
     width: calc(151 * var(--rm));
     /* Grows upwards as far as just under the header. */
     max-height: calc(100% - 70 * var(--rm));
@@ -400,7 +412,7 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     margin-top: calc(40 * var(--rm));
   }
   .group-label {
-    margin: 0 0 calc(3.5 * 0.9 * var(--rm));
+    margin: 0 0 calc(3.5 * var(--rm));
     font-size: var(--text);
     line-height: var(--line);
     font-style: italic;
@@ -597,6 +609,16 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
    * into the page under the first screen, followed by the stills.
    */
   @media (max-width: 767px) {
+    /* Phones keep the site's usual phone sizes. */
+    .top,
+    .info {
+      --text: 12px;
+      --line: calc(10.6 * var(--rm));
+    }
+    .top :global(.header) {
+      font-size: 10px;
+      line-height: 12px;
+    }
     .info {
       position: relative;
       inset: auto;
