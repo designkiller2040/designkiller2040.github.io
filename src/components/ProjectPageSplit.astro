@@ -432,10 +432,20 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     margin: 0;
     padding: 0;
   }
+  /* Lines 2% further apart than the rest of the text. */
   .list li {
     font-size: var(--text);
-    line-height: var(--line);
+    line-height: calc(var(--line) * 1.02);
     font-weight: 500;
+  }
+  /* The project you're on: the same light pill as the "Play full" label. */
+  .list a[aria-current='page'] {
+    background: #e8e8e8;
+    color: #000;
+    padding: 0.12em 0.3em;
+    margin: 0 -0.3em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
   }
   .list a:hover,
   .list a:focus-visible {
