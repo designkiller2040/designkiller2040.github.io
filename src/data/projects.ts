@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import raw from './projects.json';
 
 export type Credits = Partial<Record<CreditLabel, string>>;
@@ -51,4 +51,9 @@ function withVersion(src: string) {
     return src;
   }
 }
-export const stillSrcs = (p: Project) => [1, 2, 3, 4].map((n) => `/images/work/${p.slug}/shot-${n}.jpg`);
+/** Up to four stills (shot-1.jpg ... shot-4.jpg); missing ones are skipped. */
+export const stillSrcs = (p: Project) =>
+  [1, 2, 3, 4]
+    .map((n) => `/images/work/${p.slug}/shot-${n}.jpg`)
+    .filter((src) => existsSync(`public${src}`))
+    .map(withVersion);
