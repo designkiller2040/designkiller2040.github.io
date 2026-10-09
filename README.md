@@ -20,7 +20,7 @@ npm run build    # makes the finished site in dist/
 | Group names and order      | `src/data/projects.ts` (`GROUPS`)       |
 | Sizes, colours, fonts      | `src/styles/global.css`                 |
 | Homepage                   | `src/pages/index.astro`                 |
-| Project page template      | `src/pages/work/[slug].astro`           |
+| Project page layout        | `src/components/ProjectPage.astro`      |
 | About, contact, stills...  | `src/pages/*.astro`                     |
 | Fonts                      | `public/fonts/` (see the README there)  |
 | Showreel + poster          | `public/video/showreel.mp4`, `.jpg`     |
