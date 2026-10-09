@@ -373,11 +373,11 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     grid-column: 13 / -1;
     align-self: end;
     justify-self: end;
-    /* 10% smaller than the homepage menu (text, line height and width, so
-       titles wrap in the same places). */
+    /* Text 10% smaller than the homepage menu. Width 151 design px: 240px
+       on screen on alona's 14" MacBook. */
     --text: calc(8.8 * 0.9 * var(--rm));
     --line: calc(10.6 * 0.9 * var(--rm));
-    width: calc(150 * 0.9 * var(--rm));
+    width: calc(151 * var(--rm));
     /* Grows upwards as far as just under the header. */
     max-height: calc(100% - 70 * var(--rm));
     margin-bottom: var(--margin);
@@ -395,9 +395,9 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
   :global(html.list-gone) .list {
     pointer-events: none;
   }
-  /* 45 design px: 72px on screen on alona's 14" MacBook. */
+  /* 40 design px: 64px on screen on alona's 14" MacBook. */
   .group + .group {
-    margin-top: calc(45 * var(--rm));
+    margin-top: calc(40 * var(--rm));
   }
   .group-label {
     margin: 0 0 calc(3.5 * 0.9 * var(--rm));
