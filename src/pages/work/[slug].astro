@@ -2,8 +2,10 @@
 /*
  * One page per project in src/data/projects.json, at /work/<slug>/.
  * The layout itself is in src/components/ProjectPage.astro.
+ * Nike SNKRS - Newsstand is trying out a test layout (ProjectPageSplit.astro).
  */
 import ProjectPage from '../../components/ProjectPage.astro';
+import ProjectPageSplit from '../../components/ProjectPageSplit.astro';
 import { projects, type Project } from '../../data/projects';
 
 export function getStaticPaths() {
@@ -11,6 +13,7 @@ export function getStaticPaths() {
 }
 
 const { project } = Astro.props as { project: Project };
+const Layout = project.slug === 'nike-snkrs-newsstand' ? ProjectPageSplit : ProjectPage;
 ---
 
-<ProjectPage project={project} />
+<Layout project={project} />
