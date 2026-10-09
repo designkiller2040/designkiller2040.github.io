@@ -1,0 +1,43 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from './Header.astro';
+
+interface Props {
+  title: string;
+  current?: 'about' | 'contact';
+}
+const { title, current } = Astro.props;
+---
+
+<Base title={title}>
+  <main class="page grid">
+    <Header current={current} />
+    <h1>// {title}</h1>
+    <div class="body">
+      <slot>
+        <p class="todo">TODO: content coming from alona.</p>
+      </slot>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .page {
+    padding-block: var(--top) var(--margin);
+  }
+  h1 {
+    grid-column: 1 / -1;
+    margin: calc(var(--row) * 2) 0 var(--row);
+    font-size: var(--title);
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .body {
+    grid-column: 1 / 13;
+  }
+  @media (max-width: 767px) {
+    .body {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

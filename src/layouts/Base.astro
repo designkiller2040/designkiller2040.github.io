@@ -1,0 +1,36 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** dark = black page with white text (homepage). */
+  theme?: 'dark' | 'light';
+}
+const { title, description = 'Jonah George, director.', theme = 'light' } = Astro.props;
+const fullTitle = title ? `${title} | Jonah George` : 'Jonah George';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <slot name="head" />
+  </head>
+  <body class={theme}>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  body.dark {
+    background: #000;
+    color: #fff;
+  }
+</style>

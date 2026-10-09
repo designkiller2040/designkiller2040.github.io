@@ -1,0 +1,23 @@
+---
+/** Legal links at the bottom of a page. Sits inside a .grid, full width. */
+---
+
+<footer class="legal">
+  <a href="/privacy/">Privacy policy</a>
+  <a href="/terms/">Terms x Conditions</a>
+  <!-- TODO: temporary link to the animation test page; remove when done. -->
+  <a href="/test/">test</a>
+</footer>
+
+<style>
+  .legal {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: calc(22 * var(--rm));
+    margin-top: calc(28 * var(--rm));
+    position: relative;
+  }
+  .legal a:hover {
+    color: var(--hover);
+  }
+</style>

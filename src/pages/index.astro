@@ -1,0 +1,289 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import { GROUPS, projects, menuLabel, previewSrc } from '../data/projects';
+
+const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group === g.key) }));
+---
+
+<Base theme="dark">
+  <link slot="head" rel="preload" href="/video/showreel.jpg" as="image" />
+  <main class="hero grid">
+    <div class="stage" aria-hidden="true">
+      <!-- The reel is used as exported (public/video/showreel.mp4), no re-encoding. -->
+      <video class="reel" poster="/video/showreel.jpg" autoplay muted loop playsinline preload="auto">
+        <source src="/video/showreel.mp4" type="video/mp4" />
+      </video>
+      <div class="previews"></div>
+    </div>
+
+    <Header current="works" />
+
+    <p class="reel-label">Showreel 2025</p>
+
+    <nav class="menu" aria-label="Projects">
+      {
+        groups.map((g) => (
+          <section class="group">
+            <h2 class="group-label">{g.label}</h2>
+            <ul>
+              {g.items.map((p) => (
+                <li>
+                  <a href={`/work/${p.slug}/`} data-preview={previewSrc(p)}>
+                    {menuLabel(p)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </nav>
+  </main>
+</Base>
+
+<style>
+  /*
+   * The hero is the page grid with three rows: header, open space, and the
+   * bottom line with "Showreel 2025". The menu fills the right-hand columns
+   * from the bottom up, level with the showreel label.
+   *
+   * All homepage text (header, menu, showreel label) is SF Pro Display, 10 design
+   * px with -1.1 design px tracking (see --rm in global.css), so it scales with
+   * the window like Readymag. The header uses the same sizes as on every
+   * other page, so it doesn't move when you switch pages.
+   */
+  .hero {
+    --text: calc(8.8 * var(--rm));
+    --line: calc(10.6 * var(--rm));
+    --tracking: -0.06em;
+    font-family: var(--font-sans);
+    font-size: var(--text);
+    line-height: var(--line);
+    position: relative;
+    height: 100vh;
+    height: 100svh;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    row-gap: var(--top);
+    padding-block: var(--top) var(--margin);
+    overflow: hidden;
+  }
+
+  .stage {
+    position: absolute;
+    inset: 0;
+    background: #000;
+  }
+  .stage :global(video),
+  .stage :global(.preview) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .stage :global(.preview) {
+    opacity: 0;
+    transition: opacity 120ms linear;
+  }
+  .stage :global(.preview.on) {
+    opacity: 1;
+  }
+
+  /* Logo and menu take the same difference blend as the project list. */
+  .hero :global(.header) {
+    color: #fff;
+    mix-blend-mode: difference;
+  }
+
+  .reel-label {
+    grid-row: 3;
+    grid-column: 1 / 9;
+    align-self: end;
+    position: relative;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .menu {
+    grid-row: 2 / 4;
+    grid-column: 13 / -1;
+    align-self: end;
+    justify-self: end;
+    /* Scales with the text, so long titles always wrap in the same places. */
+    width: calc(150 * var(--rm));
+    max-height: 100%;
+    position: relative;
+    text-align: right;
+    mix-blend-mode: difference;
+    color: #fff;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .menu::-webkit-scrollbar {
+    display: none;
+  }
+  .group + .group {
+    margin-top: calc(8.8 * var(--rm));
+  }
+  .group-label {
+    margin: 0 0 calc(3.5 * var(--rm));
+    font-size: var(--text);
+    line-height: var(--line);
+    font-style: italic;
+    font-weight: 500;
+  }
+  .menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .menu li {
+    font-size: var(--text);
+    line-height: var(--line);
+    font-weight: 500;
+  }
+  .menu a:hover,
+  .menu a:focus-visible {
+    color: var(--hover);
+    outline: none;
+  }
+
+  /*
+   * Phone: the showreel stays fixed behind the page and the menu scrolls up
+   * over it, starting just below the middle of the first screen. Taps open the
+   * project straight away (there are no hover previews on touch screens).
+   */
+  @media (max-width: 767px) {
+    .hero {
+      /* Phones keep 10px text: the desktop size would be too small to read. */
+      --text: 10px;
+      --line: 12px;
+      --tracking: -0.06em;
+      height: auto;
+      min-height: 100svh;
+      grid-template-rows: auto auto;
+      overflow: visible;
+    }
+    .stage {
+      position: fixed;
+    }
+    .reel-label {
+      position: absolute;
+      left: var(--margin);
+      top: calc(100svh - var(--margin) - 1em);
+    }
+    .menu {
+      grid-row: 2;
+      grid-column: 8 / -1;
+      width: auto;
+      max-height: none;
+      margin-top: 40svh;
+      padding-bottom: 48px;
+      overflow: visible;
+    }
+    .group + .group {
+      margin-top: 20px;
+    }
+    .menu li {
+      padding: 3px 0;
+    }
+  }
+</style>
+
+<script>
+  import { coverWithCanvas } from '../scripts/video-canvas';
+
+  // Hover previews. Each menu link carries its clip's URL in data-preview.
+  // Clips are created lazily: one after another once the showreel is playing,
+  // or immediately when a link is hovered before its turn comes.
+  const stage = document.querySelector<HTMLElement>('.previews')!;
+  const reel = document.querySelector<HTMLVideoElement>('.reel')!;
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-preview]')];
+  const clips = new Map<string, HTMLVideoElement>();
+  coverWithCanvas(reel);
+  let hovered: HTMLVideoElement | null = null;
+
+  // Some browsers (Safari in Low Power Mode, some embedded viewers) block
+  // autoplay. If so, start the showreel on the visitor's first interaction.
+  reel.play().catch(() => {
+    const kick = () => reel.play().catch(() => {});
+    for (const ev of ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'scroll'])
+      addEventListener(ev, kick, { once: true, passive: true });
+  });
+
+  const canHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  function clipFor(src: string) {
+    let v = clips.get(src);
+    if (!v) {
+      // Each clip sits in its own box, so the box (clip plus Safari's
+      // canvas, see video-canvas.ts) fades in and out as one.
+      const box = document.createElement('div');
+      box.className = 'preview';
+      v = document.createElement('video');
+      v.muted = true;
+      v.loop = true;
+      v.playsInline = true;
+      v.preload = 'auto';
+      v.src = src;
+      box.append(v);
+      stage.append(box);
+      coverWithCanvas(v);
+      clips.set(src, v);
+    }
+    return v;
+  }
+
+  function show(v: HTMLVideoElement) {
+    hovered = v;
+    // Keep the showreel visible until the clip has a frame to show.
+    // (Check before rewinding: rewinding briefly resets readyState.)
+    const box = v.parentElement!;
+    if (v.readyState >= 2) box.classList.add('on');
+    else v.addEventListener('playing', () => hovered === v && box.classList.add('on'), { once: true });
+    v.currentTime = 0;
+    v.play().catch(() => {});
+  }
+
+  function hide(v: HTMLVideoElement) {
+    if (hovered === v) hovered = null;
+    v.parentElement!.classList.remove('on');
+    setTimeout(() => hovered !== v && v.pause(), 150);
+  }
+
+  async function prefetchAll() {
+    const conn = (navigator as any).connection;
+    if (conn?.saveData || /2g/.test(conn?.effectiveType ?? '')) return;
+    for (const a of links) {
+      const v = clipFor(a.dataset.preview!);
+      if (v.readyState >= 3) continue;
+      await new Promise((done) => {
+        v.addEventListener('canplaythrough', done, { once: true });
+        v.addEventListener('error', done, { once: true });
+        setTimeout(done, 4000);
+      });
+    }
+  }
+
+  if (canHover) {
+    for (const a of links) {
+      const enter = () => show(clipFor(a.dataset.preview!));
+      const leave = () => hide(clipFor(a.dataset.preview!));
+      a.addEventListener('mouseenter', enter);
+      a.addEventListener('mouseleave', leave);
+      a.addEventListener('focus', enter);
+      a.addEventListener('blur', leave);
+    }
+
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      prefetchAll();
+    };
+    reel.addEventListener('playing', start, { once: true });
+    // If autoplay is blocked or the reel is missing, start anyway after load.
+    addEventListener('load', () => setTimeout(start, 1500), { once: true });
+  }
+</script>

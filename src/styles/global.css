@@ -1,0 +1,150 @@
+/*
+ * Layout system
+ * -------------
+ * Every page sits on one 24-column grid (.grid). Columns are fluid, so the
+ * layout stretches smoothly with the window.
+ *
+ * Sizes work like Readymag: each is written in "design pixels" for a canvas
+ * 880px wide, and --rm (one design pixel) scales them with the window. So
+ * 10px text is 10px in an 880px window, about 17px on a 14" MacBook
+ * (1512px), and so on. --rm never goes below 1px (phones keep the design
+ * sizes) or above 2px (very large screens stop growing at 1760px wide).
+ * It is also capped by the window height (a 552px tall canvas), so on short,
+ * wide windows the homepage menu still fits, and every page, header included,
+ * uses exactly the same scale.
+ *
+ *   phone    < 768px    stacked layout, design sizes 1:1
+ *   tablet+  >= 768px   the Readymag layout, scaled
+ */
+:root {
+  --rm: clamp(1px, min(100vw / 880, 100svh / 552), 2px);
+  --cols: 24;
+  --margin: max(12px, calc(16 * var(--rm)));
+  --gutter: calc(5 * var(--rm));
+  --top: max(12px, calc(14 * var(--rm)));
+
+  --text: calc(8.8 * var(--rm));
+  --line: calc(10.6 * var(--rm));
+  --title: calc(8.8 * var(--rm));
+  --row: calc(16 * var(--rm));
+  --tracking: -0.005em;
+
+  --hover: #0059ff;
+  /*
+   * SF Pro Display on Apple devices. Apple's licence doesn't allow hosting
+   * the font files, so it comes from the visitor's own system (every Mac,
+   * iPhone and iPad has it). Other devices fall back to Helvetica or Arial.
+   */
+  --font-sans: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Phones: slightly larger text on the inner pages for reading. */
+@media (max-width: 767px) {
+  :root {
+    --margin: 12px;
+    --top: 12px;
+    --text: 12px;
+    --title: 18px;
+    --row: 18px;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  column-gap: var(--gutter);
+  padding-inline: var(--margin);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text);
+  letter-spacing: var(--tracking);
+  font-weight: 400;
+  background: #fff;
+  color: #000;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Re-applied on every element so the tracking scales with each one's own size. */
+body * {
+  letter-spacing: var(--tracking);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.u {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 1px;
+}
+
+.todo {
+  display: inline-block;
+  margin: 0 0 var(--row);
+  padding: 0.4em 0.6em;
+  background: #ffe600;
+  color: #000;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/*
+ * None of the site's videos has controls, but Safari can still draw its own
+ * play/pause buttons on them. Hide every part of those buttons. Each selector
+ * gets its own rule: if one rule listed them all and a browser didn't know
+ * one name, it would ignore the whole rule.
+ */
+video::-webkit-media-controls {
+  display: none !important;
+  -webkit-appearance: none;
+}
+video::-webkit-media-controls-panel {
+  display: none !important;
+  -webkit-appearance: none;
+}
+video::-webkit-media-controls-enclosure {
+  display: none !important;
+  -webkit-appearance: none;
+}
+video::-webkit-media-controls-overlay-enclosure {
+  display: none !important;
+  -webkit-appearance: none;
+}
+video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+video::-webkit-media-controls-play-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+
+/* The canvas Safari paints videos onto (see src/scripts/video-canvas.ts). */
+.video-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}

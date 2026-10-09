@@ -1,0 +1,178 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { projects, previewSrc } from '../data/projects';
+
+// The 12 previews on the wall, left to right, top to bottom. Change the slugs
+// here to pick different projects.
+const WALL = [
+  'every-other-weekend',
+  'do-you-ever-feel-nostalgic',
+  'backbone-xbox-sunriver',
+  'nike-the-unreal-lookbook',
+  'can-you-keep-a-secret',
+  'chamberlain-coffee-valentines-day',
+  'jeremy-zucker-therapist',
+  'that-winter-in-nagano',
+  'nike-snkrs-newsstand',
+  'nike-snkrs-wait-is-over',
+  'the-valley-of-souls',
+  'truth-of-existence',
+];
+const tiles = WALL.map((slug) => projects.find((p) => p.slug === slug)!).filter(Boolean);
+---
+
+<Base title="Contact">
+  <main class="contact grid">
+    <Header current="contact" />
+
+    <section class="wall" aria-label="Contact">
+      {
+        tiles.map((p) => (
+          <div class="tile" aria-hidden="true">
+            <video src={previewSrc(p)} autoplay muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback />
+          </div>
+        ))
+      }
+      <address class="say">
+        <a href="https://www.instagram.com/jonahgeorge/" target="_blank" rel="noopener">ig: jonahgeorge</a>
+        <a href="mailto:jonahmgeorge@gmail.com">email: jonahmgeorge@gmail.com</a>
+      </address>
+    </section>
+
+    <Footer />
+  </main>
+</Base>
+
+<style>
+  /*
+   * A full-bleed wall of 12 project previews, 4 across and 3 down. Each clip
+   * is blended with "difference" against the white page, so it shows as a
+   * negative, and the contact lines on top are blended the same way. On a
+   * computer the clips can be dragged around; the one you grab comes to the
+   * front, and overlapping clips blend into each other.
+   */
+  .contact {
+    min-height: 100vh;
+    min-height: 100svh;
+    grid-template-rows: auto 1fr auto;
+    padding-block: var(--top) var(--margin);
+  }
+  .wall {
+    grid-column: 1 / -1;
+    align-self: start;
+    margin: calc(28 * var(--rm)) calc(-1 * var(--margin)) 0;
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+  }
+  .tile {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    mix-blend-mode: difference;
+    touch-action: none;
+    user-select: none;
+  }
+  .tile video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+  }
+  .say {
+    position: absolute;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(4 * var(--rm));
+    pointer-events: none;
+    font-style: normal;
+    font-size: calc(8.8 * var(--rm));
+    line-height: calc(9.9 * var(--rm));
+    font-weight: 500;
+    color: #fff;
+    mix-blend-mode: difference;
+  }
+  .say a {
+    pointer-events: auto;
+  }
+  .say a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    text-decoration-thickness: 1px;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .tile {
+      cursor: grab;
+    }
+    .tile.dragging {
+      cursor: grabbing;
+    }
+  }
+
+  /* Phone: two across, six down; no dragging, so the page scrolls normally. */
+  @media (max-width: 767px) {
+    .wall {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 24px;
+    }
+    .tile {
+      touch-action: auto;
+    }
+    .say {
+      font-size: 16px;
+      line-height: 20px;
+    }
+  }
+</style>
+
+<script>
+  import { coverAll } from '../scripts/video-canvas';
+  coverAll('.tile video');
+
+  // Drag the previews around with the mouse. Each tile keeps its own offset;
+  // the one being dragged comes to the front.
+  if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    let top = 1;
+    for (const tile of document.querySelectorAll<HTMLElement>('.tile')) {
+      let x = 0;
+      let y = 0;
+      tile.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        tile.setPointerCapture(e.pointerId);
+        tile.classList.add('dragging');
+        tile.style.zIndex = String(++top);
+        const startX = e.clientX - x;
+        const startY = e.clientY - y;
+        const move = (ev: PointerEvent) => {
+          x = ev.clientX - startX;
+          y = ev.clientY - startY;
+          tile.style.transform = `translate(${x}px, ${y}px)`;
+        };
+        const end = () => {
+          tile.classList.remove('dragging');
+          tile.removeEventListener('pointermove', move);
+          tile.removeEventListener('pointerup', end);
+          tile.removeEventListener('pointercancel', end);
+        };
+        tile.addEventListener('pointermove', move);
+        tile.addEventListener('pointerup', end);
+        tile.addEventListener('pointercancel', end);
+      });
+    }
+  }
+
+  // Some browsers block autoplay until the visitor interacts.
+  const clips = [...document.querySelectorAll<HTMLVideoElement>('.tile video')];
+  for (const v of clips) v.play().catch(() => {});
+  addEventListener('pointerdown', () => clips.forEach((v) => v.paused && v.play().catch(() => {})), { once: true });
+</script>
