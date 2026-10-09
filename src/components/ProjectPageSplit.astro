@@ -324,6 +324,15 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
   .top :global(a) {
     pointer-events: auto;
   }
+  /* Once you scroll, the header dims to 66%; hovering it brings it back. */
+  .top :global(.header) {
+    pointer-events: auto;
+    opacity: calc(1 - 0.34 * min(1, var(--p) * 5));
+    transition: opacity 0.2s;
+  }
+  .top :global(.header:hover) {
+    opacity: 1;
+  }
 
   /*
    * Left column (columns 1-6) with the about text and credits, and the
