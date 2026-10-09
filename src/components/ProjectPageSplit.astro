@@ -321,6 +321,8 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     z-index: 3;
     padding-top: var(--top);
     color: #fff;
+    /* All text is white with a difference blend, so it inverts over light areas. */
+    mix-blend-mode: difference;
     pointer-events: none;
   }
   .top :global(a) {
@@ -337,6 +339,7 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     inset: 0;
     z-index: 2;
     color: #fff;
+    mix-blend-mode: difference;
     pointer-events: none;
     font-weight: 500;
     line-height: var(--line);
@@ -376,10 +379,8 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     scrollbar-width: none;
     text-align: right;
     pointer-events: auto;
-    /* Fades and drifts right during the first fifth of the scroll. */
-    --pl: min(1, var(--p) * 5);
-    opacity: calc(1 - var(--pl));
-    transform: translateX(calc(var(--pl) * 40 * var(--rm)));
+    /* Fades out in place during the first fifth of the scroll. */
+    opacity: calc(1 - min(1, var(--p) * 5));
   }
   /* The space above the list. It gives way first when the window is short,
      so the list moves up rather than getting cut off. */
