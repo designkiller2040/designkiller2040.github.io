@@ -1,9 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
-import { GROUPS, projects, menuLabel, previewSrc } from '../data/projects';
-
-const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group === g.key) }));
+import ProjectList from '../components/ProjectList.astro';
 ---
 
 <Base theme="dark">
@@ -21,24 +19,8 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
 
     <p class="reel-label">Showreel 2025</p>
 
-    <nav class="menu" aria-label="Projects">
-      {
-        groups.map((g) => (
-          <section class="group">
-            <h2 class="group-label">{g.label}</h2>
-            <ul>
-              {g.items.map((p) => (
-                <li>
-                  <a href={`/work/${p.slug}/`} data-preview={previewSrc(p)}>
-                    {menuLabel(p)}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
-      }
-    </nav>
+    <!-- The same element as the list on every project page. -->
+    <ProjectList class="menu" previews />
   </main>
 </Base>
 
@@ -48,14 +30,15 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
    * bottom line with "Showreel 2025". The menu fills the right-hand columns
    * from the bottom up, level with the showreel label.
    *
-   * All homepage text (header, menu, showreel label) is SF Pro Display, 10 design
-   * px with -1.1 design px tracking (see --rm in global.css), so it scales with
-   * the window like Readymag. The header uses the same sizes as on every
-   * other page, so it doesn't move when you switch pages.
+   * All homepage text (header, menu, showreel label) is SF Pro Display, 8.2
+   * design px on 9.4 (see --rm in global.css), so it scales with the window
+   * like Readymag. The header and the menu are the same as on every project
+   * page, so they don't move when you switch pages.
    */
   .hero {
-    --text: calc(8.8 * var(--rm));
-    --line: calc(10.6 * var(--rm));
+    /* 13px on 15px on alona's 14" MacBook, like the project pages. */
+    --text: calc(8.2 * var(--rm));
+    --line: calc(9.4 * var(--rm));
     --tracking: -0.06em;
     font-family: var(--font-sans);
     font-size: var(--text);
@@ -105,48 +88,18 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     line-height: 1;
   }
 
-  .menu {
+  /*
+   * The project list (src/components/ProjectList.astro): the same element,
+   * size and place as on every project page, anchored bottom right.
+   */
+  .hero :global(.menu) {
     grid-row: 2 / 4;
     grid-column: 13 / -1;
     align-self: end;
     justify-self: end;
-    /* Scales with the text, so long titles always wrap in the same places. */
-    width: calc(150 * var(--rm));
     max-height: 100%;
     position: relative;
-    text-align: right;
     mix-blend-mode: difference;
-    color: #fff;
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
-  .menu::-webkit-scrollbar {
-    display: none;
-  }
-  .group + .group {
-    margin-top: calc(8.8 * var(--rm));
-  }
-  .group-label {
-    margin: 0 0 calc(3.5 * var(--rm));
-    font-size: var(--text);
-    line-height: var(--line);
-    font-style: italic;
-    font-weight: 500;
-  }
-  .menu ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .menu li {
-    font-size: var(--text);
-    line-height: var(--line);
-    font-weight: 500;
-  }
-  .menu a:hover,
-  .menu a:focus-visible {
-    color: var(--hover);
-    outline: none;
   }
 
   /*
@@ -173,20 +126,12 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
       left: var(--margin);
       top: calc(100svh - var(--margin) - 1em);
     }
-    .menu {
+    .hero :global(.menu) {
       grid-row: 2;
       grid-column: 8 / -1;
-      width: auto;
       max-height: none;
       margin-top: 40svh;
       padding-bottom: 48px;
-      overflow: visible;
-    }
-    .group + .group {
-      margin-top: 20px;
-    }
-    .menu li {
-      padding: 3px 0;
     }
   }
 </style>

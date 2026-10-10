@@ -1,0 +1,117 @@
+---
+/*
+ * The list of all projects, grouped. One element shared by the homepage and
+ * every project page, so it sits in exactly the same place with exactly the
+ * same look, and doesn't move when you go from one page to another.
+ *
+ * Where it sits is up to the page (it's anchored bottom right on both). The
+ * page passes `class` and positions it with :global(.project-list).
+ */
+import { GROUPS, menuLabel, previewSrc, projects } from '../data/projects';
+
+interface Props {
+  /** Slug of the project being shown: it gets the light pill. */
+  current?: string;
+  /** Homepage: add each project's hover-preview clip as data-preview. */
+  previews?: boolean;
+  class?: string;
+}
+const { current, previews = false, class: className } = Astro.props;
+const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group === g.key) }));
+---
+
+<nav class:list={['project-list', className]} aria-label="Projects">
+  {
+    groups.map((g) => (
+      <section class="group">
+        <h2 class="group-label">{g.label}</h2>
+        <ul>
+          {g.items.map((p) => (
+            <li>
+              <a
+                href={`/work/${p.slug}/`}
+                aria-current={p.slug === current ? 'page' : undefined}
+                data-preview={previews ? previewSrc(p) : undefined}
+              >
+                {menuLabel(p)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</nav>
+
+<style>
+  /*
+   * Text 8.2 design px on 9.4 (13px on 15px on alona's 14" MacBook), lines
+   * 2% further apart, 151 design px wide (240px), 40 (64px) between groups.
+   */
+  .project-list {
+    --text: calc(8.2 * var(--rm));
+    --line: calc(9.4 * var(--rm));
+    --tracking: -0.06em;
+    width: calc(151 * var(--rm));
+    font-family: var(--font-sans);
+    font-size: var(--text);
+    line-height: var(--line);
+    text-align: right;
+    color: #fff;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .project-list::-webkit-scrollbar {
+    display: none;
+  }
+  .group + .group {
+    margin-top: calc(40 * var(--rm));
+  }
+  .group-label {
+    margin: 0 0 calc(3.5 * var(--rm));
+    font-size: var(--text);
+    line-height: var(--line);
+    font-style: italic;
+    font-weight: 500;
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  li {
+    font-size: var(--text);
+    line-height: calc(var(--line) * 1.02);
+    font-weight: 500;
+  }
+  a:hover,
+  a:focus-visible {
+    color: var(--hover);
+    outline: none;
+  }
+  /* The project you're on: the same light pill as the "Play full" label. */
+  a[aria-current='page'] {
+    background: #e8e8e8;
+    color: #000;
+    padding: 0.12em 0.3em;
+    margin: 0 -0.3em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  /* Phones keep the homepage's phone sizes. */
+  @media (max-width: 767px) {
+    .project-list {
+      --text: 10px;
+      --line: 12px;
+      width: auto;
+      overflow: visible;
+    }
+    .group + .group {
+      margin-top: 20px;
+    }
+    li {
+      padding: 3px 0;
+    }
+  }
+</style>

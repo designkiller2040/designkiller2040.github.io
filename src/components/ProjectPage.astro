@@ -9,7 +9,8 @@
  */
 import Base from '../layouts/Base.astro';
 import Header from './Header.astro';
-import { CREDIT_ORDER, GROUPS, menuLabel, posterSrc, projects, stillSrcs, type Project } from '../data/projects';
+import ProjectList from './ProjectList.astro';
+import { CREDIT_ORDER, posterSrc, stillSrcs, type Project } from '../data/projects';
 
 interface Props {
   project: Project;
@@ -21,7 +22,6 @@ const credits = CREDIT_ORDER.filter((l) => project.credits[l]).map((l) => ({
 }));
 const embed = `https://player.vimeo.com/video/${project.vimeo}?dnt=1&title=0&byline=0&portrait=0&autoplay=1`;
 const poster = posterSrc(project);
-const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group === g.key) }));
 ---
 
 <Base title={project.title} theme="dark">
@@ -73,25 +73,8 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
         </dl>
       </div>
 
-      <!-- All projects, exactly like the homepage menu. -->
-      <nav class="list" aria-label="Projects">
-        {
-          groups.map((g) => (
-            <section class="group">
-              <h2 class="group-label">{g.label}</h2>
-              <ul>
-                {g.items.map((p) => (
-                  <li>
-                    <a href={`/work/${p.slug}/`} aria-current={p.slug === project.slug ? 'page' : undefined}>
-                      {menuLabel(p)}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))
-        }
-      </nav>
+      <!-- All projects: the same element as the homepage menu. -->
+      <ProjectList class="list" current={project.slug} />
     </aside>
   </main>
 
@@ -369,10 +352,6 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     font-size: var(--text);
     line-height: var(--line);
   }
-  .top :global(.header) {
-    font-size: var(--text);
-    line-height: var(--line);
-  }
   .col {
     grid-row: 2;
     grid-column: 1 / 13;
@@ -392,60 +371,19 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
   }
 
   /*
-   * The project list: the same as the homepage menu (src/pages/index.astro):
-   * same width, text, spacing and hover colour, sitting at the bottom right.
+   * The project list (src/components/ProjectList.astro, shared with the
+   * homepage), anchored bottom right. It fades out in place during the first
+   * fifth of the scroll.
    */
-  .list {
+  .info :global(.list) {
     grid-row: 2;
     grid-column: 13 / -1;
     justify-self: end;
-    /* Width 151 design px: 240px on screen on alona's 14" MacBook. */
-    width: calc(151 * var(--rm));
-    /* Grows upwards as far as just under the header, then scrolls. */
-    overflow-y: auto;
-    scrollbar-width: none;
-    text-align: right;
-    --tracking: -0.06em;
     pointer-events: auto;
-    /* Fades out in place during the first fifth of the scroll. */
     opacity: calc(1 - min(1, var(--p) * 5));
   }
-  .list::-webkit-scrollbar {
-    display: none;
-  }
-  :global(html.list-gone) .list {
+  :global(html.list-gone) .info :global(.list) {
     pointer-events: none;
-  }
-  /* 40 design px: 64px on screen on alona's 14" MacBook. */
-  .group + .group {
-    margin-top: calc(40 * var(--rm));
-  }
-  .group-label {
-    margin: 0 0 calc(3.5 * var(--rm));
-    font-size: var(--text);
-    line-height: var(--line);
-    font-style: italic;
-    font-weight: 500;
-  }
-  .list ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  /* Lines 2% further apart than the rest of the text. */
-  .list li {
-    font-size: var(--text);
-    line-height: calc(var(--line) * 1.02);
-    font-weight: 500;
-  }
-  /* The project you're on: the same light pill as the "Play full" label. */
-  .list a[aria-current='page'] {
-    background: #e8e8e8;
-    color: #000;
-    padding: 0.12em 0.3em;
-    margin: 0 -0.3em;
-    -webkit-box-decoration-break: clone;
-    box-decoration-break: clone;
   }
   .list a:hover,
   .list a:focus-visible {
@@ -655,10 +593,6 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
       --text: 12px;
       --line: calc(10.6 * var(--rm));
     }
-    .top :global(.header) {
-      font-size: 10px;
-      line-height: 12px;
-    }
     .info {
       position: relative;
       inset: auto;
@@ -667,7 +601,7 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
       grid-template-rows: none;
       padding-bottom: 0;
     }
-    .list {
+    .info :global(.list) {
       display: none;
     }
     .col {
