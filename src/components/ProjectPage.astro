@@ -2,13 +2,14 @@
 /*
  * Project page layout, used by every project (src/pages/work/[slug].astro).
  *
- * The film's thumbnail fills the whole window and stays put. The title, about
- * text and credits sit fixed on the right, over the image. As you scroll, the
- * thumbnail blurs and the page slides sideways to show the stills on the right.
+ * The film's thumbnail fills the window. The about text and credits sit on
+ * the left, and the list of all projects on the right, as on the homepage.
+ * As you scroll, the list fades away, the thumbnail blurs and the stills
+ * slide in one by one in a row.
  */
 import Base from '../layouts/Base.astro';
 import Header from './Header.astro';
-import { CREDIT_ORDER, posterSrc, stillSrcs, type Project } from '../data/projects';
+import { CREDIT_ORDER, GROUPS, menuLabel, posterSrc, projects, stillSrcs, type Project } from '../data/projects';
 
 interface Props {
   project: Project;
@@ -20,6 +21,7 @@ const credits = CREDIT_ORDER.filter((l) => project.credits[l]).map((l) => ({
 }));
 const embed = `https://player.vimeo.com/video/${project.vimeo}?dnt=1&title=0&byline=0&portrait=0&autoplay=1`;
 const poster = posterSrc(project);
+const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group === g.key) }));
 ---
 
 <Base title={project.title} theme="dark">
@@ -53,10 +55,7 @@ const poster = posterSrc(project);
 
     <aside class="info grid">
       <div class="col">
-        <div class="titlebar">
-          <a class="back" href="/" aria-label="Back to all works">&lt;</a>
-          <h1>{project.title}</h1>
-        </div>
+        <h1 class="sr-only">{project.title}</h1>
         <div class="about">
           <p class="label">about film:</p>
           {project.about && <p class="text">{project.about}</p>}
@@ -73,6 +72,26 @@ const poster = posterSrc(project);
           }
         </dl>
       </div>
+
+      <!-- All projects, exactly like the homepage menu. -->
+      <nav class="list" aria-label="Projects">
+        {
+          groups.map((g) => (
+            <section class="group">
+              <h2 class="group-label">{g.label}</h2>
+              <ul>
+                {g.items.map((p) => (
+                  <li>
+                    <a href={`/work/${p.slug}/`} aria-current={p.slug === project.slug ? 'page' : undefined}>
+                      {menuLabel(p)}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
+        }
+      </nav>
     </aside>
   </main>
 
@@ -93,8 +112,6 @@ const poster = posterSrc(project);
   // and reopen the page halfway through.)
   const desktop = window.matchMedia('(min-width: 768px)');
   const track = document.querySelector<HTMLElement>('.track');
-  const info = document.querySelector<HTMLElement>('.info');
-  const col = document.querySelector<HTMLElement>('.info .col');
   let distance = 0; // how far the track can slide, in px
   let target = 0; // where it's heading
   let current = 0; // where it is now
@@ -106,7 +123,10 @@ const poster = posterSrc(project);
     if (!track) return;
     track.style.transform = `translate3d(${-current}px, 0, 0)`;
     // Progress: 0 at the start, 1 at the end of the slide.
-    root.style.setProperty('--p', distance ? (current / distance).toFixed(4) : '0');
+    const p = distance ? current / distance : 0;
+    root.style.setProperty('--p', p.toFixed(4));
+    // Once the project list has faded, it stops catching clicks.
+    root.classList.toggle('list-gone', p > 0.2);
   };
 
   const tick = () => {
@@ -125,11 +145,6 @@ const poster = posterSrc(project);
     if (desktop.matches) {
       root.classList.add('slide');
       distance = Math.max(0, track.scrollWidth - window.innerWidth);
-      // How far the info column travels to reach the left margin.
-      if (info && col) {
-        const shift = col.offsetLeft - parseFloat(getComputedStyle(info).paddingLeft);
-        root.style.setProperty('--shift', `${shift}px`);
-      }
       // Keep the same progress through the slide when the window resizes.
       const ratio = target && distance ? target / distance : 0;
       target = current = clamp(ratio * distance);
@@ -301,52 +316,149 @@ const poster = posterSrc(project);
     z-index: 3;
     padding-top: var(--top);
     color: #fff;
+    /* All text is white with a difference blend, so it inverts over light areas. */
+    mix-blend-mode: difference;
     pointer-events: none;
   }
   .top :global(a) {
     pointer-events: auto;
   }
+  /* Once you scroll, the header dims to 66%; hovering it brings it back. */
+  .top :global(.header) {
+    pointer-events: auto;
+    opacity: calc(1 - 0.34 * min(1, var(--p) * 5));
+    transition: opacity 0.2s;
+  }
+  .top :global(.header:hover) {
+    opacity: 1;
+  }
 
-  /* Right-hand column (columns 19-24), fixed to the window. */
+  /*
+   * Left column (columns 1-6) with the about text and credits, and the
+   * project list on the right (columns 19-24), both fixed to the window.
+   * Both start at the same height, about a third of the way down.
+   */
   .info {
     position: fixed;
     inset: 0;
-    z-index: 2;
     color: #fff;
+    /* No z-index here or on .scroll: in Chrome, a z-index on either stops the
+       difference blend from reaching the image. DOM order keeps this on top. */
+    mix-blend-mode: difference;
     pointer-events: none;
     font-weight: 500;
     line-height: var(--line);
   }
+  /*
+   * Two rows: empty space under the header, then a row as tall as the project
+   * list. The info on the left fills that second row, so it starts level with
+   * the top of the list on first paint, with no script and no jump.
+   */
+  .info {
+    grid-template-rows: minmax(calc(70 * var(--rm)), 1fr) minmax(0, max-content);
+    padding-bottom: var(--margin);
+  }
+  /*
+   * All text on this page: 8.2 design px with 9.4 line height, which is 13px
+   * on 15px on alona's 14" MacBook, scaling with the window like the rest.
+   */
+  .top,
+  .info {
+    --text: calc(8.2 * var(--rm));
+    --line: calc(9.4 * var(--rm));
+    font-size: var(--text);
+    line-height: var(--line);
+  }
+  .top :global(.header) {
+    font-size: var(--text);
+    line-height: var(--line);
+  }
   .col {
-    grid-column: 19 / -1;
+    grid-row: 2;
+    grid-column: 1 / 13;
+    /* 252 design px: 400px on screen on alona's 14" MacBook. */
+    width: calc(252 * var(--rm));
     display: flex;
     flex-direction: column;
-    height: 100%;
-    padding-block: calc(92 * var(--rm)) var(--margin);
     pointer-events: auto;
-    /* Slides from the right-hand columns to the left margin as you scroll. */
-    transform: translateX(calc(var(--p) * var(--shift, 0px) * -1));
   }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /*
+   * The project list: the same as the homepage menu (src/pages/index.astro):
+   * same width, text, spacing and hover colour, sitting at the bottom right.
+   */
+  .list {
+    grid-row: 2;
+    grid-column: 13 / -1;
+    justify-self: end;
+    /* Width 151 design px: 240px on screen on alona's 14" MacBook. */
+    width: calc(151 * var(--rm));
+    /* Grows upwards as far as just under the header, then scrolls. */
+    overflow-y: auto;
+    scrollbar-width: none;
+    text-align: right;
+    --tracking: -0.06em;
+    pointer-events: auto;
+    /* Fades out in place during the first fifth of the scroll. */
+    opacity: calc(1 - min(1, var(--p) * 5));
+  }
+  .list::-webkit-scrollbar {
+    display: none;
+  }
+  :global(html.list-gone) .list {
+    pointer-events: none;
+  }
+  /* 40 design px: 64px on screen on alona's 14" MacBook. */
+  .group + .group {
+    margin-top: calc(40 * var(--rm));
+  }
+  .group-label {
+    margin: 0 0 calc(3.5 * var(--rm));
+    font-size: var(--text);
+    line-height: var(--line);
+    font-style: italic;
+    font-weight: 500;
+  }
+  .list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  /* Lines 2% further apart than the rest of the text. */
+  .list li {
+    font-size: var(--text);
+    line-height: calc(var(--line) * 1.02);
+    font-weight: 500;
+  }
+  /* The project you're on: the same light pill as the "Play full" label. */
+  .list a[aria-current='page'] {
+    background: #e8e8e8;
+    color: #000;
+    padding: 0.12em 0.3em;
+    margin: 0 -0.3em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  .list a:hover,
+  .list a:focus-visible {
+    color: var(--hover);
+    outline: none;
+  }
+
   .col p {
     margin: 0;
   }
-  .titlebar {
-    display: flex;
-    align-items: baseline;
-    gap: calc(21 * var(--rm));
-    font-size: var(--title);
-    line-height: 1.2;
-  }
-  .titlebar h1 {
-    margin: 0;
-    font-size: inherit;
-    font-weight: 500;
-  }
-  .about {
-    margin-top: calc(56 * var(--rm));
-  }
   .about .text {
-    margin-top: calc(40 * var(--rm));
+    margin-top: calc(50 * var(--rm));
+    font-weight: 400;
     text-align: justify;
     hyphens: manual;
   }
@@ -373,13 +485,9 @@ const poster = posterSrc(project);
     text-align: right;
     max-width: 62%;
   }
-  .back:hover {
-    color: var(--hover);
-  }
 
   .scroll {
     position: relative;
-    z-index: 1;
   }
 
   /* The window-sized stage that holds the sliding track. */
@@ -461,8 +569,7 @@ const poster = posterSrc(project);
   }
 
   /*
-   * Second screen: the stills in a 2x2 grid on the right (columns 11-16 and
-   * 19-24), sitting low in the window.
+   * Phone fallback base for the stills (the desktop row is below).
    */
   .shots {
     width: 100vw;
@@ -483,6 +590,25 @@ const poster = posterSrc(project);
   }
   .shot:nth-child(even) {
     grid-column: 19 / -1;
+  }
+  /*
+   * Desktop: the stills sit in one row instead, a little below the middle
+   * of the window, and slide in one by one as you scroll. Each is 188 design
+   * px wide (about 300px on alona's MacBook) with 55 between them.
+   */
+  @media (min-width: 768px) {
+    .shots {
+      display: flex;
+      align-items: flex-start;
+      gap: calc(55 * var(--rm));
+      width: auto;
+      padding: 45vh var(--margin) 0 0;
+      padding-top: 45svh;
+    }
+    .shot {
+      flex: none;
+      width: calc(188 * var(--rm));
+    }
   }
 
   /* The film, over everything. */
@@ -523,15 +649,32 @@ const poster = posterSrc(project);
    * into the page under the first screen, followed by the stills.
    */
   @media (max-width: 767px) {
+    /* Phones keep the site's usual phone sizes. */
+    .top,
+    .info {
+      --text: 12px;
+      --line: calc(10.6 * var(--rm));
+    }
+    .top :global(.header) {
+      font-size: 10px;
+      line-height: 12px;
+    }
     .info {
       position: relative;
       inset: auto;
       z-index: 1;
       pointer-events: auto;
+      grid-template-rows: none;
+      padding-bottom: 0;
+    }
+    .list {
+      display: none;
     }
     .col {
+      grid-row: auto;
       grid-column: 1 / -1;
       height: auto;
+      width: auto;
       padding-block: 0 calc(var(--row) * 2);
     }
     .about,
@@ -566,9 +709,6 @@ const poster = posterSrc(project);
     }
     .shot:nth-child(n) {
       grid-column: 1 / -1;
-    }
-    .col {
-      transform: none;
     }
   }
 </style>
