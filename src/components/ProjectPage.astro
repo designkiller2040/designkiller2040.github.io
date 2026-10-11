@@ -6,6 +6,10 @@
  * the left, and the list of all projects on the right, as on the homepage.
  * As you scroll, the list fades away, the thumbnail blurs and the stills
  * slide in one by one in a row.
+ *
+ * Test (2026-10-11): projects listed in VERTICAL instead scroll down like a
+ * normal page on desktop. The thumbnail blurs the same way, the list fades
+ * in place, and the stills follow the info in the left column, as wide as it.
  */
 import Base from '../layouts/Base.astro';
 import Header from './Header.astro';
@@ -22,13 +26,18 @@ const credits = CREDIT_ORDER.filter((l) => project.credits[l]).map((l) => ({
 }));
 const embed = `https://player.vimeo.com/video/${project.vimeo}?dnt=1&title=0&byline=0&portrait=0&autoplay=1`;
 const poster = posterSrc(project);
+
+// Projects trying the vertical-scroll layout (desktop; phones are the same).
+const VERTICAL = ['nike-snkrs-newsstand'];
+const vertical = VERTICAL.includes(project.slug);
+const shots = stillSrcs(project);
 ---
 
 <Base title={project.title} theme="dark">
   <link slot="head" rel="preload" href={poster} as="image" />
 
   <!-- The thumbnail. As you scroll it slides left, blurs and shrinks back. -->
-  <div class="backdrop" aria-hidden="true">
+  <div class:list={['backdrop', { v: vertical }]} aria-hidden="true">
     <div class="thumb"><img src={poster} alt="" /></div>
   </div>
 
@@ -36,7 +45,7 @@ const poster = posterSrc(project);
     <Header current="works" />
   </div>
 
-  <main class="scroll">
+  <main class:list={['scroll', { v: vertical }]}>
     <!-- Desktop: the page scrolls sideways. The stage stays in the window
          while the track slides left as you scroll. -->
     <div class="stage">
@@ -47,9 +56,13 @@ const poster = posterSrc(project);
           </button>
         </div>
 
-        <div class="shots grid">
-          {stillSrcs(project).map((src) => <img class="shot" src={src} alt="" />)}
-        </div>
+        {
+          !vertical && (
+            <div class="shots grid">
+              {shots.map((src) => <img class="shot" src={src} alt="" />)}
+            </div>
+          )
+        }
       </div>
     </div>
 
@@ -73,10 +86,28 @@ const poster = posterSrc(project);
         </dl>
       </div>
 
-      <!-- All projects: the same element as the homepage menu. -->
+      <!-- All projects: the same element as the homepage menu. In the
+           vertical layout this copy is invisible and only keeps the info
+           level with the list; the visible one is .listbar below. -->
       <ProjectList class="list" current={project.slug} />
     </aside>
+
+    {
+      vertical && (
+        <div class="shots vshots grid">
+          {shots.map((src) => <img class="shot" src={src} alt="" />)}
+        </div>
+      )
+    }
   </main>
+
+  {
+    vertical && (
+      <div class="listbar grid">
+        <ProjectList class="list" current={project.slug} />
+      </div>
+    )
+  }
 
   <!-- With a mouse, "Play full" follows the pointer over the thumbnail. -->
   <div class="cursor" aria-hidden="true"><span class="play-label">Play full</span></div>
@@ -94,6 +125,9 @@ const poster = posterSrc(project);
   // (Driving it from the page's own scroll made browsers bounce at the end
   // and reopen the page halfway through.)
   const desktop = window.matchMedia('(min-width: 768px)');
+  // The vertical-layout test scrolls normally on desktop too.
+  const vertical = document.querySelector('main.v') !== null;
+  const sliding = () => desktop.matches && !vertical;
   const track = document.querySelector<HTMLElement>('.track');
   let distance = 0; // how far the track can slide, in px
   let target = 0; // where it's heading
@@ -125,7 +159,7 @@ const poster = posterSrc(project);
 
   const measure = () => {
     if (!track) return;
-    if (desktop.matches) {
+    if (sliding()) {
       root.classList.add('slide');
       distance = Math.max(0, track.scrollWidth - window.innerWidth);
       // Keep the same progress through the slide when the window resizes.
@@ -143,7 +177,7 @@ const poster = posterSrc(project);
   window.addEventListener(
     'wheel',
     (e) => {
-      if (!desktop.matches || document.body.classList.contains('watching')) return;
+      if (!sliding() || document.body.classList.contains('watching')) return;
       e.preventDefault();
       const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
       const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
@@ -153,7 +187,7 @@ const poster = posterSrc(project);
   );
 
   document.addEventListener('keydown', (e) => {
-    if (!desktop.matches || document.body.classList.contains('watching')) return;
+    if (!sliding() || document.body.classList.contains('watching')) return;
     const page = window.innerWidth * 0.8;
     const step: Record<string, number> = {
       ArrowRight: 120, ArrowDown: 120, ArrowLeft: -120, ArrowUp: -120,
@@ -174,7 +208,7 @@ const poster = posterSrc(project);
     touchY = e.touches[0].clientY;
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
-    if (!desktop.matches) return;
+    if (!sliding()) return;
     const t = e.touches[0];
     const dx = touchX - t.clientX;
     const dy = touchY - t.clientY;
@@ -185,14 +219,19 @@ const poster = posterSrc(project);
     render();
   }, { passive: false });
 
-  // Phone: the page scrolls normally; the blur follows the scroll.
+  // Phone, and the vertical layout: the page scrolls normally and the blur
+  // follows the scroll. On desktop --p reaches 1 after one window height, so
+  // the blur and the list fade take the same distance as in the slide.
   let ticking = false;
   const onScroll = () => {
-    if (desktop.matches || ticking) return;
+    if (sliding() || ticking) return;
     ticking = true;
     requestAnimationFrame(() => {
       ticking = false;
-      root.style.setProperty('--p', Math.min(1, window.scrollY / (window.innerHeight * 0.6)).toFixed(3));
+      const span = window.innerHeight * (desktop.matches ? 1 : 0.6);
+      const p = Math.min(1, window.scrollY / span);
+      root.style.setProperty('--p', p.toFixed(3));
+      root.classList.toggle('list-gone', p > 0.2);
     });
   };
   window.addEventListener('scroll', onScroll, { passive: true });
@@ -346,7 +385,8 @@ const poster = posterSrc(project);
    * on 15px on alona's 14" MacBook, scaling with the window like the rest.
    */
   .top,
-  .info {
+  .info,
+  .listbar {
     --text: calc(8.2 * var(--rm));
     --line: calc(9.4 * var(--rm));
     font-size: var(--text);
@@ -375,14 +415,16 @@ const poster = posterSrc(project);
    * homepage), anchored bottom right. It fades out in place during the first
    * fifth of the scroll.
    */
-  .info :global(.list) {
+  .info :global(.list),
+  .listbar :global(.list) {
     grid-row: 2;
     grid-column: 13 / -1;
     justify-self: end;
     pointer-events: auto;
     opacity: calc(1 - min(1, var(--p) * 5));
   }
-  :global(html.list-gone) .info :global(.list) {
+  :global(html.list-gone) .info :global(.list),
+  :global(html.list-gone) .listbar :global(.list) {
     pointer-events: none;
   }
   .list a:hover,
@@ -546,6 +588,70 @@ const poster = posterSrc(project);
     .shot {
       flex: none;
       width: calc(188 * var(--rm));
+    }
+  }
+
+  /*
+   * Vertical layout (test on Nike SNKRS, desktop only). The page scrolls
+   * down normally: the info column scrolls with it and the stills follow
+   * under it, each as wide as the column (252 design px, 400px on alona's
+   * MacBook). The thumbnail stays put and blurs, without the sideways drift.
+   * The visible project list is .listbar, fixed in the same spot as on the
+   * other pages; the copy inside .info is invisible and only keeps the info
+   * starting level with the top of the list.
+   */
+  .listbar {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .backdrop.v {
+      --bx: 0px;
+    }
+    /* The thumbnail's play area stays behind the page, for the first screen. */
+    .v .stage {
+      position: fixed;
+      inset: 0;
+      height: auto;
+    }
+    :global(html.list-gone) .v .play {
+      pointer-events: none;
+    }
+    .v .info {
+      position: relative;
+      inset: auto;
+      min-height: 100vh;
+      min-height: 100svh;
+    }
+    .v .info :global(.list) {
+      visibility: hidden;
+      align-self: end;
+    }
+    .listbar {
+      display: grid;
+      position: fixed;
+      inset: 0;
+      color: #fff;
+      mix-blend-mode: difference;
+      pointer-events: none;
+      font-weight: 500;
+      grid-template-rows: minmax(calc(70 * var(--rm)), 1fr) minmax(0, max-content);
+      padding-bottom: var(--margin);
+    }
+    .listbar :global(.list) {
+      align-self: end;
+    }
+    .v .vshots {
+      position: relative;
+      display: grid;
+      height: auto;
+      width: auto;
+      align-content: start;
+      row-gap: calc(16 * var(--rm));
+      padding: 0 var(--margin) var(--margin);
+    }
+    .v .vshots .shot {
+      grid-column: 1 / 13;
+      width: calc(252 * var(--rm));
     }
   }
 
