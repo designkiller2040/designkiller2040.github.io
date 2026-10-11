@@ -207,6 +207,7 @@ const poster = posterSrc(project);
   window.addEventListener('resize', measure);
   desktop.addEventListener('change', measure);
   document.querySelectorAll('.shot').forEach((img) => img.addEventListener('load', measure));
+  window.addEventListener('load', measure);
   measure();
 
   // The "Play full" label replaces the mouse pointer over the thumbnail.
@@ -553,8 +554,10 @@ const poster = posterSrc(project);
     }
     .shot {
       flex: none;
-      width: auto;
+      /* Width set outright (16:9), not left to the image: Safari can lay a
+         not-yet-loaded image out at zero width, leaving nothing to scroll. */
       height: var(--shots-h, calc(106 * var(--rm)));
+      width: calc(var(--shots-h, calc(106 * var(--rm))) * 16 / 9);
     }
   }
 
