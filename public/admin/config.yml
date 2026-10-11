@@ -1,0 +1,97 @@
+# Content editor for the site, open at /admin/.
+# Every save is a commit to main, which rebuilds the live site (about 1-2 minutes).
+# Full films live on Vimeo (paste the ID); only short preview clips and images
+# are uploaded here, because every upload stays in the GitHub repo forever.
+
+backend:
+  name: github
+  repo: designkiller2040/designkiller2040.github.io
+  branch: main
+  auth_methods: [token]
+
+site_url: https://designkiller2040.github.io
+app_title: Jonah George
+media_folder: public/images/uploads
+public_folder: /images/uploads
+
+media_libraries:
+  default:
+    config:
+      max_file_size: 20000000 # 20 MB per upload
+      slugify_filename: true
+
+output:
+  omit_empty_optional_fields: true
+  json:
+    indent_size: 2
+
+collections:
+  - name: site
+    label: Projects
+    files:
+      - name: projects
+        label: All projects
+        file: src/data/projects.json
+        format: json
+        fields:
+          - name: projects
+            label: Projects
+            label_singular: project
+            hint: Drag to reorder. The order here is the menu order on the site.
+            widget: list
+            root: true
+            summary: '{{title}} · {{group}}'
+            fields:
+              - { name: title, label: Title, widget: string }
+              - name: slug
+                label: Page address
+                hint: 'Lowercase words joined by dashes, e.g. maana-homes. The page lives at /work/<this>/. Don’t change it for existing projects.'
+                widget: string
+                pattern: ['^[a-z0-9]+(-[a-z0-9]+)*$', 'Only lowercase letters, numbers and dashes']
+              - { name: menuLabel, label: Short menu label, widget: string, required: false, hint: Only if the title is too long for the homepage menu. }
+              - name: group
+                label: Group
+                widget: select
+                options:
+                  - { label: commercial works, value: commercial }
+                  - { label: music videos, value: music }
+                  - { label: concept videos, value: concept }
+              - name: vimeo
+                label: Vimeo ID (full film)
+                widget: string
+                hint: 'The number at the end of the Vimeo link, e.g. 1109700480 for vimeo.com/1109700480.'
+                pattern: ['^[0-9]+$', 'Numbers only']
+              - name: preview
+                label: Hover preview clip
+                widget: file
+                required: false
+                accept: video/mp4
+                media_folder: public/video/previews
+                public_folder: /video/previews
+                hint: 'Short silent loop, MP4 (H.264), under 20 MB. Plays when hovering the title on the homepage.'
+              - name: poster
+                label: Big thumbnail
+                widget: image
+                required: false
+                media_folder: public/images/work
+                public_folder: /images/work
+                hint: Full-screen image at the top of the project page.
+              - name: stills
+                label: Stills
+                widget: image
+                multiple: true
+                max: 4
+                required: false
+                media_folder: public/images/work
+                public_folder: /images/work
+                hint: Up to four shots, shown in the row on the project page.
+              - { name: about, label: About the film, widget: text, required: false }
+              - name: credits
+                label: Credits
+                widget: keyvalue
+                required: false
+                label_singular: credit
+                key_label: Role
+                value_label: Names
+                hint: 'Use these roles, spelled exactly like this: Location, Producers, Co-Director, DP, Agency, Prod Co, Edit. The page sorts them in that order.'
+              - { name: todo, label: TODO note, widget: text, required: false, hint: Shows a yellow note on the page. Clear it when done. }

@@ -16,6 +16,10 @@ export interface Project {
   about?: string;
   /** Open question about this project's data. Shown on its page until removed. */
   todo?: string;
+  /** Uploaded files (paths inside public/). Missing ones fall back to the slug-based names below. */
+  preview?: string;
+  poster?: string;
+  stills?: string[];
 }
 
 export type GroupKey = 'commercial' | 'music' | 'concept';
@@ -33,10 +37,10 @@ export type CreditLabel = (typeof CREDIT_ORDER)[number];
 export const projects = raw as Project[];
 
 export const menuLabel = (p: Project) => p.menuLabel ?? p.title;
-export const previewSrc = (p: Project) => `/video/previews/${p.slug}.mp4`;
+export const previewSrc = (p: Project) => withVersion(p.preview ?? `/video/previews/${p.slug}.mp4`);
 
 /** Images for a project page: one big thumbnail, then four stills. */
-export const posterSrc = (p: Project) => withVersion(`/images/work/${p.slug}/poster.jpg`);
+export const posterSrc = (p: Project) => withVersion(p.poster ?? `/images/work/${p.slug}/poster.jpg`);
 
 /**
  * Adds a short fingerprint of the file to its URL (?v=...), so when an image
@@ -51,9 +55,9 @@ function withVersion(src: string) {
     return src;
   }
 }
-/** Up to four stills (shot-1.jpg ... shot-4.jpg); missing ones are skipped. */
+/** Up to four stills (from the editor, else shot-1.jpg ... shot-4.jpg); missing ones are skipped. */
 export const stillSrcs = (p: Project) =>
-  [1, 2, 3, 4]
-    .map((n) => `/images/work/${p.slug}/shot-${n}.jpg`)
+  (p.stills ?? [1, 2, 3, 4].map((n) => `/images/work/${p.slug}/shot-${n}.jpg`))
+    .slice(0, 4)
     .filter((src) => existsSync(`public${src}`))
     .map(withVersion);
