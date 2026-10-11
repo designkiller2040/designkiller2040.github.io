@@ -77,6 +77,13 @@ const links = [
     -webkit-mask: url(/images/logo.svg) center / 100% 100% no-repeat;
     mask: url(/images/logo.svg) center / 100% 100% no-repeat;
   }
+  /* 2026-10-11: logo nudged 5px down on alona's MacBook (3.1 design px),
+     without moving the nav. A translate doesn't change the layout. */
+  @media (min-width: 768px) {
+    .logo-mark {
+      translate: 0 calc(3.1 * var(--rm));
+    }
+  }
   .nav {
     grid-row: 1;
     grid-column: 1 / 9;
