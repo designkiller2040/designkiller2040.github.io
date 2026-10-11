@@ -123,10 +123,18 @@ const poster = posterSrc(project);
     if (!frame) frame = requestAnimationFrame(tick);
   };
 
+  // The stills line up with the info column: same top, same height.
+  const col = document.querySelector<HTMLElement>('.info .col');
+
   const measure = () => {
     if (!track) return;
     if (desktop.matches) {
       root.classList.add('slide');
+      if (col) {
+        const r = col.getBoundingClientRect();
+        root.style.setProperty('--shots-top', `${r.top}px`);
+        root.style.setProperty('--shots-h', `${r.height}px`);
+      }
       distance = Math.max(0, track.scrollWidth - window.innerWidth);
       // Keep the same progress through the slide when the window resizes.
       const ratio = target && distance ? target / distance : 0;
@@ -530,9 +538,10 @@ const poster = posterSrc(project);
     grid-column: 19 / -1;
   }
   /*
-   * Desktop: the stills sit in one row instead, a little below the middle
-   * of the window, and slide in one by one as you scroll. Each is 188 design
-   * px wide (about 300px on alona's MacBook) with 55 between them.
+   * Desktop: the stills sit in one row instead and slide in one by one as
+   * you scroll. Each is as tall as the info column on the left (from "about
+   * film" to the last credit) and starts level with it; the script measures
+   * the column into --shots-top and --shots-h. 55 design px between them.
    */
   @media (min-width: 768px) {
     .shots {
@@ -540,12 +549,12 @@ const poster = posterSrc(project);
       align-items: flex-start;
       gap: calc(55 * var(--rm));
       width: auto;
-      padding: 45vh var(--margin) 0 0;
-      padding-top: 45svh;
+      padding: var(--shots-top, 45svh) var(--margin) 0 0;
     }
     .shot {
       flex: none;
-      width: calc(188 * var(--rm));
+      width: auto;
+      height: var(--shots-h, calc(106 * var(--rm)));
     }
   }
 
