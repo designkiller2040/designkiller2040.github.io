@@ -102,6 +102,29 @@ const poster = posterSrc(project);
 
   const clamp = (v: number) => Math.min(distance, Math.max(0, v));
 
+  // The info column on the left. The stills line up with it (same top, same
+  // height), and it fades out as the first still slides up to it.
+  const col = document.querySelector<HTMLElement>('.info .col');
+  const firstShot = document.querySelector<HTMLElement>('.shot');
+  let shotStart = 0; // the first still's left edge before sliding, in px
+  let colEnd = 0; // the info column's right edge, in px
+  const fadeInfo = () => {
+    if (!col) return;
+    if (!distance || !firstShot) {
+      col.style.opacity = '';
+      col.style.visibility = '';
+      return;
+    }
+    // Fully visible until the still is 60 design px away, gone when it touches.
+    // (One design px, as --rm in global.css works it out.)
+    const rm = Math.min(2, Math.max(1, Math.min(window.innerWidth / 880, window.innerHeight / 552)));
+    const fade = 60 * rm;
+    const o = Math.min(1, Math.max(0, (shotStart - current - colEnd) / fade));
+    col.style.opacity = o.toFixed(3);
+    // Once invisible, it stops catching clicks and text selection.
+    col.style.visibility = o === 0 ? 'hidden' : '';
+  };
+
   const render = () => {
     if (!track) return;
     track.style.transform = `translate3d(${-current}px, 0, 0)`;
@@ -110,6 +133,7 @@ const poster = posterSrc(project);
     root.style.setProperty('--p', p.toFixed(4));
     // Once the project list has faded, it stops catching clicks.
     root.classList.toggle('list-gone', p > 0.2);
+    fadeInfo();
   };
 
   const tick = () => {
@@ -123,9 +147,6 @@ const poster = posterSrc(project);
     if (!frame) frame = requestAnimationFrame(tick);
   };
 
-  // The stills line up with the info column: same top, same height.
-  const col = document.querySelector<HTMLElement>('.info .col');
-
   const measure = () => {
     if (!track) return;
     if (desktop.matches) {
@@ -136,6 +157,8 @@ const poster = posterSrc(project);
         root.style.setProperty('--shots-h', `${r.height}px`);
       }
       distance = Math.max(0, track.scrollWidth - window.innerWidth);
+      if (col) colEnd = col.getBoundingClientRect().right;
+      if (firstShot) shotStart = firstShot.offsetLeft;
       // Keep the same progress through the slide when the window resizes.
       const ratio = target && distance ? target / distance : 0;
       target = current = clamp(ratio * distance);
@@ -144,6 +167,7 @@ const poster = posterSrc(project);
       root.classList.remove('slide');
       distance = target = current = 0;
       track.style.transform = '';
+      fadeInfo();
       onScroll();
     }
   };
