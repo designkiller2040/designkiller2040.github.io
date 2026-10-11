@@ -19,9 +19,13 @@
 :root {
   --rm: clamp(1px, min(100vw / 880, 100svh / 552), 2px);
   --cols: 24;
-  --margin: max(12px, calc(16 * var(--rm)));
+  /* 2026-10-11: 44px on alona's 14" MacBook for the side and bottom margins
+     and for the top of the menu links. The links sit about 15 design px
+     below the top of the header (on the logo's baseline), so --top is
+     27.7 - 15.1 = 12.6. */
+  --margin: max(12px, calc(27.7 * var(--rm)));
   --gutter: calc(5 * var(--rm));
-  --top: max(12px, calc(14 * var(--rm)));
+  --top: max(12px, calc(12.6 * var(--rm)));
 
   --text: calc(8.8 * var(--rm));
   --line: calc(10.6 * var(--rm));
