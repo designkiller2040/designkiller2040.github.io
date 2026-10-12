@@ -106,12 +106,13 @@ const words = TITLE.split(' ');
 
   .photo {
     justify-self: center;
-    width: calc(150 * var(--rm));
+    width: calc(189 * var(--rm)); /* 300px on alona's MacBook */
     height: auto;
     margin-top: calc(58 * var(--rm));
   }
 
   .bio {
+    width: min(100%, calc(189 * var(--rm))); /* same width as the photo */
     margin-top: calc(64 * var(--rm));
     font-size: calc(8.2 * var(--rm));
     line-height: calc(9.4 * var(--rm));
@@ -135,8 +136,11 @@ const words = TITLE.split(' ');
       font-size: 22px;
       text-indent: 1.5em;
     }
+    .photo,
+    .bio {
+      width: 75%;
+    }
     .photo {
-      width: 60%;
       margin-top: 40px;
     }
     .bio {
@@ -178,16 +182,18 @@ const words = TITLE.split(' ');
     }
   }
 
+  // Letters start a short way from their place (not all over the screen),
+  // slightly turned, and settle into the title.
   function scatter() {
-    const w = innerWidth;
-    const h = innerHeight;
     const b = box.getBoundingClientRect();
+    const sx = b.width * 0.15;
+    const sy = b.height * 0.8;
     letters.forEach((l) => {
-      l.x = Math.random() * w - (b.left + l.hx);
-      l.y = Math.random() * h - (b.top + l.hy);
-      l.r = (Math.random() - 0.5) * 360;
+      l.x = (Math.random() - 0.5) * 2 * sx;
+      l.y = (Math.random() - 0.5) * 2 * sy;
+      l.r = (Math.random() - 0.5) * 60;
       l.vx = l.vy = l.vr = 0;
-      l.wait = Math.random() * 60; // frames before it starts flying home
+      l.wait = Math.random() * 30; // frames before it starts moving home
     });
     wake();
   }
