@@ -1,0 +1,148 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Base title="Legal notice & Privacy">
+  <main class="legal-page grid">
+    <Header />
+
+    <article class="text">
+      <h1>Legal notice</h1>
+      <p>
+        <!-- TODO: Jonah's full legal name and postal address (from alona). -->
+        <mark>[Full name]</mark><br />
+        <mark>[Street and number]</mark><br />
+        <mark>[Postcode, City]</mark><br />
+        <mark>[Country]</mark>
+      </p>
+      <p>Email: <a class="u" href="mailto:jonahmgeorge@gmail.com">jonahmgeorge@gmail.com</a></p>
+      <p>
+        Responsible for the content of this website: Jonah George, address as above. All films, stills and texts on
+        this website are the work of Jonah George or are shown with the permission of their owners and may not be
+        used without permission. This website contains links to other websites. Their operators alone are
+        responsible for their content.
+      </p>
+
+      <h2>Privacy policy</h2>
+      <p>
+        This policy explains what happens with your data when you visit this website. The person responsible for
+        it is Jonah George (contact above).
+      </p>
+
+      <h3>Hosting</h3>
+      <p>
+        This website is hosted by GitHub Pages, a service of GitHub, Inc., 88 Colin P. Kelly Jr. Street, San
+        Francisco, CA 94107, USA. When you open a page, GitHub automatically records technical data such as your IP
+        address, the date and time, the page requested and your browser type. This is needed to deliver the
+        website and keep it secure (Art. 6(1)(f) GDPR). GitHub may process this data in the USA and is certified
+        under the EU-US Data Privacy Framework. More: <a class="u" href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub privacy statement</a>.
+      </p>
+
+      <h3>Cookies and tracking</h3>
+      <p>
+        This website itself sets no cookies and uses no analytics or advertising tools. The typeface comes from
+        your own device, so no font service is contacted.
+      </p>
+
+      <h3>Vimeo</h3>
+      <p>
+        Full films are played with the Vimeo player of Vimeo.com, Inc., 330 West 34th Street, 5th Floor, New York,
+        NY 10001, USA. The player only loads when you click "Play full". It then connects to Vimeo's servers, which
+        receive your IP address and may set cookies. We use the player with Vimeo's "do not track" setting. The
+        basis is your choice to start the film (Art. 6(1)(a) GDPR). More: <a class="u" href="https://vimeo.com/privacy" target="_blank" rel="noopener">Vimeo privacy policy</a>.
+      </p>
+
+      <h3>Instagram</h3>
+      <p>
+        The Instagram link is a plain link. No data is sent to Instagram until you click it.
+      </p>
+
+      <h3>Email</h3>
+      <p>
+        If you send an email, your address and message are used only to reply to you (Art. 6(1)(b) and (f) GDPR)
+        and are deleted when they are no longer needed.
+      </p>
+
+      <h3>Your rights</h3>
+      <p>
+        You have the right to access, correct, delete or restrict the processing of your data, to data
+        portability, and to object to processing. You may also complain to a data protection supervisory
+        authority. To use these rights, write to the email address above.
+      </p>
+
+      <p class="date">Last updated: October 2026</p>
+    </article>
+
+    <Footer />
+  </main>
+</Base>
+
+<style>
+  /*
+   * One centred column of justified text, 189 design px wide (300px on
+   * alona's 14" MacBook). Text 8.2 design px like the header (13px there).
+   */
+  .legal-page {
+    min-height: 100vh;
+    min-height: 100svh;
+    grid-template-rows: auto 1fr auto;
+    padding-block: var(--top) var(--margin);
+  }
+  .text {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc(189 * var(--rm));
+    max-width: 100%;
+    margin-block: calc(48 * var(--rm));
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    overflow-wrap: break-word;
+    font-size: calc(8.2 * var(--rm));
+    line-height: calc(11.4 * var(--rm));
+  }
+  .text h1,
+  .text h2,
+  .text h3 {
+    margin: 0 0 calc(4 * var(--rm));
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: 700;
+    text-align: left;
+  }
+  .text h2 {
+    margin-top: calc(40 * var(--rm));
+  }
+  .text h3 {
+    margin-top: calc(16 * var(--rm));
+  }
+  .text p {
+    margin: 0 0 calc(8 * var(--rm));
+  }
+  .text a:hover {
+    color: var(--hover);
+  }
+  /* Placeholders still to fill in. */
+  .text mark {
+    background: #ffe600;
+    color: #000;
+  }
+  .text .date {
+    margin-top: calc(24 * var(--rm));
+  }
+  .legal-page > :global(.legal) {
+    grid-row: 3;
+  }
+
+  @media (max-width: 767px) {
+    .text {
+      width: 100%;
+      margin-block: 32px;
+      font-size: 12px;
+      line-height: 17px;
+    }
+  }
+</style>
