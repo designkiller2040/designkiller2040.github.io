@@ -2,31 +2,52 @@
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+
+const TITLE = 'film director from NY, based worldwide, filmed mood videos, video clips, personal videos, commercials';
+const words = TITLE.split(' ');
 ---
 
 <Base title="About">
   <main class="about grid">
     <Header current="about" />
 
+    <!-- Animated title from the test page: letters fly in and dodge the mouse. -->
+    <div class="stage">
+      <h1 class="scatter box" aria-label={TITLE}>
+        {
+          words.map((w, i) => (
+            <>
+              <span class="word" aria-hidden="true">
+                {[...w].map((ch) => (
+                  <span class="ch">{ch}</span>
+                ))}
+              </span>
+              {i < words.length - 1 && ' '}
+            </>
+          ))
+        }
+      </h1>
+    </div>
+
     <!-- TODO: swap in the original photo. This one is cropped from a screenshot. -->
     <img class="photo" src="/images/jonah-about.jpg" width="1330" height="1426" alt="Jonah George" />
 
-    <div class="text">
+    <div class="bio box">
       <p>
         Born and raised in Bethlehem Pennsylvania, Jonah George is a self taught commercial, narrative, and
-        music video director whos work is inspired by nostalgic <b>moments from real life.</b> He started
-        creating video at the age of 5 when receiving a VHS camera as a gift from his parents. From there he
-        began his work in the music industry capturing music tours and soon after that began directing for
-        artists. Currently he's focused on commercial campaigns and documentary work.
+        music video director whos work is inspired by nostalgic moments from real life. He started creating
+        video at the age of 5 when receiving a VHS camera as a gift from his parents. From there he began his
+        work in the music industry capturing music tours and soon after that began directing for artists.
+        Currently he's focused on commercial campaigns and documentary work.
       </p>
       <p>
         Jonah George is focused on the efficient execution of creative ideas for brands, artists and narrative
         projects. He has eight years of professional experience in directing, creative producing and
         cinematography. Favoring shooting on location, Jonah's started in the United states but is currently
-        working on projects worldwide with production experience in 26 countries <b>worldwide.</b>
+        working on projects worldwide with production experience in 26 countries worldwide.
       </p>
-      <p class="clients">
-        <b>Clients:</b> Nike. Omega. Sony Music. Givenchy. UMG. Kasina. Coach. Play Station. Backbone. Lauv. Paul
+      <p>
+        Clients: Nike. Omega. Sony Music. Givenchy. UMG. Kasina. Coach. Play Station. Backbone. Lauv. Paul
         Mitchell. Starface. Jeremy Zucker. ayokay. and more
       </p>
     </div>
@@ -37,71 +58,203 @@ import Footer from '../components/Footer.astro';
 
 <style>
   /*
-   * Same structure as the Readymag About page: photo on the left (columns
-   * 1-10), the bio centred on the right (columns 13-22) and level with the
-   * photo, legal links at the bottom of the window. Sizes are design px.
+   * Everything is centred in one column. The animated title sits mid-screen,
+   * then the photo, then the bio. Title and bio share the same text
+   * box (.box: same width, same position), both justified.
    */
   .about {
-    min-height: 100vh;
-    min-height: 100svh;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto;
+    overflow-x: clip;
     padding-block: var(--top) var(--margin);
   }
-  .photo {
-    grid-row: 2;
-    grid-column: 1 / 11;
-    align-self: start;
-    width: 100%;
-    height: auto;
-    margin-top: calc(14 * var(--rm));
+  .about > * {
+    grid-column: 1 / -1;
   }
-  .text {
-    grid-row: 2;
-    grid-column: 13 / 23;
-    align-self: center;
-    text-align: center;
-    font-size: calc(8.8 * var(--rm));
-    line-height: calc(12.2 * var(--rm));
-  }
-  .text p {
-    margin: 0 0 calc(14.5 * var(--rm));
-  }
-  .text b {
-    font-weight: 700;
-  }
-  .text .clients {
-    margin-top: calc(48 * var(--rm));
-    font-size: calc(8.8 * var(--rm));
-    line-height: calc(11.4 * var(--rm));
-  }
-  .about > :global(.legal) {
-    grid-row: 3;
+  .box {
+    justify-self: center;
+    width: min(100%, calc(330 * var(--rm)));
+    text-align: justify;
   }
 
-  /* Phone: photo, then the bio, then the legal links, one under another. */
+  /* Title sits around the middle of the first screen; the photo peeks in below. */
+  .stage {
+    display: grid;
+    padding-top: calc(50svh - 66 * var(--rm));
+  }
+  .scatter {
+    position: relative;
+    margin: 0;
+    font-size: calc(16 * var(--rm));
+    line-height: 1.05;
+    font-weight: 700;
+    text-indent: 3.4em;
+    user-select: none;
+    cursor: default;
+  }
+  .scatter :global(*) {
+    letter-spacing: -0.06em;
+  }
+  .word {
+    display: inline-block;
+    white-space: nowrap;
+    text-indent: 0;
+  }
+  .ch {
+    display: inline-block;
+    will-change: transform;
+  }
+
+  .photo {
+    justify-self: center;
+    width: calc(150 * var(--rm));
+    height: auto;
+    margin-top: calc(58 * var(--rm));
+  }
+
+  .bio {
+    margin-top: calc(64 * var(--rm));
+    font-size: calc(8.2 * var(--rm));
+    line-height: calc(9.4 * var(--rm));
+  }
+  .bio p {
+    margin: 0 0 calc(9.4 * var(--rm));
+  }
+
+  .about > :global(.legal) {
+    margin-top: calc(80 * var(--rm));
+  }
+
   @media (max-width: 767px) {
-    .about {
-      grid-template-rows: auto;
-      row-gap: 28px;
+    .stage {
+      padding-top: calc(50svh - 160px);
     }
-    .photo,
-    .text,
-    .about > :global(.legal) {
-      grid-row: auto;
-      grid-column: 1 / -1;
-      margin-top: 0;
+    .box {
+      width: 100%;
+    }
+    .scatter {
+      font-size: 22px;
+      text-indent: 1.5em;
     }
     .photo {
-      margin-top: 12px;
+      width: 60%;
+      margin-top: 40px;
     }
-    .text {
+    .bio {
+      margin-top: 40px;
       font-size: 14px;
-      line-height: 19px;
+      line-height: 18px;
     }
-    .text .clients {
-      margin-top: 28px;
-      font-size: 12px;
-      line-height: 16px;
+    .bio p {
+      margin-bottom: 18px;
+    }
+    .about > :global(.legal) {
+      margin-top: 40px;
     }
   }
 </style>
+
+<script>
+  // Same physics as the test page: each letter starts scattered across the
+  // screen and springs back into the title; the mouse pushes letters away.
+  // Click the title area to scatter them again.
+  const box = document.querySelector<HTMLElement>('.scatter')!;
+  const stage = document.querySelector<HTMLElement>('.stage')!;
+  const els = [...box.querySelectorAll<HTMLElement>('.ch')];
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  type L = { el: HTMLElement; hx: number; hy: number; x: number; y: number; r: number; vx: number; vy: number; vr: number; wait: number };
+  const letters: L[] = els.map((el) => ({ el, hx: 0, hy: 0, x: 0, y: 0, r: 0, vx: 0, vy: 0, vr: 0, wait: 0 }));
+
+  const STIFF = 0.035; // pull back to place
+  const DAMP = 0.86; // how quickly motion settles (lower = calmer)
+  const RADIUS = 70; // mouse reach, px
+  const PUSH = 3; // mouse strength
+
+  // Home position of each letter's centre, relative to the title.
+  function measure() {
+    for (const l of letters) {
+      l.hx = l.el.offsetLeft + l.el.offsetWidth / 2;
+      l.hy = l.el.offsetTop + l.el.offsetHeight / 2;
+    }
+  }
+
+  function scatter() {
+    const w = innerWidth;
+    const h = innerHeight;
+    const b = box.getBoundingClientRect();
+    letters.forEach((l) => {
+      l.x = Math.random() * w - (b.left + l.hx);
+      l.y = Math.random() * h - (b.top + l.hy);
+      l.r = (Math.random() - 0.5) * 360;
+      l.vx = l.vy = l.vr = 0;
+      l.wait = Math.random() * 60; // frames before it starts flying home
+    });
+    wake();
+  }
+
+  let mx = -1e4;
+  let my = -1e4;
+  addEventListener('pointermove', (e) => {
+    const b = box.getBoundingClientRect();
+    mx = e.clientX - b.left;
+    my = e.clientY - b.top;
+    wake();
+  });
+  document.addEventListener('pointerleave', () => {
+    mx = my = -1e4;
+  });
+
+  let running = false;
+  function wake() {
+    if (!running) {
+      running = true;
+      requestAnimationFrame(step);
+    }
+  }
+
+  function step() {
+    let moving = false;
+    for (const l of letters) {
+      if (l.wait > 0) {
+        l.wait--;
+        moving = true;
+        draw(l);
+        continue;
+      }
+      let ax = -l.x * STIFF;
+      let ay = -l.y * STIFF;
+      let ar = -l.r * STIFF;
+      const dx = l.hx + l.x - mx;
+      const dy = l.hy + l.y - my;
+      const d = Math.hypot(dx, dy);
+      if (d < RADIUS && d > 0.01) {
+        const f = (1 - d / RADIUS) * PUSH;
+        ax += (dx / d) * f;
+        ay += (dy / d) * f;
+        ar += (dx > 0 ? 1 : -1) * f * 1.5;
+      }
+      l.vx = (l.vx + ax) * DAMP;
+      l.vy = (l.vy + ay) * DAMP;
+      l.vr = (l.vr + ar) * DAMP;
+      l.x += l.vx;
+      l.y += l.vy;
+      l.r += l.vr;
+      if (Math.abs(l.x) + Math.abs(l.y) + Math.abs(l.r) + Math.abs(l.vx) + Math.abs(l.vy) > 0.05) moving = true;
+      else l.x = l.y = l.r = l.vx = l.vy = l.vr = 0;
+      draw(l);
+    }
+    if (moving) requestAnimationFrame(step);
+    else running = false;
+  }
+
+  function draw(l: L) {
+    l.el.style.transform = l.x || l.y || l.r ? `translate(${l.x}px, ${l.y}px) rotate(${l.r}deg)` : '';
+  }
+
+  measure();
+  addEventListener('resize', measure);
+  if (!still) {
+    scatter();
+    stage.addEventListener('click', scatter);
+  }
+</script>
