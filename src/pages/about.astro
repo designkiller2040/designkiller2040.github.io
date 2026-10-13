@@ -170,7 +170,7 @@ const words = TITLE.split(' ');
   const letters: L[] = els.map((el) => ({ el, hx: 0, hy: 0, x: 0, y: 0, r: 0, vx: 0, vy: 0, vr: 0, wait: 0 }));
 
   const STIFF = 0.035; // pull back to place
-  const DAMP = 0.86; // how quickly motion settles (lower = calmer)
+  const DAMP = 0.73; // how quickly motion settles; this low, letters glide in without bouncing past their place
   const RADIUS = 70; // mouse reach, px
   const PUSH = 3; // mouse strength
 
