@@ -96,7 +96,7 @@ const words = TITLE.split(' ');
   .scatter {
     position: relative;
     margin: 0;
-    font-size: calc(16 * var(--rm));
+    font-size: calc(15.1 * var(--rm)); /* 24px on alona's MacBook */
     line-height: 1.05;
     font-weight: 700;
     text-indent: 3.4em;
@@ -126,22 +126,33 @@ const words = TITLE.split(' ');
     opacity: 0;
   }
 
-  .photo {
+  /*
+   * Photo and bio: 333px wide on alona's MacBook, right edge lined up with
+   * the title's right edge (title box 330 wide, so shift right by the
+   * difference of the half widths).
+   */
+  .photo,
+  .bio {
     justify-self: center;
-    width: calc(189 * var(--rm)); /* 300px on alona's MacBook */
+    position: relative;
+    left: calc((330 - 209.8) / 2 * var(--rm));
+  }
+
+  .photo {
+    width: calc(209.8 * var(--rm)); /* 333px on alona's MacBook */
     height: auto;
     margin-top: calc(58 * var(--rm));
   }
 
   .bio {
-    width: min(100%, calc(189 * var(--rm))); /* same width as the photo */
+    width: calc(209.8 * var(--rm)); /* same width as the photo */
     margin-top: calc(64 * var(--rm));
-    font-size: calc(12.6 * var(--rm)); /* 20px on alona's MacBook */
-    line-height: calc(14.4 * var(--rm));
+    font-size: calc(13.9 * var(--rm)); /* 22px on alona's MacBook */
+    line-height: calc(15.9 * var(--rm));
     font-weight: 700;
   }
   .bio p {
-    margin: 0 0 calc(14.4 * var(--rm));
+    margin: 0 0 calc(15.9 * var(--rm));
   }
 
   .about > :global(.legal) {
@@ -162,6 +173,8 @@ const words = TITLE.split(' ');
     .photo,
     .bio {
       width: 75%;
+      justify-self: end; /* right edge lines up with the title */
+      left: 0;
     }
     .photo {
       margin-top: 40px;
