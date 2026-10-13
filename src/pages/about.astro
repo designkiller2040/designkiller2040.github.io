@@ -11,6 +11,17 @@ const words = TITLE.split(' ');
   <main class="about grid">
     <Header current="about" />
 
+    <!--
+      The title animation plays once per visit. Until it has played, the photo
+      and bio stay hidden (set here, before they appear, so they never flash).
+    -->
+    <script is:inline>
+      try {
+        if (!sessionStorage.getItem('about-intro') && !matchMedia('(prefers-reduced-motion: reduce)').matches)
+          document.documentElement.classList.add('about-intro');
+      } catch (e) {}
+    </script>
+
     <!-- Animated title from the test page: letters fly in and dodge the mouse. -->
     <div class="stage">
       <h1 class="scatter box" aria-label={TITLE}>
@@ -104,6 +115,16 @@ const words = TITLE.split(' ');
     will-change: transform;
   }
 
+  /* Photo and bio fade in once the title animation has finished. */
+  .photo,
+  .bio {
+    transition: opacity 1.2s ease;
+  }
+  :global(.about-intro) .photo,
+  :global(.about-intro) .bio {
+    opacity: 0;
+  }
+
   .photo {
     justify-self: center;
     width: calc(189 * var(--rm)); /* 300px on alona's MacBook */
@@ -160,7 +181,8 @@ const words = TITLE.split(' ');
 <script>
   // Same physics as the test page: each letter starts scattered across the
   // screen and springs back into the title; the mouse pushes letters away.
-  // Click the title area to scatter them again.
+  // Click the title area to scatter them again. The fly-in plays once per
+  // visit: coming back to the page shows the finished title straight away.
   const box = document.querySelector<HTMLElement>('.scatter')!;
   const stage = document.querySelector<HTMLElement>('.stage')!;
   const els = [...box.querySelectorAll<HTMLElement>('.ch')];
@@ -220,10 +242,12 @@ const words = TITLE.split(' ');
 
   function step() {
     let moving = false;
+    let home = true; // every letter within half a pixel of its place
     for (const l of letters) {
       if (l.wait > 0) {
         l.wait--;
         moving = true;
+        home = false;
         draw(l);
         continue;
       }
@@ -247,8 +271,10 @@ const words = TITLE.split(' ');
       l.r += l.vr;
       if (Math.abs(l.x) + Math.abs(l.y) + Math.abs(l.r) + Math.abs(l.vx) + Math.abs(l.vy) > 0.05) moving = true;
       else l.x = l.y = l.r = l.vx = l.vy = l.vr = 0;
+      if (Math.abs(l.x) + Math.abs(l.y) > 0.5) home = false;
       draw(l);
     }
+    if (home) reveal();
     if (moving) requestAnimationFrame(step);
     else running = false;
   }
@@ -257,10 +283,20 @@ const words = TITLE.split(' ');
     l.el.style.transform = l.x || l.y || l.r ? `translate(${l.x}px, ${l.y}px) rotate(${l.r}deg)` : '';
   }
 
+  // First fly-in finished: remember it and fade in the photo and bio.
+  const root = document.documentElement;
+  function reveal() {
+    if (!root.classList.contains('about-intro')) return;
+    root.classList.remove('about-intro');
+    try {
+      sessionStorage.setItem('about-intro', '1');
+    } catch (e) {}
+  }
+
   measure();
   addEventListener('resize', measure);
   if (!still) {
-    scatter();
+    if (root.classList.contains('about-intro')) scatter();
     stage.addEventListener('click', scatter);
   }
 </script>
