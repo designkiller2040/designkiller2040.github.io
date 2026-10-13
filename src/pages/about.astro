@@ -135,11 +135,12 @@ const words = TITLE.split(' ');
   .bio {
     width: min(100%, calc(189 * var(--rm))); /* same width as the photo */
     margin-top: calc(64 * var(--rm));
-    font-size: calc(8.2 * var(--rm));
-    line-height: calc(9.4 * var(--rm));
+    font-size: calc(12.6 * var(--rm)); /* 20px on alona's MacBook */
+    line-height: calc(14.4 * var(--rm));
+    font-weight: 700;
   }
   .bio p {
-    margin: 0 0 calc(9.4 * var(--rm));
+    margin: 0 0 calc(14.4 * var(--rm));
   }
 
   .about > :global(.legal) {
@@ -166,11 +167,11 @@ const words = TITLE.split(' ');
     }
     .bio {
       margin-top: 40px;
-      font-size: 14px;
-      line-height: 18px;
+      font-size: 18px;
+      line-height: 21px;
     }
     .bio p {
-      margin-bottom: 18px;
+      margin-bottom: 21px;
     }
     .about > :global(.legal) {
       margin-top: 40px;
