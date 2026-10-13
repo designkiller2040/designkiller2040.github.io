@@ -182,18 +182,18 @@ const words = TITLE.split(' ');
     }
   }
 
-  // Letters start a short way from their place (not all over the screen),
-  // slightly turned, and settle into the title.
+  // Letters start scattered all over the screen, turned every which way,
+  // and fly home into the title.
   function scatter() {
     const b = box.getBoundingClientRect();
-    const sx = b.width * 0.15;
-    const sy = b.height * 0.8;
+    const w = innerWidth;
+    const h = innerHeight;
     letters.forEach((l) => {
-      l.x = (Math.random() - 0.5) * 2 * sx;
-      l.y = (Math.random() - 0.5) * 2 * sy;
-      l.r = (Math.random() - 0.5) * 60;
+      l.x = Math.random() * w - (b.left + l.hx);
+      l.y = Math.random() * h - (b.top + l.hy);
+      l.r = (Math.random() - 0.5) * 360;
       l.vx = l.vy = l.vr = 0;
-      l.wait = Math.random() * 30; // frames before it starts moving home
+      l.wait = Math.random() * 60; // frames before it starts flying home
     });
     wake();
   }
