@@ -17,7 +17,8 @@ const words = TITLE.split(' ');
     -->
     <script is:inline>
       try {
-        if (!sessionStorage.getItem('about-intro') && !matchMedia('(prefers-reduced-motion: reduce)').matches)
+        var reload = (performance.getEntriesByType('navigation')[0] || {}).type === 'reload';
+        if ((reload || !sessionStorage.getItem('about-intro')) && !matchMedia('(prefers-reduced-motion: reduce)').matches)
           document.documentElement.classList.add('about-intro');
       } catch (e) {}
     </script>
@@ -118,7 +119,7 @@ const words = TITLE.split(' ');
   /* Photo and bio fade in once the title animation has finished. */
   .photo,
   .bio {
-    transition: opacity 1.2s ease;
+    transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
   :global(.about-intro) .photo,
   :global(.about-intro) .bio {
@@ -243,12 +244,10 @@ const words = TITLE.split(' ');
 
   function step() {
     let moving = false;
-    let home = true; // every letter within half a pixel of its place
     for (const l of letters) {
       if (l.wait > 0) {
         l.wait--;
         moving = true;
-        home = false;
         draw(l);
         continue;
       }
@@ -272,12 +271,13 @@ const words = TITLE.split(' ');
       l.r += l.vr;
       if (Math.abs(l.x) + Math.abs(l.y) + Math.abs(l.r) + Math.abs(l.vx) + Math.abs(l.vy) > 0.05) moving = true;
       else l.x = l.y = l.r = l.vx = l.vy = l.vr = 0;
-      if (Math.abs(l.x) + Math.abs(l.y) > 0.5) home = false;
       draw(l);
     }
-    if (home) reveal();
     if (moving) requestAnimationFrame(step);
-    else running = false;
+    else {
+      running = false;
+      setTimeout(reveal, 250); // a short beat after the last letter stops
+    }
   }
 
   function draw(l: L) {
