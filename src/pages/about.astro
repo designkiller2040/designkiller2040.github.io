@@ -116,12 +116,19 @@ const words = TITLE.split(' ');
     will-change: transform;
   }
 
-  /* Photo and bio fade in once the title animation has finished. */
-  .photo,
+  /*
+   * Once the title animation has finished, the photo comes into focus
+   * (blurred to sharp) and the bio fades in.
+   */
+  .photo {
+    transition: filter 1.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
   .bio {
     transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  :global(.about-intro) .photo,
+  :global(.about-intro) .photo {
+    filter: blur(calc(14 * var(--rm)));
+  }
   :global(.about-intro) .bio {
     opacity: 0;
   }
