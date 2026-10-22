@@ -10,7 +10,7 @@
 import Base from '../layouts/Base.astro';
 import Header from './Header.astro';
 import ProjectList from './ProjectList.astro';
-import { CREDIT_ORDER, posterSrc, stillSrcs, type Project } from '../data/projects';
+import { CREDIT_ORDER, filmEmbed, posterSrc, stillSrcs, type Project } from '../data/projects';
 
 interface Props {
   project: Project;
@@ -20,7 +20,7 @@ const credits = CREDIT_ORDER.filter((l) => project.credits[l]).map((l) => ({
   label: l.toLowerCase(),
   value: project.credits[l]!,
 }));
-const embed = `https://player.vimeo.com/video/${project.vimeo}?dnt=1&title=0&byline=0&portrait=0&autoplay=1`;
+const embed = filmEmbed(project);
 const poster = posterSrc(project);
 ---
 
@@ -42,9 +42,11 @@ const poster = posterSrc(project);
     <div class="stage">
       <div class="track">
         <div class="hero">
-          <button class="play" type="button" data-embed={embed} data-title={project.title}>
-            <span class="play-label">Play full</span>
-          </button>
+          {embed && (
+            <button class="play" type="button" data-embed={embed} data-title={project.title}>
+              <span class="play-label">Play full</span>
+            </button>
+          )}
         </div>
 
         <div class="shots grid">
@@ -248,7 +250,7 @@ const poster = posterSrc(project);
     playArea.addEventListener('pointerleave', () => cursor.classList.remove('on'));
   }
 
-  // "Play full" opens the Vimeo player over the whole window.
+  // "Play full" opens the film (Cloudflare Stream or Vimeo) over the whole window.
   const play = document.querySelector<HTMLButtonElement>('.play');
   const player = document.querySelector<HTMLElement>('.player');
   const close = () => {
@@ -262,7 +264,7 @@ const poster = posterSrc(project);
     const iframe = document.createElement('iframe');
     iframe.src = play.dataset.embed ?? '';
     iframe.title = play.dataset.title ?? '';
-    iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+    iframe.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
     iframe.allowFullscreen = true;
     player.prepend(iframe);
     player.hidden = false;
