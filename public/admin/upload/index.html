@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Jonah George · Upload a film</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fff;
+        --fg: #111;
+        --muted: #777;
+        --line: #ddd;
+        --accent: #2f5cff;
+        --error: #d33;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #111;
+          --fg: #eee;
+          --muted: #999;
+          --line: #333;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 15px/1.45 -apple-system, BlinkMacSystemFont, 'SF Pro Text', Helvetica, Arial, sans-serif;
+      }
+      main {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 48px 16px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 6px;
+      }
+      p {
+        margin: 0 0 16px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      a {
+        color: inherit;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin: 24px 0 8px;
+      }
+      select,
+      input[type='file'],
+      button {
+        width: 100%;
+        font: inherit;
+        color: inherit;
+      }
+      select {
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg);
+      }
+      .now {
+        margin-top: 6px;
+        font-size: 13px;
+      }
+      button {
+        margin-top: 28px;
+        padding: 12px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .bar {
+        height: 6px;
+        margin-top: 24px;
+        border-radius: 3px;
+        background: var(--line);
+        overflow: hidden;
+      }
+      .bar span {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+        transition: width 0.3s;
+      }
+      #status {
+        margin-top: 12px;
+        min-height: 1.45em;
+      }
+      #status.error {
+        color: var(--error);
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Upload a film</h1>
+      <p class="muted">
+        The film goes to Cloudflare and is connected to the project you pick. About two minutes later, “Play full”
+        on that project's page plays it. Titles, credits and images are edited in the <a href="/admin/">editor</a>.
+      </p>
+
+      <p id="signin" hidden>
+        First <a href="/admin/">sign in to the editor</a> on this computer, then come back to this page.
+      </p>
+      <p id="setup" hidden class="muted">The upload helper isn't connected yet, so uploading is switched off.</p>
+
+      <form id="form" hidden>
+        <label for="project">Project</label>
+        <select id="project" required></select>
+        <p class="now muted" id="current"></p>
+        <p class="now muted">New project? Add it in the <a href="/admin/">editor</a> first, then reload this page.</p>
+
+        <label for="file">Film file</label>
+        <input id="file" type="file" accept="video/*" required />
+
+        <button id="go" type="submit">Upload and connect</button>
+        <div class="bar" hidden><span></span></div>
+        <p id="status" role="status"></p>
+      </form>
+    </main>
+
+    <script src="https://unpkg.com/tus-js-client@4.3.1/dist/tus.min.js"></script>
+    <script>
+      // Address of the upload helper (cloudflare/upload-worker.js in the repo), once it runs on Cloudflare.
+      const HELPER = '';
+      const REPO = 'designkiller2040/designkiller2040.github.io';
+      const FILE = 'src/data/projects.json';
+
+      const $ = (id) => document.getElementById(id);
+      const status = (text, error = false) => {
+        $('status').textContent = text;
+        $('status').classList.toggle('error', error);
+      };
+      const bar = document.querySelector('.bar');
+
+      // Reuse the sign-in from /admin/ (Sveltia CMS keeps it in this browser).
+      let token = '';
+      try {
+        token = JSON.parse(localStorage.getItem('sveltia-cms.user') || '{}').token || '';
+      } catch {}
+
+      const gh = (path, init = {}) =>
+        fetch(`https://api.github.com/repos/${REPO}/${path}`, {
+          ...init,
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', ...init.headers },
+        });
+
+      // projects.json as stored on GitHub (text is UTF-8 inside base64).
+      async function loadProjects() {
+        const res = await gh(`contents/${FILE}?ref=main`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Couldn't read the project list from GitHub (${res.status}).`);
+        const data = await res.json();
+        const bytes = Uint8Array.from(atob(data.content.replace(/\n/g, '')), (c) => c.charCodeAt(0));
+        return { sha: data.sha, list: JSON.parse(new TextDecoder().decode(bytes)) };
+      }
+
+      let projects = [];
+      function showCurrent() {
+        const p = projects.find((x) => x.slug === $('project').value);
+        $('current').textContent = !p
+          ? ''
+          : p.stream
+            ? `Now plays a Cloudflare video. Uploading replaces it.`
+            : p.vimeo
+              ? `Now plays from Vimeo. Uploading switches it to Cloudflare.`
+              : `No film connected yet.`;
+      }
+
+      async function start() {
+        if (!token) return ($('signin').hidden = false);
+        $('form').hidden = false;
+        if (!HELPER) {
+          $('setup').hidden = false;
+          $('go').disabled = true;
+        }
+        try {
+          projects = (await loadProjects()).list;
+          $('project').innerHTML = projects.map((p) => `<option value="${p.slug}"></option>`).join('');
+          [...$('project').options].forEach((o, i) => (o.textContent = projects[i].title));
+          showCurrent();
+        } catch (e) {
+          status(e.message, true);
+        }
+      }
+      $('project').addEventListener('change', showCurrent);
+
+      function upload(file) {
+        return new Promise((resolve, reject) => {
+          let id = '';
+          const up = new tus.Upload(file, {
+            endpoint: `${HELPER}/upload`,
+            chunkSize: 50 * 1024 * 1024, // Cloudflare wants pieces of at least 5 MB
+            retryDelays: [0, 3000, 10000, 30000],
+            storeFingerprintForResuming: false,
+            metadata: { name: file.name, filetype: file.type },
+            onBeforeRequest(req) {
+              // The sign-in goes only to the helper, never to Cloudflare's upload address.
+              if (req.getURL().startsWith(HELPER)) req.setHeader('Authorization', `Bearer ${token}`);
+            },
+            onAfterResponse(req, res) {
+              id = id || res.getHeader('Stream-Media-Id') || '';
+            },
+            onProgress(sent, total) {
+              const pct = Math.floor((sent / total) * 100);
+              bar.firstElementChild.style.width = `${pct}%`;
+              status(`Uploading… ${pct}%`);
+            },
+            onError(err) {
+              const body = err.originalResponse?.getBody?.();
+              let msg = '';
+              try {
+                msg = JSON.parse(body).error;
+              } catch {}
+              reject(new Error(msg || 'The upload stopped. Check the connection and try again.'));
+            },
+            onSuccess() {
+              bar.firstElementChild.style.width = '100%';
+              id = id || (up.url.match(/[0-9a-f]{32}/i) || [''])[0];
+              id ? resolve(id) : reject(new Error('Uploaded, but Cloudflare gave no video ID.'));
+            },
+          });
+          up.start();
+        });
+      }
+
+      // Write the new video ID into projects.json on GitHub, which republishes the site.
+      async function connect(slug, id) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const { sha, list } = await loadProjects();
+          const p = list.find((x) => x.slug === slug);
+          if (!p) throw new Error('That project is no longer in the list.');
+          p.stream = id;
+          const text = JSON.stringify(list, null, 2) + '\n';
+          let binary = '';
+          for (const b of new TextEncoder().encode(text)) binary += String.fromCharCode(b);
+          const content = btoa(binary);
+          const res = await gh(`contents/${FILE}`, {
+            method: 'PUT',
+            body: JSON.stringify({ message: `Connect Cloudflare video to ${p.title}`, content, sha, branch: 'main' }),
+          });
+          if (res.ok) return;
+          if (res.status !== 409) throw new Error(`Uploaded, but saving to the site failed (${res.status}). Video ID: ${id}`);
+        }
+        throw new Error(`Uploaded, but the project list kept changing. Video ID: ${id}`);
+      }
+
+      async function waitUntilReady(id) {
+        for (let i = 0; i < 240; i++) {
+          const res = await fetch(`${HELPER}/video/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+          const v = res.ok ? await res.json() : {};
+          if (v.ready) return status('Done. Cloudflare has finished, and the site shows it within about two minutes.');
+          if (v.state === 'error') return status(`Cloudflare couldn't process this file: ${v.error || 'unknown reason'}.`, true);
+          status(`Connected to the site. Cloudflare is preparing the video… ${v.percent ? Math.floor(v.percent) + '%' : ''}`);
+          await new Promise((r) => setTimeout(r, 5000));
+        }
+      }
+
+      $('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const file = $('file').files[0];
+        const slug = $('project').value;
+        if (!file || !slug || !HELPER) return;
+        $('go').disabled = true;
+        bar.hidden = false;
+        try {
+          const id = await upload(file);
+          status('Connecting the video to the project…');
+          await connect(slug, id);
+          const p = projects.find((x) => x.slug === slug);
+          if (p) p.stream = id;
+          showCurrent();
+          await waitUntilReady(id);
+        } catch (err) {
+          status(err.message, true);
+        } finally {
+          $('go').disabled = false;
+        }
+      });
+
+      start();
+    </script>
+  </body>
+</html>

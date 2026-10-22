@@ -1,6 +1,7 @@
 # Content editor for the site, open at /admin/.
 # Every save is a commit to main, which rebuilds the live site (about 1-2 minutes).
-# Full films live on Cloudflare Stream (upload there, paste the video ID here);
+# Full films live on Cloudflare Stream (upload at /admin/upload/, or in the
+# Cloudflare dashboard and paste the video ID here);
 # older projects can still use a Vimeo ID. Only short preview clips and images
 # are uploaded here, because every upload stays in the GitHub repo forever.
 
@@ -61,7 +62,7 @@ collections:
                 label: Cloudflare video (full film)
                 widget: string
                 required: false
-                hint: 'In the Cloudflare dashboard open Stream, click the video and copy its Video ID (32 letters and numbers), or paste its embed link. Plays when "Play full" is clicked. If filled in, it is used instead of Vimeo.'
+                hint: 'Easiest: upload the film on the [upload page](/admin/upload/), which fills this in for you. Or upload it in the Cloudflare dashboard (Stream), open the video and paste its Video ID (32 letters and numbers) or embed link here. Plays when "Play full" is clicked, instead of Vimeo.'
                 pattern: ['[0-9a-fA-F]{32}', 'Paste the 32-character Video ID from Cloudflare Stream, or a link that contains it']
               - name: vimeo
                 label: Vimeo ID (old, optional)
