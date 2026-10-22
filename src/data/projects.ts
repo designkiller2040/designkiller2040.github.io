@@ -10,7 +10,10 @@ export interface Project {
   /** Shorter label for the homepage menu. Falls back to title. */
   menuLabel?: string;
   group: GroupKey;
-  vimeo: string;
+  /** Cloudflare Stream video ID, or a Stream link pasted from the dashboard. Wins over Vimeo when set. */
+  stream?: string;
+  /** Vimeo ID, used for projects not moved to Cloudflare Stream yet. */
+  vimeo?: string;
   credits: Credits;
   /** Short description shown under "about film:" on the project page. */
   about?: string;
@@ -37,6 +40,27 @@ export type CreditLabel = (typeof CREDIT_ORDER)[number];
 export const projects = raw as Project[];
 
 export const menuLabel = (p: Project) => p.menuLabel ?? p.title;
+/**
+ * The player for "Play full": Cloudflare Stream when the project has a Stream
+ * video, else Vimeo. Accepts a bare Stream ID or any Stream link (watch page,
+ * embed code, iframe URL); a customer-xxxx.cloudflarestream.com address in the
+ * link is kept, otherwise Cloudflare's general player address is used.
+ */
+export function filmEmbed(p: Project): string | undefined {
+  const stream = p.stream?.trim();
+  if (stream) {
+    const id = stream.match(/\b[0-9a-f]{32}\b/i)?.[0];
+    if (id) {
+      const host = stream.match(/customer-[a-z0-9]+\.cloudflarestream\.com/i)?.[0];
+      const base = host ? `https://${host}/${id}/iframe` : `https://iframe.videodelivery.net/${id}`;
+      return `${base}?autoplay=true&letterboxColor=black`;
+    }
+  }
+  const vimeo = p.vimeo?.trim();
+  if (vimeo) return `https://player.vimeo.com/video/${vimeo}?dnt=1&title=0&byline=0&portrait=0&autoplay=1`;
+  return undefined;
+}
+
 export const previewSrc = (p: Project) => withVersion(p.preview ?? `/video/previews/${p.slug}.mp4`);
 
 /** Images for a project page: one big thumbnail, then four stills. */
