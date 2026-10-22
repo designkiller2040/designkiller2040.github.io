@@ -1,0 +1,24 @@
+# Upload helper (Cloudflare Worker)
+
+`upload-worker.js` lets the upload page at `/admin/upload/` send films straight
+to Cloudflare Stream and connect them to a project. It keeps the Cloudflare API
+token out of the website, and only works for people who can edit the site
+(same sign-in as `/admin/`).
+
+It is set up once, by hand, in the Cloudflare dashboard. No secrets go in this repo.
+
+1. **Stream on.** In the Cloudflare dashboard open **Stream** and turn it on (it's a paid add-on, billed per minute stored and watched).
+2. **Account ID.** On the dashboard home page, open the menu next to your account name and choose **Copy account ID**. (It's also shown on the Workers & Pages overview.)
+3. **API token.** Click your profile icon (top right) → **Profile** → **API Tokens** → **Create Token** → **Create Custom Token**.
+   Name it `jonah-george-upload`. Under Permissions pick **Account** · **Stream** · **Edit**. Continue, create it, and copy it. You only see it once.
+4. **The Worker.** **Workers & Pages** → **Create** → **Worker** (Hello World) → name it `jonah-george-upload` → **Deploy**.
+   Then **Edit code**, replace everything with the contents of `upload-worker.js`, and click **Deploy**.
+5. **Settings.** In the Worker open **Settings** → **Variables and Secrets** → **Add**:
+   - `CF_ACCOUNT_ID`, type Text, value = the account ID from step 2
+   - `CF_API_TOKEN`, type **Secret**, value = the token from step 3
+
+   Then **Deploy**.
+6. **Connect the page.** Copy the Worker's address (looks like `https://jonah-george-upload.<your-name>.workers.dev`)
+   into `HELPER` near the top of the script in `public/admin/upload/index.html`. The address is not secret.
+
+When the site moves to jonah-george.com, that domain is already allowed (see `ALLOWED_ORIGINS` in the Worker).
