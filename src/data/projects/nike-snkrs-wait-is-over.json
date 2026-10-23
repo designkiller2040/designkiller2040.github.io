@@ -1,0 +1,24 @@
+{
+  "title": "Nike SNKRS - Wait is Over",
+  "slug": "nike-snkrs-wait-is-over",
+  "order": 5,
+  "group": "commercial",
+  "vimeo": "1109701274",
+  "credits": {
+    "Location": "South Korea",
+    "Producers": "Alex Veltri, Kawika Bernal, John Jester, Ryan Guthrie",
+    "DP": "Vincent Prochoroff",
+    "Agency": "Recess Studios",
+    "Prod Co": "Loveandmoney",
+    "Edit": "Fenn Paider"
+  },
+  "about": "A short film for the brand, shot on location with a small crew. Placeholder text: replace with the real description of the project.",
+  "preview": "/video/previews/nike-snkrs-wait-is-over.mp4",
+  "poster": "/images/work/nike-snkrs-wait-is-over/poster.jpg",
+  "stills": [
+    "/images/work/nike-snkrs-wait-is-over/shot-1.jpg",
+    "/images/work/nike-snkrs-wait-is-over/shot-2.jpg",
+    "/images/work/nike-snkrs-wait-is-over/shot-3.jpg",
+    "/images/work/nike-snkrs-wait-is-over/shot-4.jpg"
+  ]
+}

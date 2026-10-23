@@ -1,0 +1,24 @@
+{
+  "title": "Nike - The Unreal Lookbook",
+  "slug": "nike-the-unreal-lookbook",
+  "order": 9,
+  "group": "commercial",
+  "vimeo": "1109700198",
+  "credits": {
+    "Location": "South East Asia",
+    "Producers": "Benny Gattegno, Roxanne Maguire",
+    "DP": "Neema Sadeghi",
+    "Agency": "Amplify",
+    "Prod Co": "Bali Prod",
+    "Edit": "Nick Sullivan, Anetta Kochish"
+  },
+  "about": "Placeholder description. A quiet, observational take on the product, built around movement, light and a few unscripted moments.",
+  "preview": "/video/previews/nike-the-unreal-lookbook.mp4",
+  "poster": "/images/work/nike-the-unreal-lookbook/poster.jpg",
+  "stills": [
+    "/images/work/nike-the-unreal-lookbook/shot-1.jpg",
+    "/images/work/nike-the-unreal-lookbook/shot-2.jpg",
+    "/images/work/nike-the-unreal-lookbook/shot-3.jpg",
+    "/images/work/nike-the-unreal-lookbook/shot-4.jpg"
+  ]
+}

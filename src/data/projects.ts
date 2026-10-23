@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import raw from './projects.json';
 
 export type Credits = Partial<Record<CreditLabel, string>>;
 
 export interface Project {
   slug: string;
   title: string;
+  /** Position within its group in the menu (1 = top). */
+  order?: number;
   /** Shorter label for the homepage menu. Falls back to title. */
   menuLabel?: string;
   group: GroupKey;
@@ -37,7 +38,12 @@ export const CREDIT_ORDER = ['Location', 'Producers', 'Co-Director', 'DP', 'Agen
 
 export type CreditLabel = (typeof CREDIT_ORDER)[number];
 
-export const projects = raw as Project[];
+/** One JSON file per project in src/data/projects/ (one editor entry each), in menu order. */
+const files = import.meta.glob<Project>('./projects/*.json', { eager: true, import: 'default' });
+const groupIndex = (p: Project) => GROUPS.findIndex((g) => g.key === p.group);
+export const projects = Object.values(files).sort(
+  (a, b) => groupIndex(a) - groupIndex(b) || (a.order ?? 999) - (b.order ?? 999) || a.title.localeCompare(b.title),
+);
 
 export const menuLabel = (p: Project) => p.menuLabel ?? p.title;
 /**

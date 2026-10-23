@@ -1,0 +1,23 @@
+{
+  "title": "ayokay - Less Alone",
+  "slug": "ayokay-less-alone",
+  "order": 3,
+  "group": "music",
+  "vimeo": "1109683954",
+  "credits": {
+    "Location": "Ukraine",
+    "Producers": "Dima Bondar, Wyatt Whitaker, Hunter Lyon, Abid El Kahlut, Elizaweta Movshyna",
+    "DP": "Nikita Khatsarevich",
+    "Prod Co": "Inakshe Studio",
+    "Edit": "Fenn Paider"
+  },
+  "about": "Placeholder description. Shot over two nights, with the song as the only script and the camera following the artist.",
+  "preview": "/video/previews/ayokay-less-alone.mp4",
+  "poster": "/images/work/ayokay-less-alone/poster.jpg",
+  "stills": [
+    "/images/work/ayokay-less-alone/shot-1.jpg",
+    "/images/work/ayokay-less-alone/shot-2.jpg",
+    "/images/work/ayokay-less-alone/shot-3.jpg",
+    "/images/work/ayokay-less-alone/shot-4.jpg"
+  ]
+}

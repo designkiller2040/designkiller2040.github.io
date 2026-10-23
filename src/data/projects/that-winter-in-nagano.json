@@ -1,0 +1,24 @@
+{
+  "title": "That Winter in Nagano - Music Film",
+  "slug": "that-winter-in-nagano",
+  "order": 6,
+  "group": "music",
+  "vimeo": "1109708125",
+  "todo": "The live site lists DP twice (Vincent Prochoroff and Jonah George). Confirm whether both are DPs.",
+  "credits": {
+    "Location": "Japan",
+    "Producers": "David Dicembre, Miyuki Murakami",
+    "DP": "Vincent Prochoroff, Jonah George",
+    "Prod Co": "DMBZ",
+    "Edit": "Jonah George"
+  },
+  "about": "Placeholder description. Shot over two nights, with the song as the only script and the camera following the artist.",
+  "preview": "/video/previews/that-winter-in-nagano.mp4",
+  "poster": "/images/work/that-winter-in-nagano/poster.jpg",
+  "stills": [
+    "/images/work/that-winter-in-nagano/shot-1.jpg",
+    "/images/work/that-winter-in-nagano/shot-2.jpg",
+    "/images/work/that-winter-in-nagano/shot-3.jpg",
+    "/images/work/that-winter-in-nagano/shot-4.jpg"
+  ]
+}

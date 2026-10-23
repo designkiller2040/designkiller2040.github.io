@@ -1,0 +1,23 @@
+{
+  "title": "Latin Mafia - Yo Siempre Contesto",
+  "slug": "latin-mafia-yo-siempre-contesto",
+  "order": 1,
+  "group": "music",
+  "vimeo": "1109696568",
+  "credits": {
+    "Location": "Mexico City",
+    "Producers": "Ada Odreman",
+    "DP": "Vincent Prochoroff",
+    "Prod Co": "Rabbit House",
+    "Edit": "Jonah George"
+  },
+  "about": "Placeholder description. A music video built around the song's mood: long takes, soft light and a loose, handheld camera.",
+  "preview": "/video/previews/latin-mafia-yo-siempre-contesto.mp4",
+  "poster": "/images/work/latin-mafia-yo-siempre-contesto/poster.jpg",
+  "stills": [
+    "/images/work/latin-mafia-yo-siempre-contesto/shot-1.jpg",
+    "/images/work/latin-mafia-yo-siempre-contesto/shot-2.jpg",
+    "/images/work/latin-mafia-yo-siempre-contesto/shot-3.jpg",
+    "/images/work/latin-mafia-yo-siempre-contesto/shot-4.jpg"
+  ]
+}
