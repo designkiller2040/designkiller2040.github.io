@@ -317,8 +317,9 @@ const poster = posterSrc(project);
     /* --pe reaches 1 after the first quarter of the scroll, so the blur and the
        step back ("behind the scenes") happen as soon as you start scrolling. */
     --pe: min(1, var(--p) * 4);
+    /* Darkened to 70% so the text on top stays readable. */
     transform: translateX(var(--bx)) scale(calc(1 - var(--pe) * 0.15));
-    filter: blur(calc(var(--pe) * 120 * var(--rm))) brightness(calc(1 - var(--pe) * 0.1));
+    filter: blur(calc(var(--pe) * 120 * var(--rm))) brightness(calc(0.7 - var(--pe) * 0.1));
     will-change: transform, filter;
   }
   .thumb img {
