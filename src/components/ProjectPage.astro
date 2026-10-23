@@ -415,8 +415,9 @@ const poster = posterSrc(project);
     inset: 0 0 auto;
     z-index: 3;
     padding-top: var(--top);
-    /* Plain white (no difference blend), readable on the darkened thumbnail. */
     color: #fff;
+    /* The top menu keeps the difference blend (the info and list are plain white). */
+    mix-blend-mode: difference;
     pointer-events: none;
   }
   .top :global(a) {
