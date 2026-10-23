@@ -4,13 +4,6 @@
   "order": 2,
   "group": "concept",
   "vimeo": "1109689803",
-  "credits": {
-    "Location": "Ukraine",
-    "Producers": "Elizaweta Movshyna",
-    "DP": "Nikita Khatsarevich",
-    "Edit": "Jonah George"
-  },
-  "about": "Placeholder description. An experimental short, made without a brief, about time passing and what stays with us.",
   "preview": "/video/previews/do-you-ever-feel-nostalgic.mp4",
   "poster": "/images/work/do-you-ever-feel-nostalgic/poster.jpg",
   "stills": [
@@ -18,5 +11,12 @@
     "/images/work/do-you-ever-feel-nostalgic/shot-2.jpg",
     "/images/work/do-you-ever-feel-nostalgic/shot-3.jpg",
     "/images/work/do-you-ever-feel-nostalgic/shot-4.jpg"
-  ]
+  ],
+  "about": "Placeholder description. An experimental short, made without a brief, about time passing and what stays with us.",
+  "credits": {
+    "Location": "Ukraine",
+    "Producers": "Elizaweta Movshyna",
+    "DP": "Nikita Khatsarevich",
+    "Edit": "Jonah George"
+  }
 }

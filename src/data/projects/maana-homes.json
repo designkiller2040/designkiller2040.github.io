@@ -4,13 +4,6 @@
   "order": 3,
   "group": "commercial",
   "vimeo": "1109698828",
-  "credits": {
-    "Location": "Japan",
-    "Co-Director": "Stefan Kohli",
-    "DP": "Nicky Rudolph",
-    "Edit": "Simon Morrison"
-  },
-  "about": "Placeholder description. A quiet, observational take on the product, built around movement, light and a few unscripted moments.",
   "preview": "/video/previews/maana-homes.mp4",
   "poster": "/images/work/maana-homes/poster.jpg",
   "stills": [
@@ -18,5 +11,12 @@
     "/images/work/maana-homes/shot-2.jpg",
     "/images/work/maana-homes/shot-3.jpg",
     "/images/work/maana-homes/shot-4.jpg"
-  ]
+  ],
+  "about": "Placeholder description. A quiet, observational take on the product, built around movement, light and a few unscripted moments.",
+  "credits": {
+    "Location": "Japan",
+    "Co-Director": "Stefan Kohli",
+    "DP": "Nicky Rudolph",
+    "Edit": "Simon Morrison"
+  }
 }

@@ -2,17 +2,9 @@
   "title": "Givenchy - TK 360",
   "slug": "givenchy-tk-360",
   "order": 12,
-  "menuLabel": "Givenchy TK 360",
   "group": "commercial",
+  "menuLabel": "Givenchy TK 360",
   "vimeo": "1109691177",
-  "credits": {
-    "Location": "Victorville, CA",
-    "Producers": "Alex Veltri, Kawika Bernal, Wyatt Whitaker",
-    "DP": "Tanner Deutsch",
-    "Agency": "Recess Studios",
-    "Edit": "Jonah George"
-  },
-  "about": "Placeholder description. A quiet, observational take on the product, built around movement, light and a few unscripted moments.",
   "preview": "/video/previews/givenchy-tk-360.mp4",
   "poster": "/images/work/givenchy-tk-360/poster.jpg",
   "stills": [
@@ -20,5 +12,13 @@
     "/images/work/givenchy-tk-360/shot-2.jpg",
     "/images/work/givenchy-tk-360/shot-3.jpg",
     "/images/work/givenchy-tk-360/shot-4.jpg"
-  ]
+  ],
+  "about": "Placeholder description. A quiet, observational take on the product, built around movement, light and a few unscripted moments.",
+  "credits": {
+    "Location": "Victorville, CA",
+    "Producers": "Alex Veltri, Kawika Bernal, Wyatt Whitaker",
+    "DP": "Tanner Deutsch",
+    "Agency": "Recess Studios",
+    "Edit": "Jonah George"
+  }
 }

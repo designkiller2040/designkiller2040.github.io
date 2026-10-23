@@ -4,13 +4,6 @@
   "order": 4,
   "group": "commercial",
   "vimeo": "1109705518",
-  "credits": {
-    "Location": "Japan",
-    "Co-Director": "Stefan Kohli",
-    "DP": "Jonah George",
-    "Edit": "Jonah George, Stefan Kohli"
-  },
-  "about": "Placeholder description. A campaign film that follows its characters through one day, mixing planned scenes with found ones.",
   "preview": "/video/previews/omega-kaia-gerber.mp4",
   "poster": "/images/work/omega-kaia-gerber/poster.jpg",
   "stills": [
@@ -18,5 +11,12 @@
     "/images/work/omega-kaia-gerber/shot-2.jpg",
     "/images/work/omega-kaia-gerber/shot-3.jpg",
     "/images/work/omega-kaia-gerber/shot-4.jpg"
-  ]
+  ],
+  "about": "Placeholder description. A campaign film that follows its characters through one day, mixing planned scenes with found ones.",
+  "credits": {
+    "Location": "Japan",
+    "Co-Director": "Stefan Kohli",
+    "DP": "Jonah George",
+    "Edit": "Jonah George, Stefan Kohli"
+  }
 }
