@@ -29,7 +29,11 @@ const poster = posterSrc(project);
 
   <!-- The thumbnail. As you scroll it slides left, blurs and shrinks back. -->
   <div class="backdrop" aria-hidden="true">
-    <div class="thumb"><img src={poster} alt="" /></div>
+    <div class="thumb">
+      <img src={poster} alt="" />
+      <!-- Hovering a project in the list plays its preview clip here. -->
+      <div class="previews"></div>
+    </div>
   </div>
 
   <div class="top grid">
@@ -76,7 +80,7 @@ const poster = posterSrc(project);
       </div>
 
       <!-- All projects: the same element as the homepage menu. -->
-      <ProjectList class="list" current={project.slug} />
+      <ProjectList class="list" current={project.slug} previews />
     </aside>
   </main>
 
@@ -277,6 +281,63 @@ const poster = posterSrc(project);
   });
 </script>
 
+<script>
+  import { coverWithCanvas } from '../scripts/video-canvas';
+
+  // Hover previews, as on the homepage: hovering a project in the list plays
+  // its clip over the thumbnail (same slide, blur and darkening). Clips load
+  // on first hover only, so opening a project page stays light.
+  const stage = document.querySelector<HTMLElement>('.thumb .previews');
+  const clips = new Map<string, HTMLVideoElement>();
+  let hovered: HTMLVideoElement | null = null;
+
+  function clipFor(src: string) {
+    let v = clips.get(src);
+    if (!v) {
+      const box = document.createElement('div');
+      box.className = 'preview';
+      v = document.createElement('video');
+      v.muted = true;
+      v.loop = true;
+      v.playsInline = true;
+      v.preload = 'auto';
+      v.src = src;
+      box.append(v);
+      stage!.append(box);
+      coverWithCanvas(v);
+      clips.set(src, v);
+    }
+    return v;
+  }
+
+  function show(v: HTMLVideoElement) {
+    hovered = v;
+    // Keep the thumbnail until the clip has a frame to show.
+    const box = v.parentElement!;
+    if (v.readyState >= 2) box.classList.add('on');
+    else v.addEventListener('playing', () => hovered === v && box.classList.add('on'), { once: true });
+    v.currentTime = 0;
+    v.play().catch(() => {});
+  }
+
+  function hide(v: HTMLVideoElement) {
+    if (hovered === v) hovered = null;
+    v.parentElement!.classList.remove('on');
+    setTimeout(() => hovered !== v && v.pause(), 150);
+  }
+
+  if (stage && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    for (const a of document.querySelectorAll<HTMLAnchorElement>('.list [data-preview]')) {
+      const enter = () => show(clipFor(a.dataset.preview!));
+      const leave = () => hide(clipFor(a.dataset.preview!));
+      a.addEventListener('mouseenter', enter);
+      a.addEventListener('mouseleave', leave);
+      a.addEventListener('focus', enter);
+      a.addEventListener('blur', leave);
+    }
+  }
+</script>
+
 <style>
   /*
    * Layers, back to front: the thumbnail (fixed), the stills (scroll), the
@@ -327,6 +388,26 @@ const poster = posterSrc(project);
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+  /* Preview clips cover the image exactly (inside the same margin). */
+  .previews {
+    position: absolute;
+    inset: var(--pad);
+  }
+  .previews :global(.preview),
+  .previews :global(video) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .previews :global(.preview) {
+    opacity: 0;
+    transition: opacity 120ms linear;
+  }
+  .previews :global(.preview.on) {
+    opacity: 1;
   }
 
   .top {
