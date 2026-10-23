@@ -2,22 +2,28 @@
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import ProjectList from '../components/ProjectList.astro';
+import home from '../data/home.json';
+import { withVersion } from '../data/projects';
+
+// Showreel, its still frame and label are edited in /admin/ (Homepage).
+const reel = withVersion(home.reel);
+const poster = withVersion(home.poster);
 ---
 
 <Base theme="dark">
-  <link slot="head" rel="preload" href="/video/showreel.jpg" as="image" />
+  <link slot="head" rel="preload" href={poster} as="image" />
   <main class="hero grid">
     <div class="stage" aria-hidden="true">
-      <!-- The reel is used as exported (public/video/showreel.mp4), no re-encoding. -->
-      <video class="reel" poster="/video/showreel.jpg" autoplay muted loop playsinline preload="auto">
-        <source src="/video/showreel.mp4" type="video/mp4" />
+      <!-- The reel is used as exported, no re-encoding. -->
+      <video class="reel" poster={poster} autoplay muted loop playsinline preload="auto">
+        <source src={reel} type="video/mp4" />
       </video>
       <div class="previews"></div>
     </div>
 
     <Header current="works" />
 
-    <p class="reel-label">Showreel 2025</p>
+    <p class="reel-label">{home.label}</p>
 
     <!-- The same element as the list on every project page. -->
     <ProjectList class="menu" previews />

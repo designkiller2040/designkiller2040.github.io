@@ -71,7 +71,7 @@ export const posterSrc = (p: Project) => withVersion(p.poster ?? `/images/work/$
  * is replaced, browsers fetch the new one instead of showing a cached copy.
  * Runs at build time only.
  */
-function withVersion(src: string) {
+export function withVersion(src: string) {
   try {
     const hash = createHash('md5').update(readFileSync(`public${src}`)).digest('hex').slice(0, 8);
     return `${src}?v=${hash}`;

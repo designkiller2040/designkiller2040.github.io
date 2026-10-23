@@ -28,6 +28,31 @@ output:
     indent_size: 2
 
 collections:
+  - name: homepage
+    label: Homepage
+    files:
+      - name: home
+        label: Showreel
+        file: src/data/home.json
+        format: json
+        fields:
+          - name: reel
+            label: Showreel video
+            widget: file
+            accept: video/mp4
+            media_folder: public/video
+            public_folder: /video
+            media_library:
+              config:
+                max_file_size: 95000000 # GitHub refuses files over 100 MB
+            hint: 'Silent loop behind the homepage. MP4 (H.264, 1080p), under 95 MB. It plays exactly as uploaded, so export it web-ready.'
+          - name: poster
+            label: Still frame
+            widget: image
+            media_folder: public/video
+            public_folder: /video
+            hint: 'A JPG of the first frame. Shows for a moment while the video loads.'
+          - { name: label, label: Label, widget: string, hint: 'Text in the bottom-left corner, e.g. Showreel 2025.' }
   - name: site
     label: Projects
     files:
