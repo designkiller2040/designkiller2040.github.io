@@ -334,9 +334,8 @@ const poster = posterSrc(project);
     inset: 0 0 auto;
     z-index: 3;
     padding-top: var(--top);
+    /* Plain white (no difference blend), readable on the darkened thumbnail. */
     color: #fff;
-    /* All text is white with a difference blend, so it inverts over light areas. */
-    mix-blend-mode: difference;
     pointer-events: none;
   }
   .top :global(a) {
@@ -360,10 +359,8 @@ const poster = posterSrc(project);
   .info {
     position: fixed;
     inset: 0;
+    /* Plain white, like the header. DOM order keeps this above the stills. */
     color: #fff;
-    /* No z-index here or on .scroll: in Chrome, a z-index on either stops the
-       difference blend from reaching the image. DOM order keeps this on top. */
-    mix-blend-mode: difference;
     pointer-events: none;
     font-weight: 500;
     line-height: var(--line);
