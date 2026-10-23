@@ -16,7 +16,7 @@ npm run build    # makes the finished site in dist/
 
 | What                       | Where                                   |
 | -------------------------- | --------------------------------------- |
-| All project data           | `src/data/projects.json`                |
+| All project data           | `src/data/projects/*.json`              |
 | Group names and order      | `src/data/projects.ts` (`GROUPS`)       |
 | Sizes, colours, fonts      | `src/styles/global.css`                 |
 | Homepage                   | `src/pages/index.astro`                 |
@@ -26,7 +26,7 @@ npm run build    # makes the finished site in dist/
 | Showreel + poster          | `public/video/showreel.mp4`, `.jpg`     |
 | Hover previews             | `public/video/previews/<slug>.mp4`      |
 
-To add a project, add an entry to `projects.json` (menu order = file order) and
+To add a project, add a file to `src/data/projects/` (menu order = its `order` within its group) and
 drop a preview clip named `<slug>.mp4` into `public/video/previews/`.
 
 A project with a `todo` field shows a yellow TODO note on its page. Delete the

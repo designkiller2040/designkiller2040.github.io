@@ -53,79 +53,87 @@ collections:
             public_folder: /video
             hint: 'A JPG of the first frame. Shows for a moment while the video loads.'
           - { name: label, label: Label, widget: string, hint: 'Text in the bottom-left corner, e.g. Showreel 2025.' }
-  - name: site
+  - name: projects
     label: Projects
-    files:
-      - name: projects
-        label: All projects
-        file: src/data/projects.json
-        format: json
-        fields:
-          - name: projects
-            label: Projects
-            label_singular: project
-            hint: Drag to reorder. The order here is the menu order on the site.
-            widget: list
-            root: true
-            summary: '{{title}} · {{group}}'
-            fields:
-              - { name: title, label: Title, widget: string }
-              - name: slug
-                label: Page address
-                hint: 'Lowercase words joined by dashes, e.g. maana-homes. The page lives at /work/<this>/. Don’t change it for existing projects.'
-                widget: string
-                pattern: ['^[a-z0-9]+(-[a-z0-9]+)*$', 'Only lowercase letters, numbers and dashes']
-              - { name: menuLabel, label: Short menu label, widget: string, required: false, hint: Only if the title is too long for the homepage menu. }
-              - name: group
-                label: Group
-                widget: select
-                options:
-                  - { label: commercial works, value: commercial }
-                  - { label: music videos, value: music }
-                  - { label: concept videos, value: concept }
-              - name: stream
-                label: Cloudflare video (full film)
-                widget: string
-                required: false
-                hint: 'Easiest: upload the film on the [upload page](/admin/upload/), which fills this in for you. Or upload it in the Cloudflare dashboard (Stream), open the video and paste its Video ID (32 letters and numbers) or embed link here. Plays when "Play full" is clicked, instead of Vimeo.'
-                pattern: ['[0-9a-fA-F]{32}', 'Paste the 32-character Video ID from Cloudflare Stream, or a link that contains it']
-              - name: vimeo
-                label: Vimeo ID (old, optional)
-                widget: string
-                required: false
-                hint: 'Only used when the Cloudflare field is empty. The number at the end of the Vimeo link, e.g. 1109700480 for vimeo.com/1109700480.'
-                pattern: ['^[0-9]+$', 'Numbers only']
-              - name: preview
-                label: Hover preview clip
-                widget: file
-                required: false
-                accept: video/mp4
-                media_folder: public/video/previews
-                public_folder: /video/previews
-                hint: 'Short silent loop, MP4 (H.264), under 20 MB. Plays when hovering the title on the homepage.'
-              - name: poster
-                label: Big thumbnail
-                widget: image
-                required: false
-                media_folder: public/images/work
-                public_folder: /images/work
-                hint: Full-screen image at the top of the project page.
-              - name: stills
-                label: Stills
-                widget: image
-                multiple: true
-                max: 4
-                required: false
-                media_folder: public/images/work
-                public_folder: /images/work
-                hint: Up to four shots, shown in the row on the project page.
-              - { name: about, label: About the film, widget: text, required: false }
-              - name: credits
-                label: Credits
-                widget: keyvalue
-                required: false
-                label_singular: credit
-                key_label: Role
-                value_label: Names
-                hint: 'Use these roles, spelled exactly like this: Location, Producers, Co-Director, DP, Agency, Prod Co, Edit. The page sorts them in that order.'
-              - { name: todo, label: TODO note, widget: text, required: false, hint: Shows a yellow note on the page. Clear it when done. }
+    label_singular: project
+    description: One entry per project. The menu lists them by group, then by Position.
+    folder: src/data/projects
+    format: json
+    extension: json
+    identifier_field: title
+    slug: '{{fields.slug}}'
+    summary: '{{title}}'
+    sortable_fields:
+      fields: [order, title]
+      default: { field: order, direction: ascending }
+    view_groups:
+      default: group
+      groups:
+        - { name: group, label: Group, field: group }
+    fields:
+          - { name: title, label: Title, widget: string }
+          - name: slug
+            label: Page address
+            hint: 'Lowercase words joined by dashes, e.g. maana-homes. The page lives at /work/<this>/. Don’t change it for existing projects.'
+            widget: string
+            pattern: ['^[a-z0-9]+(-[a-z0-9]+)*$', 'Only lowercase letters, numbers and dashes']
+          - name: order
+            label: Position in menu
+            widget: number
+            value_type: int
+            min: 1
+            hint: 'Place within its group in the menu: 1 is the top. Two projects with the same number are sorted by title.'
+          - { name: menuLabel, label: Short menu label, widget: string, required: false, hint: Only if the title is too long for the homepage menu. }
+          - name: group
+            label: Group
+            widget: select
+            options:
+              - { label: commercial works, value: commercial }
+              - { label: music videos, value: music }
+              - { label: concept videos, value: concept }
+          - name: stream
+            label: Cloudflare video (full film)
+            widget: string
+            required: false
+            hint: 'Easiest: upload the film on the [upload page](/admin/upload/), which fills this in for you. Or upload it in the Cloudflare dashboard (Stream), open the video and paste its Video ID (32 letters and numbers) or embed link here. Plays when "Play full" is clicked, instead of Vimeo.'
+            pattern: ['[0-9a-fA-F]{32}', 'Paste the 32-character Video ID from Cloudflare Stream, or a link that contains it']
+          - name: vimeo
+            label: Vimeo ID (old, optional)
+            widget: string
+            required: false
+            hint: 'Only used when the Cloudflare field is empty. The number at the end of the Vimeo link, e.g. 1109700480 for vimeo.com/1109700480.'
+            pattern: ['^[0-9]+$', 'Numbers only']
+          - name: preview
+            label: Hover preview clip
+            widget: file
+            required: false
+            accept: video/mp4
+            media_folder: public/video/previews
+            public_folder: /video/previews
+            hint: 'Short silent loop, MP4 (H.264), under 20 MB. Plays when hovering the title on the homepage.'
+          - name: poster
+            label: Big thumbnail
+            widget: image
+            required: false
+            media_folder: public/images/work
+            public_folder: /images/work
+            hint: Full-screen image at the top of the project page.
+          - name: stills
+            label: Stills
+            widget: image
+            multiple: true
+            max: 4
+            required: false
+            media_folder: public/images/work
+            public_folder: /images/work
+            hint: Up to four shots, shown in the row on the project page.
+          - { name: about, label: About the film, widget: text, required: false }
+          - name: credits
+            label: Credits
+            widget: keyvalue
+            required: false
+            label_singular: credit
+            key_label: Role
+            value_label: Names
+            hint: 'Use these roles, spelled exactly like this: Location, Producers, Co-Director, DP, Agency, Prod Co, Edit. The page sorts them in that order.'
+          - { name: todo, label: TODO note, widget: text, required: false, hint: Shows a yellow note on the page. Clear it when done. }

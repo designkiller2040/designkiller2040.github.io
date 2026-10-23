@@ -1,0 +1,21 @@
+{
+  "title": "Thacker Fall/Winter",
+  "slug": "thacker-fall-winter",
+  "order": 10,
+  "group": "commercial",
+  "vimeo": "1109707347",
+  "credits": {
+    "Location": "New York City",
+    "DP": "Jonah George",
+    "Edit": "Jonah George"
+  },
+  "about": "Placeholder description. A campaign film that follows its characters through one day, mixing planned scenes with found ones.",
+  "preview": "/video/previews/thacker-fall-winter.mp4",
+  "poster": "/images/work/thacker-fall-winter/poster.jpg",
+  "stills": [
+    "/images/work/thacker-fall-winter/shot-1.jpg",
+    "/images/work/thacker-fall-winter/shot-2.jpg",
+    "/images/work/thacker-fall-winter/shot-3.jpg",
+    "/images/work/thacker-fall-winter/shot-4.jpg"
+  ]
+}

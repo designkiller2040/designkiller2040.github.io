@@ -15,7 +15,7 @@ ffmpeg -nostdin -hide_banner -loglevel error -y \
 ffmpeg -nostdin -hide_banner -loglevel error -y -i "$OUT/showreel.mp4" -frames:v 1 "$OUT/showreel.jpg"
 
 i=0
-node -e "for (const p of require('./src/data/projects.json')) console.log(p.slug)" | while read -r slug; do
+node -e "for (const f of require('fs').readdirSync('./src/data/projects')) console.log(require('./src/data/projects/' + f).slug)" | while read -r slug; do
   hue=$(( (i * 137) % 360 )); i=$((i + 1))
   ffmpeg -nostdin -hide_banner -loglevel error -y \
     -f lavfi -i "color=c=0x808080:s=640x360:d=3,format=yuv420p,hue=h=$hue:s=4,eq=brightness=-0.1" \

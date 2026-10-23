@@ -1,0 +1,23 @@
+{
+  "title": "Backbone, Xbox - Sunriver",
+  "slug": "backbone-xbox-sunriver",
+  "order": 6,
+  "group": "commercial",
+  "vimeo": "1109686584",
+  "credits": {
+    "Location": "Atlanta, GA",
+    "Producers": "Alex Veltri, Kawika Bernal, Wyatt Whitaker",
+    "DP": "Alex Allgood",
+    "Agency": "Recess Studios",
+    "Edit": "Connor Cuevas"
+  },
+  "about": "Placeholder description. A quiet, observational take on the product, built around movement, light and a few unscripted moments.",
+  "preview": "/video/previews/backbone-xbox-sunriver.mp4",
+  "poster": "/images/work/backbone-xbox-sunriver/poster.jpg",
+  "stills": [
+    "/images/work/backbone-xbox-sunriver/shot-1.jpg",
+    "/images/work/backbone-xbox-sunriver/shot-2.jpg",
+    "/images/work/backbone-xbox-sunriver/shot-3.jpg",
+    "/images/work/backbone-xbox-sunriver/shot-4.jpg"
+  ]
+}

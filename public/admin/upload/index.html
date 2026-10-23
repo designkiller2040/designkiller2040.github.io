@@ -151,7 +151,7 @@
       // Address of the upload helper (cloudflare/upload-worker.js in the repo), once it runs on Cloudflare.
       const HELPER = 'https://jonah-george-upload.jonahmgeorge.workers.dev';
       const REPO = 'designkiller2040/designkiller2040.github.io';
-      const FILE = 'src/data/projects.json';
+      const DIR = 'src/data/projects'; // one JSON file per project
 
       const $ = (id) => document.getElementById(id);
       const status = (text, error = false) => {
@@ -200,13 +200,28 @@
           headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', ...init.headers },
         });
 
-      // projects.json as stored on GitHub (text is UTF-8 inside base64).
-      async function loadProjects() {
-        const res = await gh(`contents/${FILE}?ref=main`, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`Couldn't read the project list from GitHub (${res.status}).`);
+      // A JSON file as stored on GitHub (text is UTF-8 inside base64).
+      async function readJson(path) {
+        const res = await gh(`contents/${path}?ref=main`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Couldn't read ${path} from GitHub (${res.status}).`);
         const data = await res.json();
         const bytes = Uint8Array.from(atob(data.content.replace(/\n/g, '')), (c) => c.charCodeAt(0));
-        return { sha: data.sha, list: JSON.parse(new TextDecoder().decode(bytes)) };
+        return { sha: data.sha, data: JSON.parse(new TextDecoder().decode(bytes)) };
+      }
+
+      // All projects, in the same order as the site menu.
+      async function loadProjects() {
+        const res = await gh(`contents/${DIR}?ref=main`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Couldn't read the project list from GitHub (${res.status}).`);
+        const paths = (await res.json()).filter((f) => f.name.endsWith('.json')).map((f) => f.path);
+        const list = await Promise.all(paths.map(async (path) => ({ ...(await readJson(path)).data, path })));
+        const groups = ['commercial', 'music', 'concept'];
+        return list.sort(
+          (a, b) =>
+            groups.indexOf(a.group) - groups.indexOf(b.group) ||
+            (a.order ?? 999) - (b.order ?? 999) ||
+            a.title.localeCompare(b.title),
+        );
       }
 
       let projects = [];
@@ -229,7 +244,7 @@
           $('go').disabled = true;
         }
         try {
-          projects = (await loadProjects()).list;
+          projects = await loadProjects();
           $('project').innerHTML = projects.map((p) => `<option value="${p.slug}"></option>`).join('');
           [...$('project').options].forEach((o, i) => (o.textContent = projects[i].title));
           showCurrent();
@@ -282,25 +297,25 @@
         });
       }
 
-      // Write the new video ID into projects.json on GitHub, which republishes the site.
+      // Write the new video ID into the project's file on GitHub, which republishes the site.
       async function connect(slug, id) {
+        const path = projects.find((x) => x.slug === slug)?.path;
+        if (!path) throw new Error(`That project is no longer in the list. Video ID: ${id}`);
         for (let attempt = 0; attempt < 3; attempt++) {
-          const { sha, list } = await loadProjects();
-          const p = list.find((x) => x.slug === slug);
-          if (!p) throw new Error('That project is no longer in the list.');
-          p.stream = id;
-          const text = JSON.stringify(list, null, 2) + '\n';
+          const { sha, data } = await readJson(path);
+          data.stream = id;
+          const text = JSON.stringify(data, null, 2) + '\n';
           let binary = '';
           for (const b of new TextEncoder().encode(text)) binary += String.fromCharCode(b);
           const content = btoa(binary);
-          const res = await gh(`contents/${FILE}`, {
+          const res = await gh(`contents/${path}`, {
             method: 'PUT',
-            body: JSON.stringify({ message: `Connect Cloudflare video to ${p.title}`, content, sha, branch: 'main' }),
+            body: JSON.stringify({ message: `Connect Cloudflare video to ${data.title}`, content, sha, branch: 'main' }),
           });
           if (res.ok) return;
           if (res.status !== 409) throw new Error(`Uploaded, but saving to the site failed (${res.status}). Video ID: ${id}`);
         }
-        throw new Error(`Uploaded, but the project list kept changing. Video ID: ${id}`);
+        throw new Error(`Uploaded, but the project kept changing. Video ID: ${id}`);
       }
 
       // Cloudflare converts the film for the web after the upload, usually a few minutes.

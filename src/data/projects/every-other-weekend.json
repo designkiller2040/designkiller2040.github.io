@@ -1,0 +1,21 @@
+{
+  "title": "Every Other Weekend",
+  "slug": "every-other-weekend",
+  "order": 5,
+  "group": "concept",
+  "vimeo": "1111189727",
+  "credits": {
+    "Location": "Bali",
+    "Producers": "Jonah George",
+    "Edit": "Jonah George"
+  },
+  "about": "Placeholder description. An experimental short, made without a brief, about time passing and what stays with us.",
+  "preview": "/video/previews/every-other-weekend.mp4",
+  "poster": "/images/work/every-other-weekend/poster.jpg",
+  "stills": [
+    "/images/work/every-other-weekend/shot-1.jpg",
+    "/images/work/every-other-weekend/shot-2.jpg",
+    "/images/work/every-other-weekend/shot-3.jpg",
+    "/images/work/every-other-weekend/shot-4.jpg"
+  ]
+}

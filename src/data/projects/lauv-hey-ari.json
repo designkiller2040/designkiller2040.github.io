@@ -1,0 +1,21 @@
+{
+  "title": "Lauv - Hey Ari",
+  "slug": "lauv-hey-ari",
+  "order": 7,
+  "group": "music",
+  "vimeo": "1109697666",
+  "credits": {
+    "Location": "USA, Taiwan, Korea",
+    "DP": "Jonah George",
+    "Edit": "Jonah George"
+  },
+  "about": "Placeholder description. A music video built around the song's mood: long takes, soft light and a loose, handheld camera.",
+  "preview": "/video/previews/lauv-hey-ari.mp4",
+  "poster": "/images/work/lauv-hey-ari/poster.jpg",
+  "stills": [
+    "/images/work/lauv-hey-ari/shot-1.jpg",
+    "/images/work/lauv-hey-ari/shot-2.jpg",
+    "/images/work/lauv-hey-ari/shot-3.jpg",
+    "/images/work/lauv-hey-ari/shot-4.jpg"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "title": "Truth of Existence",
+  "slug": "truth-of-existence",
+  "order": 3,
+  "group": "concept",
+  "vimeo": "1109712158",
+  "credits": {
+    "Location": "Poland",
+    "Producers": "Nikita Khatsarevich",
+    "DP": "Stanislav Smyrnov",
+    "Edit": "Jonah George"
+  },
+  "about": "Placeholder description. A concept piece built from images first and story second, cut to a slow rhythm.",
+  "preview": "/video/previews/truth-of-existence.mp4",
+  "poster": "/images/work/truth-of-existence/poster.jpg",
+  "stills": [
+    "/images/work/truth-of-existence/shot-1.jpg",
+    "/images/work/truth-of-existence/shot-2.jpg",
+    "/images/work/truth-of-existence/shot-3.jpg",
+    "/images/work/truth-of-existence/shot-4.jpg"
+  ]
+}

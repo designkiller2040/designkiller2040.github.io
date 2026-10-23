@@ -1,0 +1,24 @@
+{
+  "title": "Chamberlain Coffee - OOPS",
+  "slug": "chamberlain-coffee-oops",
+  "order": 11,
+  "menuLabel": "Chamberlain Coffee OOPS",
+  "group": "commercial",
+  "vimeo": "1109688284",
+  "credits": {
+    "Location": "Los Angeles",
+    "Producers": "Brent Assaya, Sydny Furuichi",
+    "DP": "Neema Sadeghi",
+    "Prod Co": "Anno",
+    "Edit": "Henry Kornaros"
+  },
+  "about": "A short film for the brand, shot on location with a small crew. Placeholder text: replace with the real description of the project.",
+  "preview": "/video/previews/chamberlain-coffee-oops.mp4",
+  "poster": "/images/work/chamberlain-coffee-oops/poster.jpg",
+  "stills": [
+    "/images/work/chamberlain-coffee-oops/shot-1.jpg",
+    "/images/work/chamberlain-coffee-oops/shot-2.jpg",
+    "/images/work/chamberlain-coffee-oops/shot-3.jpg",
+    "/images/work/chamberlain-coffee-oops/shot-4.jpg"
+  ]
+}
