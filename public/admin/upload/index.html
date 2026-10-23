@@ -104,6 +104,11 @@
         margin-top: 12px;
         min-height: 1.45em;
       }
+      #status small {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+      }
       #status.error {
         color: var(--error);
       }
@@ -153,6 +158,34 @@
         $('status').classList.toggle('error', error);
       };
       const bar = document.querySelector('.bar');
+      const setBar = (pct) => (bar.firstElementChild.style.width = `${pct}%`);
+      const mb = (bytes) => `${Math.round(bytes / 1e6)} MB`;
+
+      // Rough time left from the average speed so far ("about 3 min left").
+      function timeLeft(done, total, since) {
+        const secs = (Date.now() - since) / 1000;
+        if (secs < 3 || done <= 0) return 'working out time left…';
+        const left = ((total - done) * secs) / done;
+        if (left < 45) return 'less than a minute left';
+        if (left < 90 * 60) return `about ${Math.round(left / 60)} min left`;
+        return `about ${(left / 3600).toFixed(1)} hours left`;
+      }
+      const showStep = (text, note) => {
+        $('status').classList.remove('error');
+        $('status').innerHTML = '';
+        $('status').append(text);
+        if (note) {
+          const small = document.createElement('small');
+          small.textContent = note;
+          $('status').append(small);
+        }
+      };
+
+      // While uploading, warn before the page is closed (that would stop the upload).
+      let busy = false;
+      addEventListener('beforeunload', (e) => {
+        if (busy) e.preventDefault();
+      });
 
       // Reuse the sign-in from /admin/ (Sveltia CMS keeps it in this browser).
       let token = '';
@@ -208,6 +241,7 @@
       function upload(file) {
         return new Promise((resolve, reject) => {
           let id = '';
+          const started = Date.now();
           const up = new tus.Upload(file, {
             endpoint: `${HELPER}/upload`,
             chunkSize: 50 * 1024 * 1024, // Cloudflare wants pieces of at least 5 MB
@@ -223,8 +257,11 @@
             },
             onProgress(sent, total) {
               const pct = Math.floor((sent / total) * 100);
-              bar.firstElementChild.style.width = `${pct}%`;
-              status(`Uploading… ${pct}%`);
+              setBar(pct);
+              showStep(
+                `Step 1 of 2 · Uploading ${pct}% · ${mb(sent)} of ${mb(total)} · ${timeLeft(sent, total, started)}`,
+                'Keep this page open until it says Done.',
+              );
             },
             onError(err) {
               const body = err.originalResponse?.getBody?.();
@@ -235,7 +272,7 @@
               reject(new Error(msg || 'The upload stopped. Check the connection and try again.'));
             },
             onSuccess() {
-              bar.firstElementChild.style.width = '100%';
+              setBar(100);
               id = id || (up.url.match(/[0-9a-f]{32}/i) || [''])[0];
               id ? resolve(id) : reject(new Error('Uploaded, but Cloudflare gave no video ID.'));
             },
@@ -265,13 +302,30 @@
         throw new Error(`Uploaded, but the project list kept changing. Video ID: ${id}`);
       }
 
-      async function waitUntilReady(id) {
-        for (let i = 0; i < 240; i++) {
+      // Cloudflare converts the film for the web after the upload, usually a few minutes.
+      async function waitUntilReady(id, slug) {
+        let since = 0;
+        setBar(0);
+        for (let i = 0; i < 720; i++) {
           const res = await fetch(`${HELPER}/video/${id}`, { headers: { Authorization: `Bearer ${token}` } });
           const v = res.ok ? await res.json() : {};
-          if (v.ready) return status('Done. Cloudflare has finished, and the site shows it within about two minutes.');
+          if (v.ready) {
+            setBar(100);
+            const link = document.createElement('a');
+            link.href = `/work/${slug}/`;
+            link.textContent = 'Open the project page';
+            showStep('Done. The film is on Cloudflare and connected. ', 'The site updates within about two minutes. ');
+            $('status').querySelector('small').append(link);
+            return;
+          }
           if (v.state === 'error') return status(`Cloudflare couldn't process this file: ${v.error || 'unknown reason'}.`, true);
-          status(`Connected to the site. Cloudflare is preparing the video… ${v.percent ? Math.floor(v.percent) + '%' : ''}`);
+          const pct = Math.floor(v.percent || 0);
+          if (pct > 0 && !since) since = Date.now() - 1; // count speed from the first visible progress
+          setBar(pct);
+          showStep(
+            `Step 2 of 2 · Cloudflare is preparing the video ${pct ? pct + '% · ' + timeLeft(pct, 100, since) : '· usually takes a few minutes'}`,
+            'The upload is finished and saved. You can close this page now; Cloudflare carries on by itself.',
+          );
           await new Promise((r) => setTimeout(r, 5000));
         }
       }
@@ -283,17 +337,20 @@
         if (!file || !slug || !HELPER) return;
         $('go').disabled = true;
         bar.hidden = false;
+        busy = true;
         try {
           const id = await upload(file);
-          status('Connecting the video to the project…');
+          showStep('Connecting the video to the project…', 'Keep this page open until it says Done.');
           await connect(slug, id);
+          busy = false;
           const p = projects.find((x) => x.slug === slug);
           if (p) p.stream = id;
           showCurrent();
-          await waitUntilReady(id);
+          await waitUntilReady(id, slug);
         } catch (err) {
           status(err.message, true);
         } finally {
+          busy = false;
           $('go').disabled = false;
         }
       });
