@@ -2,17 +2,9 @@
   "title": "Chamberlain Coffee - Valentines Day",
   "slug": "chamberlain-coffee-valentines-day",
   "order": 13,
-  "menuLabel": "Chamberlain Coffee Valentines Day",
   "group": "commercial",
+  "menuLabel": "Chamberlain Coffee Valentines Day",
   "vimeo": "1109689622",
-  "credits": {
-    "Location": "Los Angeles",
-    "Producers": "Brent Assaya, Sydny Furuichi",
-    "DP": "Neema Sadeghi",
-    "Prod Co": "Anno",
-    "Edit": "Henry Kornaros"
-  },
-  "about": "Placeholder description. A campaign film that follows its characters through one day, mixing planned scenes with found ones.",
   "preview": "/video/previews/chamberlain-coffee-valentines-day.mp4",
   "poster": "/images/work/chamberlain-coffee-valentines-day/poster.jpg",
   "stills": [
@@ -20,5 +12,13 @@
     "/images/work/chamberlain-coffee-valentines-day/shot-2.jpg",
     "/images/work/chamberlain-coffee-valentines-day/shot-3.jpg",
     "/images/work/chamberlain-coffee-valentines-day/shot-4.jpg"
-  ]
+  ],
+  "about": "Placeholder description. A campaign film that follows its characters through one day, mixing planned scenes with found ones.",
+  "credits": {
+    "Location": "Los Angeles",
+    "Producers": "Brent Assaya, Sydny Furuichi",
+    "DP": "Neema Sadeghi",
+    "Prod Co": "Anno",
+    "Edit": "Henry Kornaros"
+  }
 }

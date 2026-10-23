@@ -3,7 +3,15 @@
   "slug": "nike-snkrs-newsstand",
   "order": 1,
   "group": "commercial",
+  "stream": "0bb7d170713f580c39ce49fea2e758a3",
   "vimeo": "1109700480",
+  "preview": "/video/previews/nike-snkrs-newsstand.mp4",
+  "poster": "/images/work/nike-snkrs-newsstand/poster.jpg",
+  "stills": [
+    "/images/work/nike-snkrs-newsstand/shot-1.jpg",
+    "/images/work/nike-snkrs-newsstand/shot-2.jpg",
+    "/images/work/nike-snkrs-newsstand/shot-3.jpg"
+  ],
   "about": "A summer afternoon in the city, where two young women drift between boredom, freedom and the quiet feeling that something is about to change. A short film about youth, intimacy, and the fleeting moments that become memories before we even realize it.",
   "credits": {
     "Location": "South Korea",
@@ -12,13 +20,5 @@
     "Agency": "Recess Studios",
     "Prod Co": "Loveandmoney",
     "Edit": "Fenn Paider"
-  },
-  "preview": "/video/previews/nike-snkrs-newsstand.mp4",
-  "poster": "/images/work/nike-snkrs-newsstand/poster.jpg",
-  "stills": [
-    "/images/work/nike-snkrs-newsstand/shot-1.jpg",
-    "/images/work/nike-snkrs-newsstand/shot-2.jpg",
-    "/images/work/nike-snkrs-newsstand/shot-3.jpg"
-  ],
-  "stream": "0bb7d170713f580c39ce49fea2e758a3"
+  }
 }
