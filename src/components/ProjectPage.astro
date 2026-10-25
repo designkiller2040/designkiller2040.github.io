@@ -25,12 +25,12 @@ const poster = posterSrc(project);
 ---
 
 <Base title={project.title} theme="dark">
-  <link slot="head" rel="preload" href={poster} as="image" />
+  {poster && <link slot="head" rel="preload" href={poster} as="image" />}
 
   <!-- The thumbnail. As you scroll it slides left, blurs and shrinks back. -->
   <div class="backdrop" aria-hidden="true">
     <div class="thumb">
-      <img src={poster} alt="" />
+      {poster && <img src={poster} alt="" />}
       <!-- Hovering a project in the list plays its preview clip here. -->
       <div class="previews"></div>
     </div>

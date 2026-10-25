@@ -84,12 +84,14 @@ export const previewSrc = (p: Project) => {
 
 /**
  * Big thumbnail for a project page: the frame at 1 second of its preview clip
- * (made by scripts/preview-frames.sh for HD clips), else the "Big thumbnail" image.
+ * (made by scripts/preview-frames.sh for HD clips), else the "Big thumbnail" image, else none.
  */
 export const posterSrc = (p: Project) => {
   const clip = p.preview ?? `/video/previews/${p.slug}.mp4`;
   const frame = `/images/frames/${clip.split('/').pop()!.replace(/\.[^.]+$/, '')}.jpg`;
-  return withVersion(existsSync(`public${frame}`) ? frame : (p.poster ?? `/images/work/${p.slug}/poster.jpg`));
+  if (existsSync(`public${frame}`)) return withVersion(frame);
+  const poster = p.poster ?? `/images/work/${p.slug}/poster.jpg`;
+  return existsSync(`public${poster}`) ? withVersion(poster) : undefined; // none yet: plain black
 };
 
 /**
