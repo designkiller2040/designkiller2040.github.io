@@ -5,9 +5,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>Jonah George · Editor</title>
+    <style>
+      /* Projects in Grid View: cards, 5 in a row, with the preview clip (see the script below). */
+      @media (min-width: 1000px) {
+        .grid-view:has(.jg-media) .grid-body { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+      }
+      .jg-media { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #111; }
+      .jg-media img,
+      .jg-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      .jg-media video { opacity: 0; transition: opacity 0.2s; }
+      .jg-media.playing video { opacity: 1; }
+      .grid-row:has(> .jg-media) .grid-cell.image { display: none !important; }
+    </style>
   </head>
   <body>
     <!-- Sveltia CMS: edits the files in src/data/ and uploads files straight to the GitHub repo. Setup: config.yml next to this file. -->
     <script src="https://unpkg.com/@sveltia/cms@0.233.1/dist/sveltia-cms.js"></script>
+    <script>
+      // Card view for Projects: adds each project's thumbnail to its card in
+      // Grid View and plays the preview clip on hover. The files come from the
+      // live site (/admin/cards.json, rebuilt on every save), matched by title.
+      (() => {
+        let cards;
+        fetch('/admin/cards.json', { cache: 'no-cache' })
+          .then((r) => r.json())
+          .then((list) => {
+            cards = new Map(list.map((c) => [c.title, c]));
+            update();
+          })
+          .catch(() => {});
+
+        const update = () => {
+          // Open Projects as cards the first time; after that the editor remembers the chosen view.
+          const grid = document.querySelector('[role="radio"][aria-label="Grid View"]');
+          if (grid && location.hash.startsWith('#/collections/projects') && !localStorage.getItem('jg-grid')) {
+            localStorage.setItem('jg-grid', '1');
+            if (grid.getAttribute('aria-checked') !== 'true') grid.click();
+          }
+          if (!cards) return;
+          for (const row of document.querySelectorAll('.grid-view .grid-row[aria-label]')) {
+            const card = cards.get(row.getAttribute('aria-label'));
+            const old = row.querySelector(':scope > .jg-media');
+            if (old?.dataset.slug === card?.slug) continue;
+            old?.remove();
+            if (!card) continue;
+            const media = document.createElement('div');
+            media.className = 'jg-media';
+            media.dataset.slug = card.slug;
+            const img = Object.assign(document.createElement('img'), { src: card.poster, alt: '', loading: 'lazy' });
+            const video = Object.assign(document.createElement('video'), { muted: true, loop: true, playsInline: true, preload: 'none' });
+            video.dataset.src = card.preview;
+            media.append(img, video);
+            row.prepend(media);
+          }
+        };
+
+        let queued = false;
+        new MutationObserver(() => {
+          if (queued) return;
+          queued = true;
+          requestAnimationFrame(() => {
+            queued = false;
+            update();
+          });
+        }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-label'] });
+
+        // Play the clip while the pointer is over a card.
+        const mediaOf = (el) => el?.closest?.('.grid-row')?.querySelector(':scope > .jg-media');
+        document.addEventListener('mouseover', (e) => {
+          const media = mediaOf(e.target);
+          if (!media || media.classList.contains('playing')) return;
+          const video = media.querySelector('video');
+          if (!video.src) video.src = video.dataset.src;
+          media.classList.add('playing');
+          video.play().catch(() => {});
+        });
+        document.addEventListener('mouseout', (e) => {
+          const media = mediaOf(e.target);
+          if (!media || media === mediaOf(e.relatedTarget)) return;
+          media.classList.remove('playing');
+          media.querySelector('video').pause();
+        });
+      })();
+    </script>
   </body>
 </html>
