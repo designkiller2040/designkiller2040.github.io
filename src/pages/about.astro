@@ -118,16 +118,20 @@ const words = TITLE.split(' ');
 
   /*
    * Once the title animation has finished, the photo comes into focus
-   * (blurred to sharp) and the bio fades in.
+   * (fades in from invisible while going from heavy blur to sharp) and the
+   * bio fades in.
    */
   .photo {
-    transition: filter 1.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1),
+      filter 2.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .bio {
     transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
   :global(.about-intro) .photo {
-    filter: blur(calc(14 * var(--rm)));
+    opacity: 0;
+    filter: blur(calc(40 * var(--rm)));
   }
   :global(.about-intro) .bio {
     opacity: 0;
