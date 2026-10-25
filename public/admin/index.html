@@ -14,6 +14,7 @@
       .jg-media img,
       .jg-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
       .jg-media video { opacity: 0; transition: opacity 0.2s; }
+      .jg-media.ready video,
       .jg-media.playing video { opacity: 1; }
       .grid-row:has(> .jg-media) .grid-cell.image { display: none !important; }
 
@@ -37,17 +38,71 @@
     <script src="https://unpkg.com/@sveltia/cms@0.233.1/dist/sveltia-cms.js"></script>
     <script>
       // Card view for Projects: adds each project's thumbnail to its card in
-      // Grid View and plays the preview clip on hover. The files come from the
-      // live site (/admin/cards.json, rebuilt on every save), matched by title.
+      // Grid View and plays the preview clip on hover. The cards follow the
+      // project files on GitHub, so a new clip shows as soon as it's saved:
+      // published files come from the live site (/admin/cards.json), files
+      // not published yet straight from GitHub. Matched by title.
       (() => {
+        const REPO = 'designkiller2040/designkiller2040.github.io';
+        const RAW = `https://raw.githubusercontent.com/${REPO}/main/public`;
         let cards;
-        fetch('/admin/cards.json', { cache: 'no-cache' })
-          .then((r) => r.json())
-          .then((list) => {
-            cards = new Map(list.map((c) => [c.title, c]));
-            update();
-          })
-          .catch(() => {});
+        let published = new Map(); // slug -> { preview, poster } URLs on the live site
+        let loading = false;
+        let fromGitHub = false;
+        const token = () => {
+          try {
+            return JSON.parse(localStorage.getItem('sveltia-cms.user'))?.token;
+          } catch {}
+        };
+
+        const rooted = (p) => (p ? p.replace(/^\/?/, '/') : p);
+        const bare = (url) => url?.split('?')[0];
+        // URL for a file path: the live site's copy if that file is published, else GitHub's.
+        const fileURL = (path, live, video) => {
+          const site = video ? path.replace(/\.(mov|m4v|mkv|webm|mxf)$/i, '.mp4') : path;
+          return bare(live) === site ? live : `${RAW}${path}`;
+        };
+
+        const load = async () => {
+          if (loading) return;
+          loading = true;
+          try {
+            const list = await (await fetch('/admin/cards.json', { cache: 'no-cache' })).json();
+            published = new Map(list.map((c) => [c.slug, c]));
+            cards ??= new Map(list.map((c) => [c.title, c]));
+          } catch {}
+          try {
+            if (!token()) return;
+            const res = await fetch('https://api.github.com/graphql', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                query: `{ repository(owner: "${REPO.split('/')[0]}", name: "${REPO.split('/')[1]}") {
+                  object(expression: "main:src/data/projects") { ... on Tree { entries { name object { ... on Blob { text } } } } } } }`,
+              }),
+            });
+            const entries = (await res.json()).data.repository.object.entries;
+            cards = new Map(
+              entries
+                .filter((e) => e.name.endsWith('.json'))
+                .map((e) => JSON.parse(e.object.text))
+                .map((p) => {
+                  const live = published.get(p.slug);
+                  const preview = rooted(p.preview) ?? `/video/previews/${p.slug}.mp4`;
+                  const poster = rooted(p.poster) ?? `/images/work/${p.slug}/poster.jpg`;
+                  return [p.title, { slug: p.slug, preview: fileURL(preview, live?.preview, true), poster: fileURL(poster, live?.poster) }];
+                }),
+            );
+            fromGitHub = true;
+          } catch {
+          } finally {
+            loading = false;
+          }
+          update();
+        };
+        load();
+        // Reload after saving or switching back to the list.
+        window.addEventListener('hashchange', () => /^#\/collections\/projects\/?$/.test(location.hash) && load());
 
         const update = () => {
           // Open Projects as cards the first time; after that the editor remembers the chosen view.
@@ -56,21 +111,27 @@
             localStorage.setItem('jg-grid', '1');
             if (grid.getAttribute('aria-checked') !== 'true') grid.click();
           }
+          if (!fromGitHub && !loading && token()) load(); // just signed in
           if (!cards) return;
           for (const row of document.querySelectorAll('.grid-view .grid-row[aria-label]')) {
             const card = cards.get(row.getAttribute('aria-label'));
             const old = row.querySelector(':scope > .jg-media');
-            if (old?.dataset.slug === card?.slug) continue;
+            const key = card && `${card.slug} ${card.preview} ${card.poster}`;
+            if (old?.dataset.key === key) continue;
             old?.remove();
             if (!card) continue;
             const media = document.createElement('div');
             media.className = 'jg-media';
-            media.dataset.slug = card.slug;
+            media.dataset.key = key;
             const img = Object.assign(document.createElement('img'), { src: card.poster, alt: '', loading: 'lazy' });
-            const video = Object.assign(document.createElement('video'), { muted: true, loop: true, playsInline: true, preload: 'none' });
+            // The picture on the card is the clip's frame at 1 second; the thumbnail image shows until it loads.
+            const video = Object.assign(document.createElement('video'), { muted: true, loop: true, playsInline: true, preload: 'metadata' });
             video.dataset.src = card.preview;
+            video.addEventListener('loadedmetadata', () => video.currentTime < 0.5 && !video.closest('.playing') && (video.currentTime = Math.min(1, video.duration / 2)));
+            video.addEventListener('loadeddata', () => media.classList.add('ready'));
             media.append(img, video);
             row.prepend(media);
+            setSource(video);
           }
 
           // File and image fields: the editor can't show files kept in project
@@ -103,13 +164,28 @@
           });
         }).observe(document.body, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['aria-label'] });
 
+        // GitHub serves files without a video type, so a clip that isn't
+        // published yet is downloaded and played from memory.
+        const setSource = async (video) => {
+          if (video.dataset.loading) return;
+          video.dataset.loading = '1';
+          const src = video.dataset.src;
+          if (!src.startsWith(RAW)) return void (video.src = `${src}#t=1`);
+          try {
+            const blob = await (await fetch(src)).blob();
+            const type = /\.mov$/i.test(src) ? 'video/quicktime' : 'video/mp4';
+            video.src = URL.createObjectURL(new Blob([blob], { type }));
+            if (video.closest('.playing')) video.play().catch(() => {});
+          } catch {}
+        };
+
         // Play the clip while the pointer is over a card.
         const mediaOf = (el) => el?.closest?.('.grid-row')?.querySelector(':scope > .jg-media');
         document.addEventListener('mouseover', (e) => {
           const media = mediaOf(e.target);
           if (!media || media.classList.contains('playing')) return;
           const video = media.querySelector('video');
-          if (!video.src) video.src = video.dataset.src;
+          if (!video.src) setSource(video);
           media.classList.add('playing');
           video.play().catch(() => {});
         });
@@ -117,7 +193,9 @@
           const media = mediaOf(e.target);
           if (!media || media === mediaOf(e.relatedTarget)) return;
           media.classList.remove('playing');
-          media.querySelector('video').pause();
+          const video = media.querySelector('video');
+          video.pause();
+          if (video.duration) video.currentTime = Math.min(1, video.duration / 2);
         });
       })();
     </script>
