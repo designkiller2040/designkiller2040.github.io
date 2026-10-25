@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs before `astro build`. Saves the frame at 1 second of every HD preview
+# Runs before `astro build` (after scripts/stream-previews.sh). Saves the frame at 1 second of every HD preview
 # clip as a JPG in public/images/frames/<clip name>.jpg (not kept in git).
 # A project page uses that frame as its big thumbnail when it exists (see
 # posterSrc in src/data/projects.ts); projects that only have the old small
@@ -15,7 +15,7 @@ mkdir -p "$OUT" "$CACHE"
 rm -f "$OUT"/*.jpg
 
 shopt -s nullglob nocaseglob
-for f in "$ROOT"/public/{video/previews,images/uploads}/*.{mp4,mov,m4v,mkv,webm,mxf}; do
+for f in "$ROOT"/public/{video/previews,video/previews/auto,images/uploads}/*.{mp4,mov,m4v,mkv,webm,mxf}; do
   name="$(basename "$f")"
   height="$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$f" || echo 0)"
   [ "${height:-0}" -ge 720 ] || continue
