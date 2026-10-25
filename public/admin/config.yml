@@ -19,7 +19,7 @@ public_folder: /images/uploads
 media_libraries:
   default:
     config:
-      max_file_size: 20000000 # 20 MB per upload
+      max_file_size: 95000000 # 95 MB per upload (GitHub refuses files over 100 MB); fields can set lower limits
       slugify_filename: true
 
 output:
@@ -40,7 +40,7 @@ collections:
             label: Showreel video
             widget: file
             accept: video/mp4
-            media_folder: public/video
+            media_folder: /public/video
             public_folder: /video
             media_library:
               config:
@@ -49,7 +49,7 @@ collections:
           - name: poster
             label: Still frame
             widget: image
-            media_folder: public/video
+            media_folder: /public/video
             public_folder: /video
             hint: 'A JPG of the first frame. Shows for a moment while the video loads.'
           - { name: label, label: Label, widget: string, hint: 'Text in the bottom-left corner, e.g. Showreel 2025.' }
@@ -110,7 +110,7 @@ collections:
             widget: file
             required: false
             accept: video/*,.mov,.mp4,.m4v
-            media_folder: public/video/previews
+            media_folder: /public/video/previews
             public_folder: /video/previews
             media_library:
               config:
@@ -120,7 +120,7 @@ collections:
             label: Big thumbnail
             widget: image
             required: false
-            media_folder: public/images/work
+            media_folder: /public/images/work
             public_folder: /images/work
             hint: Full-screen image at the top of the project page.
           - name: stills
@@ -129,7 +129,7 @@ collections:
             multiple: true
             max: 4
             required: false
-            media_folder: public/images/work
+            media_folder: /public/images/work
             public_folder: /images/work
             hint: Up to four shots, shown in the row on the project page.
           - { name: about, label: About the film, widget: text, required: false }

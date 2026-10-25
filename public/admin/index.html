@@ -16,6 +16,19 @@
       .jg-media video { opacity: 0; transition: opacity 0.2s; }
       .jg-media.playing video { opacity: 1; }
       .grid-row:has(> .jg-media) .grid-cell.image { display: none !important; }
+
+      /* File fields: show the image or clip instead of a blank file icon. */
+      .preview.no-thumbnail:has(> .jg-file:not([hidden])) > .icon { display: none; }
+      .jg-file { width: 100%; height: 100%; object-fit: cover; }
+
+      /* "Publishing" badge, bottom right (see the last script). */
+      .jg-publish { position: fixed; right: 16px; bottom: 16px; z-index: 10000; display: flex; align-items: center; gap: 8px;
+        padding: 8px 14px; border-radius: 999px; background: #222; color: #fff; font: 13px/1.2 system-ui, sans-serif;
+        box-shadow: 0 2px 12px rgb(0 0 0 / 0.3); pointer-events: none; }
+      .jg-publish::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #3ecf6e; }
+      .jg-publish.busy::before { background: #f5b730; animation: jg-pulse 1s ease-in-out infinite alternate; }
+      .jg-publish.slow::before { background: #f0603c; }
+      @keyframes jg-pulse { to { opacity: 0.3; } }
     </style>
   </head>
   <body>
@@ -59,6 +72,25 @@
             media.append(img, video);
             row.prepend(media);
           }
+
+          // File and image fields: the editor can't show files kept in project
+          // folders, so load them from the live site. .mov uploads are published as .mp4.
+          for (const box of document.querySelectorAll('.preview.no-thumbnail')) {
+            const path = box.parentElement.querySelector('.value')?.textContent.trim() ?? '';
+            const src = /^\/?(images|video)\//.test(path) ? path.replace(/^\/?/, '/').replace(/\.(mov|m4v|mkv|webm|mxf)$/i, '.mp4') : '';
+            const old = box.querySelector(':scope > .jg-file');
+            if ((old?.dataset.src ?? '') === src) continue;
+            old?.remove();
+            if (!src) continue;
+            const video = /\.mp4$/i.test(src);
+            const el = document.createElement(video ? 'video' : 'img');
+            if (video) Object.assign(el, { muted: true, loop: true, autoplay: true, playsInline: true });
+            el.className = 'jg-file';
+            el.dataset.src = src;
+            el.onerror = () => (el.hidden = true); // not published yet: keep the icon
+            el.src = src;
+            box.append(el);
+          }
         };
 
         let queued = false;
@@ -69,7 +101,7 @@
             queued = false;
             update();
           });
-        }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-label'] });
+        }).observe(document.body, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['aria-label'] });
 
         // Play the clip while the pointer is over a card.
         const mediaOf = (el) => el?.closest?.('.grid-row')?.querySelector(':scope > .jg-media');
@@ -87,6 +119,54 @@
           media.classList.remove('playing');
           media.querySelector('video').pause();
         });
+      })();
+    </script>
+    <script>
+      // Publishing badge: compares the newest commit on GitHub with the one the
+      // live site was built from (/admin/version.json), so the editor shows
+      // whether saved changes are on the website yet.
+      (() => {
+        const REPO = 'designkiller2040/designkiller2040.github.io';
+        const badge = document.createElement('div');
+        badge.className = 'jg-publish';
+        badge.hidden = true;
+        badge.setAttribute('role', 'status');
+        document.body.append(badge);
+        let since = 0;
+
+        const show = (state, text) => {
+          badge.className = `jg-publish ${state}`;
+          badge.textContent = text;
+          badge.hidden = false;
+        };
+
+        const check = async () => {
+          let token;
+          try {
+            token = JSON.parse(localStorage.getItem('sveltia-cms.user'))?.token;
+          } catch {}
+          if (!token) return void (badge.hidden = true);
+          try {
+            const [head, live] = await Promise.all([
+              fetch(`https://api.github.com/repos/${REPO}/commits/main`, {
+                cache: 'no-store',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.sha' },
+              }).then((r) => (r.ok ? r.text() : Promise.reject())),
+              fetch(`/admin/version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => r.json()),
+            ]);
+            if (live.commit === head.trim()) {
+              since = 0;
+              show('live', 'Live: all changes are on the website');
+            } else {
+              since ||= Date.now();
+              if (Date.now() - since > 8 * 60 * 1000) show('slow', 'Publishing is taking longer than usual…');
+              else show('busy', 'Publishing changes… (about 1–2 minutes)');
+            }
+          } catch {}
+        };
+
+        check();
+        setInterval(check, 15000);
       })();
     </script>
   </body>

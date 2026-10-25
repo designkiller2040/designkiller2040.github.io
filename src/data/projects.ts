@@ -41,7 +41,11 @@ export type CreditLabel = (typeof CREDIT_ORDER)[number];
 /** One JSON file per project in src/data/projects/ (one editor entry each), in menu order. */
 const files = import.meta.glob<Project>('./projects/*.json', { eager: true, import: 'default' });
 const groupIndex = (p: Project) => GROUPS.findIndex((g) => g.key === p.group);
-export const projects = Object.values(files).sort(
+/** File paths from the editor sometimes lack the leading slash; add it. */
+const rooted = (src?: string) => (src && !/^(\/|https?:)/.test(src) ? `/${src}` : src);
+export const projects = Object.values(files)
+  .map((p) => ({ ...p, preview: rooted(p.preview), poster: rooted(p.poster), stills: p.stills?.map((s) => rooted(s)!) }))
+  .sort(
   (a, b) => groupIndex(a) - groupIndex(b) || (a.order ?? 999) - (b.order ?? 999) || a.title.localeCompare(b.title),
 );
 
