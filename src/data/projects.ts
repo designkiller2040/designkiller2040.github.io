@@ -67,7 +67,13 @@ export function filmEmbed(p: Project): string | undefined {
   return undefined;
 }
 
-export const previewSrc = (p: Project) => withVersion(p.preview ?? `/video/previews/${p.slug}.mp4`);
+/**
+ * Hover preview clip. Uploads can be .mov or another format; the build turns
+ * those into an .mp4 next to them (scripts/convert-previews.sh), so always
+ * link the .mp4 name.
+ */
+export const previewSrc = (p: Project) =>
+  withVersion(p.preview ?? `/video/previews/${p.slug}.mp4`).replace(/\.(mov|m4v|mkv|webm|mxf)(?=\?|$)/i, '.mp4');
 
 /** Images for a project page: one big thumbnail, then four stills. */
 export const posterSrc = (p: Project) => withVersion(p.poster ?? `/images/work/${p.slug}/poster.jpg`);

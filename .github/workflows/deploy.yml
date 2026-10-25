@@ -25,6 +25,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Preview clips uploaded as .mov etc. are converted during the build (scripts/convert-previews.sh).
+      - name: Install ffmpeg
+        run: command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+      - uses: actions/cache@v4
+        with:
+          path: .cache/previews
+          key: previews-${{ hashFiles('public/video/previews/**') }}
+          restore-keys: previews-
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
