@@ -13,8 +13,10 @@ const poster = withVersion(home.poster);
 <Base theme="dark">
   <link slot="head" rel="preload" href={poster} as="image" />
   <main class="hero grid">
-    <div class="stage" aria-hidden="true">
-      <!-- The reel is used as exported, no re-encoding. -->
+    <div class="stage" aria-hidden="true" style={`background-image: url("${poster}")`}>
+      <!-- The reel is used as exported, no re-encoding. It stays invisible
+           (the still behind it shows) until it is actually playing, so
+           Safari's own play button never flashes up while it loads. -->
       <video class="reel" poster={poster} autoplay muted loop playsinline preload="auto">
         <source src={reel} type="video/mp4" />
       </video>
@@ -61,7 +63,14 @@ const poster = withVersion(home.poster);
   .stage {
     position: absolute;
     inset: 0;
-    background: #000;
+    background: #000 center / cover no-repeat;
+  }
+  .stage .reel {
+    opacity: 0;
+    transition: opacity 200ms linear;
+  }
+  .stage .reel.playing {
+    opacity: 1;
   }
   .stage :global(video),
   .stage :global(.preview) {
@@ -153,6 +162,9 @@ const poster = withVersion(home.poster);
   const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-preview]')];
   const clips = new Map<string, HTMLVideoElement>();
   coverWithCanvas(reel);
+  const showReel = () => reel.classList.add('playing');
+  if (!reel.paused && reel.readyState > 2) showReel();
+  else reel.addEventListener('playing', showReel, { once: true });
   let hovered: HTMLVideoElement | null = null;
 
   // Some browsers (Safari in Low Power Mode, some embedded viewers) block

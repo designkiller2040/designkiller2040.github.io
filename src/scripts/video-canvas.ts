@@ -2,10 +2,12 @@
 // the controls attribute, and on some setups CSS can't hide them. In Safari
 // we lay a <canvas> over each video and paint the frames onto it, so the
 // buttons stay underneath, out of sight. Other browsers keep the plain
-// video. (Add ?canvas to a page URL to try the canvas in any browser.)
+// video. Every browser on iPhone and iPad is Safari underneath, so they
+// get the canvas too. (Add ?canvas to a page URL to try the canvas in any browser.)
 
 const useCanvas =
   /^((?!chrome|chromium|crios|fxios|edg|android).)*safari/i.test(navigator.userAgent) ||
+  /iP(hone|ad|od)/.test(navigator.userAgent) ||
   new URLSearchParams(location.search).has('canvas');
 
 export function coverWithCanvas(video: HTMLVideoElement) {
