@@ -89,8 +89,8 @@
                 .map((p) => {
                   const live = published.get(p.slug);
                   const preview = rooted(p.preview);
-                  const poster = rooted(p.poster) ?? `/images/work/${p.slug}/poster.jpg`;
-                  return [p.title, { slug: p.slug, preview: preview && fileURL(preview, live?.preview, true), poster: fileURL(poster, live?.poster) }];
+                  const poster = rooted(p.poster);
+                  return [p.title, { slug: p.slug, preview: preview && fileURL(preview, live?.preview, true), poster: poster ? fileURL(poster, live?.poster) : live?.poster }];
                 }),
             );
             fromGitHub = true;
@@ -123,7 +123,9 @@
             const media = document.createElement('div');
             media.className = 'jg-media';
             media.dataset.key = key;
-            const img = Object.assign(document.createElement('img'), { src: card.poster, alt: '', loading: 'lazy' });
+            const img = Object.assign(document.createElement('img'), { alt: '', loading: 'lazy' });
+            img.onerror = () => (img.hidden = true);
+            if (card.poster) img.src = card.poster;
             // The picture on the card is the clip's frame at 1 second; the thumbnail image shows until it loads.
             const video = Object.assign(document.createElement('video'), { muted: true, loop: true, playsInline: true, preload: 'metadata' });
             video.dataset.src = card.preview;
