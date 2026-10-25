@@ -76,11 +76,21 @@ export function filmEmbed(p: Project): string | undefined {
  * those into an .mp4 next to them (scripts/convert-previews.sh), so always
  * link the .mp4 name.
  */
-export const previewSrc = (p: Project) =>
-  withVersion(p.preview ?? `/video/previews/${p.slug}.mp4`).replace(/\.(mov|m4v|mkv|webm|mxf)(?=\?|$)/i, '.mp4');
+export const previewSrc = (p: Project) => {
+  const clip = p.preview ?? `/video/previews/${p.slug}.mp4`;
+  if (!existsSync(`public${clip}`)) return undefined; // no clip: no hover preview
+  return withVersion(clip).replace(/\.(mov|m4v|mkv|webm|mxf)(?=\?|$)/i, '.mp4');
+};
 
-/** Images for a project page: one big thumbnail, then four stills. */
-export const posterSrc = (p: Project) => withVersion(p.poster ?? `/images/work/${p.slug}/poster.jpg`);
+/**
+ * Big thumbnail for a project page: the frame at 1 second of its preview clip
+ * (made by scripts/preview-frames.sh for HD clips), else the "Big thumbnail" image.
+ */
+export const posterSrc = (p: Project) => {
+  const clip = p.preview ?? `/video/previews/${p.slug}.mp4`;
+  const frame = `/images/frames/${clip.split('/').pop()!.replace(/\.[^.]+$/, '')}.jpg`;
+  return withVersion(existsSync(`public${frame}`) ? frame : (p.poster ?? `/images/work/${p.slug}/poster.jpg`));
+};
 
 /**
  * Adds a short fingerprint of the file to its URL (?v=...), so when an image
