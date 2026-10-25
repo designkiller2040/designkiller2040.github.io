@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Projects · Jonah George</title>
+    <!--
+      Projects list 2.0: every project as a card, by group, in menu order.
+      Clicking a card opens the project editor (/admin/project/). Dragging cards
+      within a group changes their Position in menu (saved in one commit).
+      /admin/ sends people here instead of the old list (see the redirect script there).
+    -->
+    <style>
+      :root {
+        --bg: #fff;
+        --fg: #111;
+        --muted: #6b6b6b;
+        --faint: #8a8a8a;
+        --line: #e6e6e6;
+        --field: #dcdcdc;
+        --media: #dadada;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.4 -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+        letter-spacing: 0.01em;
+      }
+      a { color: inherit; }
+      h1, h2, p { margin: 0; }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 14px;
+        border: 1px solid var(--field);
+        border-radius: 8px;
+        background: var(--bg);
+        font: inherit;
+        font-size: 13px;
+        color: var(--fg);
+        text-decoration: none;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn:hover { border-color: #b5b5b5; }
+      .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+      .btn.ghost:hover { color: var(--fg); }
+      .btn.dark { background: #111; border-color: #111; color: #fff; }
+      .btn.dark:disabled { background: #e6e6e6; border-color: #e6e6e6; color: #8a8a8a; cursor: default; }
+      svg { flex-shrink: 0; }
+
+      header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+      .bar { max-width: 1280px; margin: 0 auto; padding: 14px 48px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+      .bar > div { display: flex; align-items: center; gap: 16px; min-width: 0; }
+      .brand { font-size: 16px; font-weight: 600; white-space: nowrap; }
+      .sep { width: 1px; height: 20px; background: var(--line); }
+      nav { display: flex; gap: 4px; }
+      nav a { height: 32px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 8px; font-size: 13px; color: var(--muted); text-decoration: none; }
+      nav a:hover { color: var(--fg); }
+      nav a[aria-current='page'] { background: #f0f0f0; color: var(--fg); }
+      .pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; white-space: nowrap; }
+      .pill::before { content: ''; width: 6px; height: 6px; border-radius: 3px; background: currentColor; }
+      .pill.live { background: #eef6ef; color: #1f6b33; }
+      .pill.busy { background: #fdf4e3; color: #8a5a00; }
+      .pill.busy::before { animation: pulse 1s ease-in-out infinite alternate; }
+      @keyframes pulse { to { opacity: 0.3; } }
+      .actions { gap: 8px !important; }
+      #state { font-size: 12px; color: var(--muted); margin-right: 8px; }
+      #state.err { color: #b42318; }
+      .search { position: relative; }
+      .search svg { position: absolute; left: 10px; top: 11px; color: var(--faint); }
+      .search input { height: 36px; width: 200px; padding: 0 12px 0 32px; border: 1px solid var(--field); border-radius: 8px; font: inherit; font-size: 13px; color: var(--fg); background: var(--bg); }
+      .search input:focus { outline: 2px solid #111; outline-offset: -1px; }
+
+      main { max-width: 1280px; margin: 0 auto; padding: 48px 48px 96px; display: flex; flex-direction: column; gap: 64px; }
+      section { display: flex; flex-direction: column; gap: 20px; }
+      .head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+      h2 { font-size: 22px; font-weight: 600; }
+      h2 span { margin-left: 8px; font-size: 14px; font-weight: 400; color: var(--faint); }
+      .note { font-size: 13px; color: var(--muted); }
+
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 32px 24px; }
+      .card { display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit; border-radius: 10px; }
+      .card:focus-visible { outline: 2px solid #111; outline-offset: 4px; }
+      .media { position: relative; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--media); }
+      .media img, .media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      .media video { opacity: 0; transition: opacity 0.2s; }
+      .card.playing .media video { opacity: 1; }
+      .media .empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #9a9a9a; }
+      .num { position: absolute; top: 10px; left: 10px; z-index: 1; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; background: rgb(17 17 17 / 0.72); color: #fff; font-size: 11px; }
+      .title { font-size: 14px; font-weight: 500; line-height: 1.3; }
+      .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -4px; }
+      .tag { font-size: 11px; color: var(--muted); }
+      .tag.missing { color: #8a5a00; }
+      .card.dragging { opacity: 0.35; }
+      .card.over .media { outline: 2px solid #111; outline-offset: 3px; }
+      .new { aspect-ratio: 16 / 9; border: 1px dashed #bdbdbd; border-radius: 10px; background: #f8f8f8; font-size: 13px; color: #444; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+      .new:hover { border-color: #888; }
+
+      .center { max-width: 480px; margin: 120px auto; padding: 0 16px; text-align: center; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+      .foot { flex-direction: row; justify-content: flex-end; padding-top: 32px; border-top: 1px solid var(--line); }
+
+      @media (max-width: 700px) {
+        .bar { padding: 12px 16px; }
+        main { padding: 32px 16px 64px; gap: 48px; }
+        .search input { width: 140px; }
+        .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="bar">
+        <div>
+          <h1 class="brand">Jonah George</h1>
+          <span class="sep"></span>
+          <nav aria-label="Sections">
+            <a href="/admin/projects/" aria-current="page">Projects</a>
+            <a href="/admin/#/collections/homepage/entries/home">Showreel</a>
+            <a href="/admin/upload/">Upload a film</a>
+          </nav>
+          <span id="live" class="pill" hidden></span>
+        </div>
+        <div class="actions">
+          <span id="state" role="status"></span>
+          <button id="saveOrder" class="btn dark" type="button" hidden>Save order</button>
+          <label class="search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+            <input id="q" type="search" placeholder="Search projects" aria-label="Search projects" />
+          </label>
+          <a class="btn dark" href="/admin/project/?new=1">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            New project
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <div id="message" class="center" hidden></div>
+    <main id="list" hidden></main>
+
+    <script>
+      const REPO = 'designkiller2040/designkiller2040.github.io';
+      const RAW = `https://raw.githubusercontent.com/${REPO}/main/public`;
+      const DIR = 'src/data/projects';
+      const GROUPS = [
+        ['commercial', 'commercial works'],
+        ['music', 'music videos'],
+        ['concept', 'concept videos'],
+      ];
+      const $ = (id) => document.getElementById(id);
+      let token = '';
+      try {
+        token = JSON.parse(localStorage.getItem('sveltia-cms.user') || '{}').token || '';
+      } catch {}
+      sessionStorage.removeItem('jg-classic');
+
+      async function gh(p, init = {}) {
+        const res = await fetch(`https://api.github.com/${p}`, {
+          cache: 'no-store',
+          ...init,
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', ...(init.body && { 'Content-Type': 'application/json' }) },
+          body: init.body && JSON.stringify(init.body),
+        });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok || out.errors) throw Object.assign(new Error(out.message || out.errors?.[0]?.message || `GitHub said ${res.status}`), { status: res.status });
+        return out;
+      }
+      const el = (tag, props = {}, ...kids) => {
+        const e = Object.assign(document.createElement(tag), props);
+        for (const k of kids) if (k != null) e.append(k);
+        return e;
+      };
+      const icon = (html, size = 14) => {
+        const t = document.createElement('template');
+        t.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${html}</svg>`;
+        return t.content.firstChild;
+      };
+
+      // ---------- Data ----------
+      let projects = []; // { file, sha?, data, text }
+      let published = new Map(); // slug -> { preview, poster } on the live site
+      let saved = ''; // order as last saved, to know when "Save order" is needed
+
+      const rooted = (p) => (p ? p.replace(/^\/?/, '/') : p);
+      const bare = (u) => u?.split('?')[0];
+      // A file's URL: the live site's copy when that exact file is published, else GitHub's.
+      const fileURL = (path, live, video) => {
+        const site = video ? path.replace(/\.(mov|m4v|mkv|webm|mxf)$/i, '.mp4') : path;
+        return bare(live) === site ? live : `${RAW}${path}`;
+      };
+
+      async function load() {
+        const [list, tree] = await Promise.all([
+          fetch('/admin/cards.json', { cache: 'no-cache' }).then((r) => r.json()).catch(() => []),
+          gh('graphql', {
+            method: 'POST',
+            body: {
+              query: `{ repository(owner: "${REPO.split('/')[0]}", name: "${REPO.split('/')[1]}") {
+                object(expression: "main:${DIR}") { ... on Tree { entries { name object { ... on Blob { text } } } } } } }`,
+            },
+          }),
+        ]);
+        published = new Map(list.map((c) => [c.slug, c]));
+        projects = tree.data.repository.object.entries
+          .filter((e) => e.name.endsWith('.json'))
+          .map((e) => ({ file: e.name, text: e.object.text, data: JSON.parse(e.object.text) }));
+        sortAll();
+        saved = orderKey();
+      }
+
+      const groupIndex = (p) => GROUPS.findIndex(([k]) => k === p.data.group);
+      function sortAll() {
+        projects.sort((a, b) => groupIndex(a) - groupIndex(b) || (a.data.order ?? 999) - (b.data.order ?? 999) || a.data.title.localeCompare(b.data.title));
+      }
+      const orderKey = () => projects.map((p) => `${p.file}:${p.data.order ?? ''}`).join('|');
+
+      // ---------- Cards ----------
+      function card(p, n) {
+        const d = p.data;
+        const live = published.get(d.slug);
+        const preview = rooted(d.preview);
+        const poster = live?.poster ?? (rooted(d.poster) ? `${RAW}${rooted(d.poster)}` : '');
+        const clip = preview ? fileURL(preview, live?.preview, true) : live?.preview;
+
+        const a = el('a', { className: 'card', href: `/admin/project/?slug=${encodeURIComponent(d.slug)}`, draggable: true });
+        const media = el('div', { className: 'media' });
+        if (poster) {
+          const img = el('img', { alt: '', loading: 'lazy', src: poster });
+          img.onerror = () => img.remove();
+          media.append(img);
+        } else if (!clip) {
+          media.append(el('div', { className: 'empty' }, icon('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>', 28)));
+        }
+        if (clip) {
+          const video = el('video', { muted: true, loop: true, playsInline: true, preload: 'none' });
+          video.dataset.src = clip;
+          media.append(video);
+          if (!poster) {
+            // No still: show the clip's frame at 1 s.
+            video.preload = 'metadata';
+            setSource(video).then(() => (video.style.opacity = 1));
+            video.addEventListener('loadedmetadata', () => (video.currentTime = Math.min(1, video.duration / 2)), { once: true });
+          }
+        }
+        media.append(el('span', { className: 'num', textContent: d.order ?? n, title: 'Position in menu' }));
+
+        const tags = el('div', { className: 'tags' });
+        const tag = (text, missing) => tags.append(el('span', { className: `tag${missing ? ' missing' : ''}`, textContent: text }));
+        if (d.stream) tag('Cloudflare film');
+        else if (d.vimeo) tag('Vimeo film');
+        else tag('No film yet', true);
+        if (!clip) tag('No preview', true);
+        if (d.todo) tag('Note', true);
+
+        a.append(media, el('span', { className: 'title', textContent: d.title }), tags);
+        a.addEventListener('mouseenter', () => play(a, true));
+        a.addEventListener('mouseleave', () => play(a, false));
+        a.addEventListener('focus', () => play(a, true));
+        a.addEventListener('blur', () => play(a, false));
+        drag(a, p);
+        return a;
+      }
+
+      // GitHub serves files without a video type, so a clip that isn't published yet is played from memory.
+      async function setSource(video) {
+        if (video.src || !video.dataset.src) return;
+        const src = video.dataset.src;
+        if (!src.startsWith(RAW)) return void (video.src = src);
+        try {
+          const blob = await (await fetch(src)).blob();
+          video.src = URL.createObjectURL(new Blob([blob], { type: /\.mov$/i.test(src) ? 'video/quicktime' : 'video/mp4' }));
+        } catch {}
+      }
+      async function play(card, on) {
+        const video = card.querySelector('video');
+        if (!video) return;
+        card.classList.toggle('playing', on);
+        if (on) {
+          await setSource(video);
+          if (card.classList.contains('playing')) video.play().catch(() => {});
+        } else {
+          video.pause();
+          if (video.style.opacity && video.duration) video.currentTime = Math.min(1, video.duration / 2);
+        }
+      }
+
+      // ---------- Drag to reorder (within a group) ----------
+      let dragging = null;
+      function drag(a, p) {
+        a.addEventListener('dragstart', (e) => {
+          dragging = p;
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', p.data.title);
+          requestAnimationFrame(() => a.classList.add('dragging'));
+        });
+        a.addEventListener('dragend', () => {
+          a.classList.remove('dragging');
+          dragging = null;
+        });
+        a.addEventListener('dragover', (e) => {
+          if (!dragging || dragging === p || dragging.data.group !== p.data.group) return;
+          e.preventDefault();
+          a.classList.add('over');
+        });
+        a.addEventListener('dragleave', () => a.classList.remove('over'));
+        a.addEventListener('drop', (e) => {
+          a.classList.remove('over');
+          if (!dragging || dragging === p || dragging.data.group !== p.data.group) return;
+          e.preventDefault();
+          const group = projects.filter((x) => x.data.group === p.data.group);
+          group.splice(group.indexOf(dragging), 1);
+          group.splice(group.indexOf(p) + (indexIn(dragging) < indexIn(p) ? 1 : 0), 0, dragging);
+          group.forEach((x, i) => (x.data.order = i + 1));
+          sortAll();
+          render();
+        });
+      }
+      const indexIn = (p) => projects.filter((x) => x.data.group === p.data.group).indexOf(p);
+
+      // ---------- Render ----------
+      function render() {
+        const q = $('q').value.trim().toLowerCase();
+        const main = $('list');
+        const sections = GROUPS.map(([key, label]) => {
+          const all = projects.filter((p) => p.data.group === key);
+          const shown = all.filter((p) => !q || p.data.title.toLowerCase().includes(q));
+          if (q && !shown.length) return null;
+          const grid = el('div', { className: 'grid' }, ...shown.map((p) => card(p, all.indexOf(p) + 1)));
+          if (!q) grid.append(el('a', { className: 'new', href: `/admin/project/?new=1&group=${key}` }, icon('<path d="M12 5v14M5 12h14"/>', 20), 'New project'));
+          const head = el('div', { className: 'head' }, el('h2', {}, label, el('span', { textContent: String(all.length) })));
+          if (!q && all.length > 1) head.append(el('p', { className: 'note', textContent: 'Drag cards to change the order in the menu.' }));
+          return el('section', {}, head, grid);
+        });
+        const foot = el('section', { className: 'foot' }, el('a', { className: 'btn ghost', href: '/admin/#/collections/projects', textContent: 'Open old list', onclick: () => sessionStorage.setItem('jg-classic', '1') }));
+        main.replaceChildren(...sections.filter(Boolean), foot);
+        if (q && !sections.some(Boolean)) main.prepend(el('p', { className: 'note', textContent: `No project matches “${$('q').value}”.` }));
+        const changed = orderKey() !== saved;
+        $('saveOrder').hidden = !changed;
+        setState(changed ? 'Order changed, not saved yet' : '');
+      }
+      $('q').addEventListener('input', render);
+
+      function setState(text, error = false) {
+        $('state').textContent = text;
+        $('state').classList.toggle('err', error);
+      }
+      addEventListener('beforeunload', (e) => {
+        if (orderKey() !== saved) e.preventDefault();
+      });
+
+      // Saves the new positions: every project whose number changed, in one commit.
+      $('saveOrder').onclick = async () => {
+        const changed = projects.filter((p) => JSON.parse(p.text).order !== p.data.order);
+        if (!changed.length) return;
+        $('saveOrder').disabled = true;
+        setState('Saving…');
+        try {
+          // Start from the files as they are now on GitHub, so other changes made meanwhile aren't undone.
+          const repo = `repos/${REPO}`;
+          for (let attempt = 0; ; attempt++) {
+            const head = (await gh(`${repo}/git/ref/heads/main`)).object.sha;
+            const base = (await gh(`${repo}/git/commits/${head}`)).tree.sha;
+            const entries = [];
+            for (const p of changed) {
+              const file = await gh(`${repo}/contents/${DIR}/${p.file}?ref=${head}`);
+              const data = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(file.content.replace(/\n/g, '')), (c) => c.charCodeAt(0))));
+              data.order = p.data.order;
+              p.next = JSON.stringify(data, null, 2) + '\n';
+              entries.push({ path: `${DIR}/${p.file}`, mode: '100644', type: 'blob', content: p.next });
+            }
+            const tree = await gh(`${repo}/git/trees`, { method: 'POST', body: { base_tree: base, tree: entries } });
+            const c = await gh(`${repo}/git/commits`, { method: 'POST', body: { message: 'Reorder projects in the menu', tree: tree.sha, parents: [head] } });
+            try {
+              await gh(`${repo}/git/refs/heads/main`, { method: 'PATCH', body: { sha: c.sha, force: false } });
+              break;
+            } catch (e) {
+              if (e.status !== 422 || attempt >= 2) throw e;
+            }
+          }
+          for (const p of changed) p.text = p.next;
+          saved = orderKey();
+          render();
+          setState('Saved. The website updates in about 2 minutes.');
+          checkLive();
+        } catch (e) {
+          setState(e.message || 'Saving failed. Try again.', true);
+        } finally {
+          $('saveOrder').disabled = false;
+        }
+      };
+
+      // ---------- Live badge ----------
+      let since = 0;
+      async function checkLive() {
+        try {
+          const [head, live] = await Promise.all([
+            fetch(`https://api.github.com/repos/${REPO}/commits/main`, { cache: 'no-store', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.sha' } }).then((r) => (r.ok ? r.text() : Promise.reject())),
+            fetch(`/admin/version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => r.json()),
+          ]);
+          const pill = $('live');
+          pill.hidden = false;
+          if (live.commit === head.trim()) {
+            since = 0;
+            pill.className = 'pill live';
+            pill.textContent = 'Live';
+            pill.title = 'All saved changes are on the website';
+          } else {
+            since ||= Date.now();
+            pill.className = 'pill busy';
+            pill.textContent = Date.now() - since > 8 * 60 * 1000 ? 'Publishing (slow)' : 'Publishing…';
+            pill.title = 'Saved changes appear on the website in about 2 minutes';
+          }
+        } catch {}
+      }
+
+      async function start() {
+        const fail = (text, link) => {
+          const box = $('message');
+          box.hidden = false;
+          box.replaceChildren(el('p', { textContent: text }));
+          if (link) box.append(el('a', { className: 'btn', href: link[1], textContent: link[0] }));
+        };
+        if (!token) return fail('Sign in to the editor first.', ['Go to sign in', '/admin/']);
+        try {
+          await load();
+        } catch (e) {
+          return fail(`Couldn't load the projects: ${e.message}`, ['Try again', location.href]);
+        }
+        render();
+        $('list').hidden = false;
+        checkLive();
+        setInterval(checkLive, 15000);
+      }
+      start();
+    </script>
+  </body>
+</html>

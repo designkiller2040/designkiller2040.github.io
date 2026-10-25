@@ -170,7 +170,7 @@
     <header>
       <div class="bar">
         <div>
-          <a class="back" href="/admin/#/collections/projects">
+          <a class="back" href="/admin/projects/">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
             Projects
           </a>
@@ -1048,14 +1048,14 @@
       $('save').onclick = save;
 
       $('delete').onclick = async () => {
-        if (isNew && !sha) return void (location.href = '/admin/#/collections/projects');
+        if (isNew && !sha) return void (location.href = '/admin/projects/');
         if (!confirm(`Delete “${model.title}” from the website? Its uploaded files stay in the repo.`)) return;
         try {
           setState('Deleting…');
           await commit(`Delete project “${model.slug}”`, [{ path, mode: '100644', type: 'blob', sha: null }]);
           savedSnapshot = snapshot();
           sha = '';
-          location.href = '/admin/#/collections/projects';
+          location.href = '/admin/projects/';
         } catch (e) {
           setState(e.message, true);
         }
@@ -1100,15 +1100,15 @@
 
       async function start() {
         if (!token) return fail('Sign in to the editor first, then open the project again.', ['Go to the editor', '/admin/']);
-        if (!isNew && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return fail('No project chosen.', ['Back to projects', '/admin/#/collections/projects']);
-        let data = { group: 'commercial' };
+        if (!isNew && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return fail('No project chosen.', ['Back to projects', '/admin/projects/']);
+        let data = { group: GROUPS.some(([k]) => k === params.get('group')) ? params.get('group') : 'commercial' };
         if (!isNew) {
           try {
             const file = await gh(`contents/${path}?ref=main`);
             sha = file.sha;
             data = JSON.parse(decode(file.content));
           } catch (e) {
-            return fail(e.status === 404 ? 'This project doesn’t exist (it may have been deleted or renamed).' : `Couldn't load the project: ${e.message}`, ['Back to projects', '/admin/#/collections/projects']);
+            return fail(e.status === 404 ? 'This project doesn’t exist (it may have been deleted or renamed).' : `Couldn't load the project: ${e.message}`, ['Back to projects', '/admin/projects/']);
           }
         }
         original = data;
