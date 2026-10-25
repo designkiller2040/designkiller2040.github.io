@@ -31,7 +31,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .cache
-          key: previews-${{ hashFiles('public/video/previews/**') }}
+          key: previews-${{ hashFiles('public/video/previews/**', 'public/images/uploads/**') }}
           restore-keys: previews-
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3

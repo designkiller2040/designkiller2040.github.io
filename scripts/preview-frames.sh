@@ -9,14 +9,13 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SRC="$ROOT/public/video/previews"
 OUT="$ROOT/public/images/frames"
 CACHE="$ROOT/.cache/frames"
 mkdir -p "$OUT" "$CACHE"
 rm -f "$OUT"/*.jpg
 
 shopt -s nullglob nocaseglob
-for f in "$SRC"/*.{mp4,mov,m4v,mkv,webm,mxf}; do
+for f in "$ROOT"/public/{video/previews,images/uploads}/*.{mp4,mov,m4v,mkv,webm,mxf}; do
   name="$(basename "$f")"
   height="$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$f" || echo 0)"
   [ "${height:-0}" -ge 720 ] || continue
