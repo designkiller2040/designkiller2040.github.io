@@ -112,7 +112,10 @@ collections:
             accept: video/mp4
             media_folder: public/video/previews
             public_folder: /video/previews
-            hint: 'Short silent loop, MP4 (H.264), under 20 MB. Plays when hovering the title on the homepage.'
+            media_library:
+              config:
+                max_file_size: 40000000 # 40 MB
+            hint: 'Short silent loop, MP4 (H.264), under 40 MB. Plays when hovering the title on the homepage.'
           - name: poster
             label: Big thumbnail
             widget: image
