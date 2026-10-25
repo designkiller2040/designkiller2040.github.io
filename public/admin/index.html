@@ -30,6 +30,15 @@
       .jg-publish.busy::before { background: #f5b730; animation: jg-pulse 1s ease-in-out infinite alternate; }
       .jg-publish.slow::before { background: #f0603c; }
       @keyframes jg-pulse { to { opacity: 0.3; } }
+
+      /* "Upload film" button under the Cloudflare field, and its window (see the last script). */
+      .jg-film { display: flex; align-items: center; gap: 12px; margin-top: 8px; font: 13px/1.3 system-ui, sans-serif; }
+      .jg-film button { padding: 6px 14px; border: 0; border-radius: 6px; background: #2f5cff; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+      .jg-film span { opacity: 0.7; }
+      .jg-film-modal { position: fixed; inset: 0; z-index: 10001; display: grid; place-items: center; background: rgb(0 0 0 / 0.6); }
+      .jg-film-modal > div { position: relative; width: min(600px, calc(100vw - 32px)); height: min(560px, calc(100vh - 32px)); border-radius: 12px; overflow: hidden; background: #111; }
+      .jg-film-modal iframe { width: 100%; height: 100%; border: 0; }
+      .jg-film-modal button { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border: 0; border-radius: 50%; background: #333; color: #fff; font-size: 18px; cursor: pointer; }
     </style>
   </head>
   <body>
@@ -248,6 +257,55 @@
 
         check();
         setInterval(check, 15000);
+      })();
+    </script>
+    <script>
+      // "Upload film" on a project: opens the upload page (/admin/upload/) in a
+      // window over the editor. When Cloudflare has the film ready, its ID is
+      // put into the Cloudflare field, and saving the project publishes it.
+      (() => {
+        let target = null; // the Cloudflare field's input that gets the ID
+
+        const open = (input) => {
+          target = input;
+          const slug = document.querySelector('[data-key-path="slug"] input')?.value || location.hash.split('/').pop();
+          const modal = document.createElement('div');
+          modal.className = 'jg-film-modal';
+          modal.innerHTML = '<div><iframe title="Upload film"></iframe><button type="button" aria-label="Close">×</button></div>';
+          modal.querySelector('iframe').src = `/admin/upload/?embed=1&slug=${encodeURIComponent(slug)}`;
+          modal.querySelector('button').onclick = () => {
+            const busy = /Step [12] of/.test(modal.querySelector('iframe').contentDocument?.getElementById('status')?.textContent ?? '');
+            if (!busy || confirm('The upload is still running. Closing stops it. Close anyway?')) modal.remove();
+          };
+          document.body.append(modal);
+        };
+
+        window.addEventListener('message', (e) => {
+          if (e.origin !== location.origin || e.data?.type !== 'jg-film' || !/^[0-9a-f]{32}$/i.test(e.data.id)) return;
+          if (target?.isConnected) {
+            // Set the value the way typing would, so the editor notices the change.
+            Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(target, e.data.id);
+            target.dispatchEvent(new Event('input', { bubbles: true }));
+            target.dispatchEvent(new Event('change', { bubbles: true }));
+            const note = target.closest('section')?.querySelector('.jg-film span');
+            if (note) note.textContent = 'Film uploaded. Click Save to publish it.';
+          }
+          setTimeout(() => document.querySelector('.jg-film-modal')?.remove(), 2500);
+        });
+
+        const add = () => {
+          for (const field of document.querySelectorAll('section[data-key-path="stream"]')) {
+            if (field.querySelector('.jg-film')) continue;
+            const input = field.querySelector('input');
+            if (!input) continue;
+            const row = document.createElement('div');
+            row.className = 'jg-film';
+            row.innerHTML = '<button type="button">Upload film</button><span>Videos up to 1 GB. H.264 MP4 works best (not ProRes).</span>';
+            row.querySelector('button').onclick = () => open(input);
+            field.querySelector('.field-wrapper')?.after(row);
+          }
+        };
+        new MutationObserver(add).observe(document.body, { childList: true, subtree: true });
       })();
     </script>
   </body>
