@@ -63,6 +63,8 @@ collections:
     identifier_field: title
     slug: '{{fields.slug}}'
     summary: '{{title}}'
+    # Turns on Grid View. /admin/index.html swaps these thumbnails for the preview clip cards (from /admin/cards.json).
+    thumbnail: poster
     sortable_fields:
       fields: [order, title]
       default: { field: order, direction: ascending }
