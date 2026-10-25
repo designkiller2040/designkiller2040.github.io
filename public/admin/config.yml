@@ -13,8 +13,9 @@ backend:
 
 site_url: https://designkiller2040.github.io
 app_title: Jonah George
-media_folder: public/images/uploads
-public_folder: /images/uploads
+# Global Assets = the preview clips folder, so bulk uploads on the Assets page land with the other clips.
+media_folder: public/video/previews
+public_folder: /video/previews
 
 media_libraries:
   default:
