@@ -90,7 +90,7 @@
                   const live = published.get(p.slug);
                   const preview = rooted(p.preview);
                   const poster = rooted(p.poster);
-                  return [p.title, { slug: p.slug, preview: preview && fileURL(preview, live?.preview, true), poster: poster ? fileURL(poster, live?.poster) : live?.poster }];
+                  return [p.title, { slug: p.slug, preview: preview ? fileURL(preview, live?.preview, true) : live?.preview, poster: poster ? fileURL(poster, live?.poster) : live?.poster }];
                 }),
             );
             fromGitHub = true;

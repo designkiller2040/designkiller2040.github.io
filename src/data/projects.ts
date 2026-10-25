@@ -22,6 +22,8 @@ export interface Project {
   todo?: string;
   /** Uploaded files (paths inside public/). Missing ones fall back to the slug-based names below. */
   preview?: string;
+  /** Where the automatic hover clip starts in the Cloudflare film, in seconds (used when no clip is uploaded). */
+  previewStart?: number;
   poster?: string;
   stills?: string[];
 }
@@ -76,8 +78,17 @@ export function filmEmbed(p: Project): string | undefined {
  * those into an .mp4 next to them (scripts/convert-previews.sh), so always
  * link the .mp4 name.
  */
+/**
+ * The project's clip: the uploaded one, else the 3 seconds the build cuts from
+ * its Cloudflare film (scripts/stream-previews.sh), else the old slug-based name.
+ */
+const clipOf = (p: Project) => {
+  const auto = `/video/previews/auto/${p.slug}.mp4`;
+  return p.preview ?? (existsSync(`public${auto}`) ? auto : `/video/previews/${p.slug}.mp4`);
+};
+
 export const previewSrc = (p: Project) => {
-  const clip = p.preview ?? `/video/previews/${p.slug}.mp4`;
+  const clip = clipOf(p);
   if (!existsSync(`public${clip}`)) return undefined; // no clip: no hover preview
   return withVersion(clip).replace(/\.(mov|m4v|mkv|webm|mxf)(?=\?|$)/i, '.mp4');
 };
@@ -87,7 +98,7 @@ export const previewSrc = (p: Project) => {
  * (made by scripts/preview-frames.sh for HD clips), else the "Big thumbnail" image, else none.
  */
 export const posterSrc = (p: Project) => {
-  const clip = p.preview ?? `/video/previews/${p.slug}.mp4`;
+  const clip = clipOf(p);
   const frame = `/images/frames/${clip.split('/').pop()!.replace(/\.[^.]+$/, '')}.jpg`;
   if (existsSync(`public${frame}`)) return withVersion(frame);
   const poster = p.poster ?? `/images/work/${p.slug}/poster.jpg`;

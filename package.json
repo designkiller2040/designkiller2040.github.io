@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "build": "bash scripts/preview-frames.sh && astro build && bash scripts/convert-previews.sh",
+    "build": "bash scripts/stream-previews.sh && bash scripts/preview-frames.sh && astro build && bash scripts/convert-previews.sh",
     "preview": "astro preview"
   },
   "dependencies": {
