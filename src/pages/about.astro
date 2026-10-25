@@ -4,41 +4,14 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 
 const TITLE = 'film director from NY, based worldwide, filmed mood videos, video clips, personal videos, commercials';
-const words = TITLE.split(' ');
 ---
 
 <Base title="About">
   <main class="about grid">
     <Header current="about" />
 
-    <!--
-      The title animation plays once per visit. Until it has played, the photo
-      and bio stay hidden (set here, before they appear, so they never flash).
-    -->
-    <script is:inline>
-      try {
-        var reload = (performance.getEntriesByType('navigation')[0] || {}).type === 'reload';
-        if ((reload || !sessionStorage.getItem('about-intro')) && !matchMedia('(prefers-reduced-motion: reduce)').matches)
-          document.documentElement.classList.add('about-intro');
-      } catch (e) {}
-    </script>
-
-    <!-- Animated title from the test page: letters fly in and dodge the mouse. -->
     <div class="stage">
-      <h1 class="scatter box" aria-label={TITLE}>
-        {
-          words.map((w, i) => (
-            <>
-              <span class="word" aria-hidden="true">
-                {[...w].map((ch) => (
-                  <span class="ch">{ch}</span>
-                ))}
-              </span>
-              {i < words.length - 1 && ' '}
-            </>
-          ))
-        }
-      </h1>
+      <h1 class="title box">{TITLE}</h1>
     </div>
 
     <!-- TODO: swap in the original photo. This one is cropped from a screenshot. -->
@@ -70,7 +43,7 @@ const words = TITLE.split(' ');
 
 <style>
   /*
-   * Everything is centred in one column. The animated title sits mid-screen,
+   * Everything is centred in one column. The title sits mid-screen,
    * then the photo, then the bio. Title and bio share the same text
    * box (.box: same width, same position), both justified.
    */
@@ -93,48 +66,16 @@ const words = TITLE.split(' ');
     display: grid;
     padding-top: calc(50svh - 66 * var(--rm));
   }
-  .scatter {
+  .title {
     position: relative;
     margin: 0;
     font-size: calc(15.1 * var(--rm)); /* 24px on alona's MacBook */
     line-height: 1.05;
     font-weight: 700;
     text-indent: 3.4em;
-    user-select: none;
-    cursor: default;
   }
-  .scatter :global(*) {
+  .title {
     letter-spacing: -0.06em;
-  }
-  .word {
-    display: inline-block;
-    white-space: nowrap;
-    text-indent: 0;
-  }
-  .ch {
-    display: inline-block;
-    will-change: transform;
-  }
-
-  /*
-   * Once the title animation has finished, the photo comes into focus
-   * (fades in from invisible while going from heavy blur to sharp) and the
-   * bio fades in.
-   */
-  .photo {
-    transition:
-      opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1),
-      filter 2.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .bio {
-    transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  :global(.about-intro) .photo {
-    opacity: 0;
-    filter: blur(calc(40 * var(--rm)));
-  }
-  :global(.about-intro) .bio {
-    opacity: 0;
   }
 
   /*
@@ -177,7 +118,7 @@ const words = TITLE.split(' ');
     .box {
       width: 100%;
     }
-    .scatter {
+    .title {
       font-size: 22px;
       text-indent: 1.5em;
     }
@@ -204,124 +145,3 @@ const words = TITLE.split(' ');
   }
 </style>
 
-<script>
-  // Same physics as the test page: each letter starts scattered across the
-  // screen and springs back into the title; the mouse pushes letters away.
-  // Click the title area to scatter them again. The fly-in plays once per
-  // visit: coming back to the page shows the finished title straight away.
-  const box = document.querySelector<HTMLElement>('.scatter')!;
-  const stage = document.querySelector<HTMLElement>('.stage')!;
-  const els = [...box.querySelectorAll<HTMLElement>('.ch')];
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  type L = { el: HTMLElement; hx: number; hy: number; x: number; y: number; r: number; vx: number; vy: number; vr: number; wait: number };
-  const letters: L[] = els.map((el) => ({ el, hx: 0, hy: 0, x: 0, y: 0, r: 0, vx: 0, vy: 0, vr: 0, wait: 0 }));
-
-  const STIFF = 0.035; // pull back to place
-  const DAMP = 0.73; // how quickly motion settles; this low, letters glide in without bouncing past their place
-  const RADIUS = 70; // mouse reach, px
-  const PUSH = 3; // mouse strength
-
-  // Home position of each letter's centre, relative to the title.
-  function measure() {
-    for (const l of letters) {
-      l.hx = l.el.offsetLeft + l.el.offsetWidth / 2;
-      l.hy = l.el.offsetTop + l.el.offsetHeight / 2;
-    }
-  }
-
-  // Letters start scattered all over the screen, turned every which way,
-  // and fly home into the title.
-  function scatter() {
-    const b = box.getBoundingClientRect();
-    const w = innerWidth;
-    const h = innerHeight;
-    letters.forEach((l) => {
-      l.x = Math.random() * w - (b.left + l.hx);
-      l.y = Math.random() * h - (b.top + l.hy);
-      l.r = (Math.random() - 0.5) * 360;
-      l.vx = l.vy = l.vr = 0;
-      l.wait = Math.random() * 60; // frames before it starts flying home
-    });
-    wake();
-  }
-
-  let mx = -1e4;
-  let my = -1e4;
-  addEventListener('pointermove', (e) => {
-    const b = box.getBoundingClientRect();
-    mx = e.clientX - b.left;
-    my = e.clientY - b.top;
-    wake();
-  });
-  document.addEventListener('pointerleave', () => {
-    mx = my = -1e4;
-  });
-
-  let running = false;
-  function wake() {
-    if (!running) {
-      running = true;
-      requestAnimationFrame(step);
-    }
-  }
-
-  function step() {
-    let moving = false;
-    for (const l of letters) {
-      if (l.wait > 0) {
-        l.wait--;
-        moving = true;
-        draw(l);
-        continue;
-      }
-      let ax = -l.x * STIFF;
-      let ay = -l.y * STIFF;
-      let ar = -l.r * STIFF;
-      const dx = l.hx + l.x - mx;
-      const dy = l.hy + l.y - my;
-      const d = Math.hypot(dx, dy);
-      if (d < RADIUS && d > 0.01) {
-        const f = (1 - d / RADIUS) * PUSH;
-        ax += (dx / d) * f;
-        ay += (dy / d) * f;
-        ar += (dx > 0 ? 1 : -1) * f * 1.5;
-      }
-      l.vx = (l.vx + ax) * DAMP;
-      l.vy = (l.vy + ay) * DAMP;
-      l.vr = (l.vr + ar) * DAMP;
-      l.x += l.vx;
-      l.y += l.vy;
-      l.r += l.vr;
-      if (Math.abs(l.x) + Math.abs(l.y) + Math.abs(l.r) + Math.abs(l.vx) + Math.abs(l.vy) > 0.05) moving = true;
-      else l.x = l.y = l.r = l.vx = l.vy = l.vr = 0;
-      draw(l);
-    }
-    if (moving) requestAnimationFrame(step);
-    else {
-      running = false;
-      setTimeout(reveal, 250); // a short beat after the last letter stops
-    }
-  }
-
-  function draw(l: L) {
-    l.el.style.transform = l.x || l.y || l.r ? `translate(${l.x}px, ${l.y}px) rotate(${l.r}deg)` : '';
-  }
-
-  // First fly-in finished: remember it and fade in the photo and bio.
-  const root = document.documentElement;
-  function reveal() {
-    if (!root.classList.contains('about-intro')) return;
-    root.classList.remove('about-intro');
-    try {
-      sessionStorage.setItem('about-intro', '1');
-    } catch (e) {}
-  }
-
-  measure();
-  addEventListener('resize', measure);
-  if (!still) {
-    if (root.classList.contains('about-intro')) scatter();
-    stage.addEventListener('click', scatter);
-  }
-</script>
