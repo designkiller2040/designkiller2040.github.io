@@ -109,13 +109,13 @@ collections:
             label: Hover preview clip
             widget: file
             required: false
-            accept: video/mp4
+            accept: video/*,.mov,.mp4,.m4v
             media_folder: public/video/previews
             public_folder: /video/previews
             media_library:
               config:
                 max_file_size: 40000000 # 40 MB
-            hint: 'Short silent loop, MP4 (H.264), under 40 MB. Plays when hovering the title on the homepage.'
+            hint: 'Short silent loop, under 40 MB. MP4 or MOV (ProRes is fine): the site turns it into a small web video by itself, about 2 minutes after saving. Plays when hovering the title.'
           - name: poster
             label: Big thumbnail
             widget: image
