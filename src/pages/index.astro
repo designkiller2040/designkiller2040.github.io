@@ -217,6 +217,7 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   }
 
   function show(v: HTMLVideoElement) {
+    for (const other of clips.values()) if (other !== v) hide(other);
     hovered = v;
     // The clip itself stays hidden until it is actually playing; meanwhile
     // the thumbnail shows, as soon as it has loaded. (Check before
@@ -242,18 +243,32 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     setTimeout(() => hovered !== v && v.pause(), 150);
   }
 
+  // Thumbnails first (small, so a hover shows at least the thumbnail right
+  // away), then the clips, three at a time.
   async function prefetchAll() {
     const conn = (navigator as any).connection;
     if (conn?.saveData || /2g/.test(conn?.effectiveType ?? '')) return;
-    for (const a of links) {
+    for (const a of links) if (a.dataset.thumb) new Image().src = a.dataset.thumb;
+    const queue = [...links];
+    const next = async (): Promise<void> => {
+      const a = queue.shift();
+      if (!a) return;
       const v = clipFor(a.dataset.preview!, a.dataset.thumb);
-      if (v.readyState >= 3) continue;
-      await new Promise((done) => {
-        v.addEventListener('canplaythrough', done, { once: true });
-        v.addEventListener('error', done, { once: true });
-        setTimeout(done, 4000);
-      });
-    }
+      if (v.readyState < 4)
+        await new Promise((done) => {
+          v.addEventListener('canplaythrough', done, { once: true });
+          v.addEventListener('error', done, { once: true });
+          setTimeout(done, 6000);
+        });
+      return next();
+    };
+    await Promise.all([next(), next(), next()]);
+  }
+
+  // Safety net: if a mouseleave gets missed (fast moves, coming back to the
+  // page), no clip may stay over the showreel.
+  function hideAll() {
+    for (const v of clips.values()) hide(v);
   }
 
   if (canHover) {
@@ -265,6 +280,13 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
       a.addEventListener('focus', enter);
       a.addEventListener('blur', leave);
     }
+
+    document.querySelector('.menu')?.addEventListener('mouseleave', hideAll);
+    document.documentElement.addEventListener('mouseleave', hideAll);
+    addEventListener('pageshow', hideAll);
+    addEventListener('pointermove', (e) => {
+      if (hovered && !(e.target as Element).closest?.('[data-preview]')) hideAll();
+    }, { passive: true });
 
     let started = false;
     const start = () => {

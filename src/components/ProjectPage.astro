@@ -320,6 +320,7 @@ const poster = posterSrc(project);
   }
 
   function show(v: HTMLVideoElement) {
+    for (const other of clips.values()) if (other !== v) hide(other);
     hovered = v;
     // The clip itself stays hidden until it is actually playing; meanwhile
     // the thumbnail shows, as soon as it has loaded.
@@ -353,6 +354,19 @@ const poster = posterSrc(project);
       a.addEventListener('focus', enter);
       a.addEventListener('blur', leave);
     }
+    // Safety net: if a mouseleave gets missed (fast moves, coming back to the
+    // page), no clip may stay over the thumbnail.
+    const hideAll = () => clips.forEach(hide);
+    document.querySelector('.list')?.addEventListener('mouseleave', hideAll);
+    addEventListener('pageshow', hideAll);
+    addEventListener('pointermove', (e) => {
+      if (hovered && !(e.target as Element).closest?.('[data-preview]')) hideAll();
+    }, { passive: true });
+    // Thumbnails are small: load them all early, so a hover shows at least
+    // the thumbnail right away while its clip loads.
+    addEventListener('load', () => setTimeout(() => {
+      for (const a of document.querySelectorAll<HTMLAnchorElement>('.list [data-thumb]')) new Image().src = a.dataset.thumb!;
+    }, 1000), { once: true });
   }
 </script>
 
