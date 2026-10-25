@@ -77,7 +77,8 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     opacity: 1;
   }
   .stage :global(video),
-  .stage :global(.preview) {
+  .stage :global(.preview),
+  .stage :global(.preview img) {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -90,6 +91,10 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   }
   .stage :global(.preview.on) {
     opacity: 1;
+  }
+  /* Until its clip plays, a preview shows only the thumbnail underneath. */
+  .stage :global(.preview:not(.ready) :is(video, .video-canvas)) {
+    visibility: hidden;
   }
 
   /* Logo and menu take the same difference blend as the project list. */
@@ -181,7 +186,7 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
 
   const canHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-  function clipFor(src: string) {
+  function clipFor(src: string, thumb?: string) {
     let v = clips.get(src);
     if (!v) {
       // Each clip sits in its own box, so the box (clip plus Safari's
@@ -194,6 +199,15 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
       v.playsInline = true;
       v.preload = 'auto';
       v.src = src;
+      // The project's thumbnail sits under the clip, so a hover before the
+      // clip has loaded shows the thumbnail instead of nothing.
+      if (thumb) {
+        const img = new Image();
+        img.alt = '';
+        img.decoding = 'async';
+        img.src = thumb;
+        box.append(img);
+      }
       box.append(v);
       stage.append(box);
       coverWithCanvas(v);
@@ -204,11 +218,20 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
 
   function show(v: HTMLVideoElement) {
     hovered = v;
-    // Keep the showreel visible until the clip has a frame to show.
-    // (Check before rewinding: rewinding briefly resets readyState.)
+    // The clip itself stays hidden until it is actually playing; meanwhile
+    // the thumbnail shows, as soon as it has loaded. (Check before
+    // rewinding: rewinding briefly resets readyState.)
     const box = v.parentElement!;
-    if (v.readyState >= 2) box.classList.add('on');
-    else v.addEventListener('playing', () => hovered === v && box.classList.add('on'), { once: true });
+    const img = box.querySelector('img');
+    const on = () => hovered === v && box.classList.add('on');
+    if (v.readyState >= 2) {
+      box.classList.add('ready');
+      on();
+    } else {
+      v.addEventListener('playing', () => (box.classList.add('ready'), on()), { once: true });
+      if (img?.complete && img.naturalWidth) on();
+      else img?.addEventListener('load', on, { once: true });
+    }
     v.currentTime = 0;
     v.play().catch(() => {});
   }
@@ -223,7 +246,7 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     const conn = (navigator as any).connection;
     if (conn?.saveData || /2g/.test(conn?.effectiveType ?? '')) return;
     for (const a of links) {
-      const v = clipFor(a.dataset.preview!);
+      const v = clipFor(a.dataset.preview!, a.dataset.thumb);
       if (v.readyState >= 3) continue;
       await new Promise((done) => {
         v.addEventListener('canplaythrough', done, { once: true });
@@ -235,7 +258,7 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
 
   if (canHover) {
     for (const a of links) {
-      const enter = () => show(clipFor(a.dataset.preview!));
+      const enter = () => show(clipFor(a.dataset.preview!, a.dataset.thumb));
       const leave = () => hide(clipFor(a.dataset.preview!));
       a.addEventListener('mouseenter', enter);
       a.addEventListener('mouseleave', leave);

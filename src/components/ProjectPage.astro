@@ -291,7 +291,7 @@ const poster = posterSrc(project);
   const clips = new Map<string, HTMLVideoElement>();
   let hovered: HTMLVideoElement | null = null;
 
-  function clipFor(src: string) {
+  function clipFor(src: string, thumb?: string) {
     let v = clips.get(src);
     if (!v) {
       const box = document.createElement('div');
@@ -302,6 +302,15 @@ const poster = posterSrc(project);
       v.playsInline = true;
       v.preload = 'auto';
       v.src = src;
+      // The project's thumbnail sits under the clip, so a hover before the
+      // clip has loaded shows the thumbnail instead of nothing.
+      if (thumb) {
+        const img = new Image();
+        img.alt = '';
+        img.decoding = 'async';
+        img.src = thumb;
+        box.append(img);
+      }
       box.append(v);
       stage!.append(box);
       coverWithCanvas(v);
@@ -312,10 +321,19 @@ const poster = posterSrc(project);
 
   function show(v: HTMLVideoElement) {
     hovered = v;
-    // Keep the thumbnail until the clip has a frame to show.
+    // The clip itself stays hidden until it is actually playing; meanwhile
+    // the thumbnail shows, as soon as it has loaded.
     const box = v.parentElement!;
-    if (v.readyState >= 2) box.classList.add('on');
-    else v.addEventListener('playing', () => hovered === v && box.classList.add('on'), { once: true });
+    const img = box.querySelector('img');
+    const on = () => hovered === v && box.classList.add('on');
+    if (v.readyState >= 2) {
+      box.classList.add('ready');
+      on();
+    } else {
+      v.addEventListener('playing', () => (box.classList.add('ready'), on()), { once: true });
+      if (img?.complete && img.naturalWidth) on();
+      else img?.addEventListener('load', on, { once: true });
+    }
     v.currentTime = 0;
     v.play().catch(() => {});
   }
@@ -328,7 +346,7 @@ const poster = posterSrc(project);
 
   if (stage && matchMedia('(hover: hover) and (pointer: fine)').matches) {
     for (const a of document.querySelectorAll<HTMLAnchorElement>('.list [data-preview]')) {
-      const enter = () => show(clipFor(a.dataset.preview!));
+      const enter = () => show(clipFor(a.dataset.preview!, a.dataset.thumb));
       const leave = () => hide(clipFor(a.dataset.preview!));
       a.addEventListener('mouseenter', enter);
       a.addEventListener('mouseleave', leave);
@@ -395,6 +413,7 @@ const poster = posterSrc(project);
     inset: var(--pad);
   }
   .previews :global(.preview),
+  .previews :global(.preview img),
   .previews :global(video) {
     position: absolute;
     inset: 0;
@@ -408,6 +427,10 @@ const poster = posterSrc(project);
   }
   .previews :global(.preview.on) {
     opacity: 1;
+  }
+  /* Until its clip plays, a preview shows only the thumbnail underneath. */
+  .previews :global(.preview:not(.ready) :is(video, .video-canvas)) {
+    visibility: hidden;
   }
 
   .top {

@@ -7,12 +7,12 @@
  * Where it sits is up to the page (it's anchored bottom right on both). The
  * page passes `class` and positions it with :global(.project-list).
  */
-import { GROUPS, menuLabel, previewSrc, projects } from '../data/projects';
+import { GROUPS, menuLabel, posterSrc, previewSrc, projects } from '../data/projects';
 
 interface Props {
   /** Slug of the project being shown: it gets the light pill. */
   current?: string;
-  /** Homepage: add each project's hover-preview clip as data-preview. */
+  /** Add each project's hover-preview clip as data-preview, and its thumbnail (shown while the clip loads) as data-thumb. */
   previews?: boolean;
   class?: string;
 }
@@ -32,6 +32,7 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
                 href={`/work/${p.slug}/`}
                 aria-current={p.slug === current ? 'page' : undefined}
                 data-preview={previews ? previewSrc(p) : undefined}
+                data-thumb={previews && previewSrc(p) ? posterSrc(p) : undefined}
               >
                 {menuLabel(p)}
               </a>
