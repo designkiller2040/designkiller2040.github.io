@@ -135,7 +135,7 @@ collections:
             required: false
             media_folder: /public/images/work
             public_folder: /images/work
-            hint: Full-screen image at the top of the project page.
+            hint: Full-screen image at the top of the project page. Empty = a frame from the preview clip.
           - name: stills
             label: Stills
             widget: image
@@ -153,5 +153,5 @@ collections:
             label_singular: credit
             key_label: Role
             value_label: Names
-            hint: 'Use these roles, spelled exactly like this: Location, Producers, Co-Director, DP, Agency, Prod Co, Edit. The page sorts them in that order.'
+            hint: 'Shown on the page in this order. Usual roles: Location, Producers, Co-Director, DP, Agency, Prod Co, Edit; any other role works too.'
           - { name: todo, label: TODO note, widget: text, required: false, hint: Shows a yellow note on the page. Clear it when done. }

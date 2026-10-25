@@ -1,0 +1,1144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Jonah George · Project</title>
+    <!--
+      Project editor 2.0. Opens instead of the old project form when a project
+      is clicked in /admin/ (see the redirect script there). Reads and writes the
+      same file, src/data/projects/<slug>.json, with the editor's GitHub sign-in.
+      Every Save is one commit to main, which republishes the site.
+      The old editor is kept on the admin-v1 branch.
+    -->
+    <style>
+      :root {
+        --bg: #fff;
+        --fg: #111;
+        --muted: #6b6b6b;
+        --faint: #8a8a8a;
+        --line: #e6e6e6;
+        --field: #dcdcdc;
+        --panel: #f4f4f4;
+        --empty: #f6f6f6;
+        --media: #dadada;
+        --red: #b42318;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.4 -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+        letter-spacing: 0.01em;
+      }
+      a { color: inherit; }
+      h1, h2, h3, p, dl, dd, figure { margin: 0; }
+      .lbl { display: block; font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+      .in, .ta {
+        width: 100%;
+        border: 1px solid var(--field);
+        border-radius: 8px;
+        background: var(--bg);
+        font: inherit;
+        color: var(--fg);
+      }
+      .in { height: 40px; padding: 0 12px; }
+      .ta { padding: 12px; line-height: 1.5; resize: vertical; min-height: 168px; }
+      .in::placeholder, .ta::placeholder { color: var(--faint); }
+      .in:focus, .ta:focus { outline: 2px solid #111; outline-offset: -1px; }
+      .in.bad { border-color: var(--red); }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 14px;
+        border: 1px solid var(--field);
+        border-radius: 8px;
+        background: var(--bg);
+        font: inherit;
+        font-size: 13px;
+        color: var(--fg);
+        text-decoration: none;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn:hover { border-color: #b5b5b5; }
+      .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+      .btn.ghost:hover { color: var(--fg); }
+      .btn.dark { background: #111; border-color: #111; color: #fff; }
+      .btn.dark:disabled { background: #e6e6e6; border-color: #e6e6e6; color: #8a8a8a; cursor: default; }
+      .btn.icon { width: 36px; padding: 0; justify-content: center; }
+      .btn.red { color: var(--red); }
+      svg { flex-shrink: 0; }
+
+      header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+      .bar { max-width: 1280px; margin: 0 auto; padding: 14px 48px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+      .bar > div { display: flex; align-items: center; gap: 16px; min-width: 0; }
+      .back { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); text-decoration: none; }
+      .back:hover { color: var(--fg); }
+      .sep { width: 1px; height: 20px; background: var(--line); }
+      #heading { font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; white-space: nowrap; }
+      .pill::before { content: ''; width: 6px; height: 6px; border-radius: 3px; background: currentColor; }
+      .pill.live { background: #eef6ef; color: #1f6b33; }
+      .pill.busy { background: #fdf4e3; color: #8a5a00; }
+      .pill.busy::before { animation: pulse 1s ease-in-out infinite alternate; }
+      @keyframes pulse { to { opacity: 0.3; } }
+      #saveState { font-size: 12px; color: var(--muted); margin-right: 8px; }
+      #saveState.err { color: var(--red); }
+      .actions { gap: 8px !important; }
+
+      main { max-width: 1280px; margin: 0 auto; padding: 48px 48px 96px; display: flex; flex-direction: column; gap: 64px; }
+      section { display: flex; flex-direction: column; gap: 20px; }
+      .head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+      h2 { font-size: 22px; font-weight: 600; }
+      .note { font-size: 13px; color: var(--muted); }
+
+      /* Video cards */
+      .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+      .card { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+      .media { position: relative; aspect-ratio: 16 / 9; background: var(--media); overflow: hidden; }
+      .media img, .media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      .media.empty { background: var(--empty); border-bottom: 1px dashed #cfcfcf; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-align: center; padding: 16px; }
+      .media.empty span { font-size: 13px; color: #444; }
+      .media.empty small { font-size: 12px; color: var(--muted); }
+      .media.drop { outline: 2px dashed #111; outline-offset: -8px; }
+      .tag { position: absolute; top: 12px; left: 12px; z-index: 1; height: 22px; padding: 0 8px; display: inline-flex; align-items: center; border-radius: 6px; background: rgb(17 17 17 / 0.72); color: #fff; font-size: 11px; }
+      .time { position: absolute; bottom: 12px; right: 12px; z-index: 1; height: 22px; padding: 0 8px; display: inline-flex; align-items: center; border-radius: 6px; background: rgb(255 255 255 / 0.85); color: #111; font-size: 12px; }
+      .play { position: absolute; inset: 0; margin: auto; width: 48px; height: 48px; border: 0; border-radius: 24px; background: rgb(255 255 255 / 0.85); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1; }
+      .body { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 16px; flex-grow: 1; }
+      h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+      .meta { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.3fr); gap: 12px; font-size: 13px; }
+      .meta dt { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+      .meta dd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .meta.none dd { color: var(--faint); }
+      .row { display: flex; flex-wrap: wrap; gap: 8px; }
+      .extra { margin-top: auto; padding-top: 16px; border-top: 1px solid #efefef; }
+      .info { display: flex; gap: 10px; align-items: flex-start; font-size: 12px; line-height: 1.5; color: var(--muted); }
+      .unsaved { color: #8a5a00; }
+
+      /* Info */
+      .split { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+      .fields { flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+      .two { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; }
+      .seg { display: flex; height: 40px; border: 1px solid var(--field); border-radius: 8px; padding: 3px; gap: 2px; }
+      .seg button { flex: 1; min-width: 0; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 13px; color: var(--muted); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+      .seg button[aria-pressed='true'] { background: #111; color: #fff; }
+      .address { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+      .credits { flex: 999 1 520px; min-width: 0; background: var(--panel); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+      .credit { display: grid; grid-template-columns: 20px minmax(0, 2fr) minmax(0, 3fr) 36px; gap: 8px; align-items: center; }
+      .credit.dragging, .still.dragging { opacity: 0.4; }
+      .grip { cursor: grab; color: #9a9a9a; display: flex; }
+      #addCredit { margin: 4px 0 0 28px; align-self: flex-start; }
+
+      /* Stills */
+      .stills { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; }
+      .still { display: flex; flex-direction: column; gap: 8px; cursor: grab; }
+      .still .media { border-radius: 10px; }
+      .still .tools { position: absolute; top: 8px; right: 8px; z-index: 1; display: flex; gap: 6px; opacity: 0; transition: opacity 0.15s; }
+      .still:hover .tools, .still:focus-within .tools { opacity: 1; }
+      .still .tools .btn { width: 32px; height: 32px; }
+      .still figcaption { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .tag.num { width: 22px; padding: 0; justify-content: center; top: 10px; left: 10px; }
+      .add { aspect-ratio: 16 / 9; border: 1px dashed #bdbdbd; border-radius: 10px; background: #f8f8f8; font: inherit; font-size: 13px; color: #444; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+      .add.drop { outline: 2px dashed #111; outline-offset: -8px; }
+      .slot { aspect-ratio: 16 / 9; border: 1px dashed #e2e2e2; border-radius: 10px; }
+
+      .foot { flex-direction: row; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px; padding-top: 32px; border-top: 1px solid var(--line); }
+      .foot > div:first-child { flex: 1 1 420px; max-width: 640px; }
+      .foot .links { display: flex; align-items: center; gap: 8px; }
+
+      .center { max-width: 480px; margin: 120px auto; padding: 0 16px; text-align: center; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+      .modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgb(0 0 0 / 0.6); padding: 16px; }
+      .modal > div { position: relative; width: min(600px, 100%); height: min(560px, 100%); border-radius: 12px; overflow: hidden; background: #111; }
+      .modal.player > div { width: min(1100px, 100%); height: auto; aspect-ratio: 16 / 9; background: #000; }
+      .modal iframe { width: 100%; height: 100%; border: 0; }
+      .modal .close { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 0; border-radius: 16px; background: #333; color: #fff; font-size: 18px; cursor: pointer; z-index: 1; }
+
+      @media (max-width: 700px) {
+        .bar { padding: 12px 16px; }
+        main { padding: 32px 16px 64px; gap: 48px; }
+        .credit { grid-template-columns: 20px minmax(0, 1fr) minmax(0, 1.4fr) 36px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="bar">
+        <div>
+          <a class="back" href="/admin/#/collections/projects">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            Projects
+          </a>
+          <span class="sep"></span>
+          <h1 id="heading">Project</h1>
+          <span id="live" class="pill" hidden></span>
+        </div>
+        <div class="actions">
+          <span id="saveState" role="status"></span>
+          <a id="view" class="btn" href="/" target="_blank" rel="noopener">
+            View page
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg>
+          </a>
+          <button id="save" class="btn dark" type="button" disabled>Save</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="message" class="center" hidden></div>
+
+    <main id="editor" hidden>
+      <section>
+        <div class="head">
+          <h2>Video</h2>
+          <p class="note">Full films upload to Cloudflare. Clips and images save to the site.</p>
+        </div>
+        <div class="cards">
+          <article class="card" id="filmCard">
+            <div class="media" id="filmMedia"></div>
+            <div class="body">
+              <div>
+                <h3>Full video</h3>
+                <p class="note">Plays on the project page after Play full.</p>
+              </div>
+              <dl class="meta" id="filmMeta"></dl>
+              <div class="row">
+                <button class="btn" type="button" id="filmUpload"></button>
+                <button class="btn ghost" type="button" id="filmRemove">Remove</button>
+              </div>
+              <div class="extra">
+                <label class="lbl" for="vimeo">Vimeo backup (used only if Cloudflare is empty)</label>
+                <input class="in" id="vimeo" type="text" inputmode="numeric" placeholder="e.g. 1109700480" />
+              </div>
+            </div>
+          </article>
+
+          <article class="card" id="previewCard">
+            <div class="media" id="previewMedia"></div>
+            <div class="body">
+              <div>
+                <h3>Preview video</h3>
+                <p class="note">Plays when someone hovers the title in the menu.</p>
+              </div>
+              <dl class="meta" id="previewMeta"></dl>
+              <div class="row">
+                <button class="btn" type="button" id="previewUpload"></button>
+                <button class="btn ghost" type="button" id="previewRemove">Remove</button>
+              </div>
+              <div class="extra">
+                <label class="lbl" for="previewStart">No clip uploaded? Cut 3 s from the full video, starting at</label>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <input class="in" id="previewStart" type="number" min="0" step="1" placeholder="0" style="width: 88px" />
+                  <span class="note">seconds</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" id="posterCard">
+            <div class="media" id="posterMedia"></div>
+            <div class="body">
+              <div>
+                <h3>Thumbnail image</h3>
+                <p class="note">Full-screen image at the top of the project page.</p>
+              </div>
+              <dl class="meta" id="posterMeta"></dl>
+              <div class="row">
+                <button class="btn" type="button" id="posterUpload"></button>
+                <button class="btn ghost" type="button" id="posterRemove">Remove</button>
+              </div>
+              <div class="extra info" id="posterInfo"></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Info</h2>
+        <div class="split">
+          <div class="fields">
+            <div>
+              <label class="lbl" for="title">Name</label>
+              <input class="in" id="title" type="text" required />
+            </div>
+            <div>
+              <span class="lbl" id="groupLabel">Group</span>
+              <div class="seg" id="group" role="group" aria-labelledby="groupLabel"></div>
+            </div>
+            <div class="two">
+              <div>
+                <label class="lbl" for="menuLabel">Short name for the menu (optional)</label>
+                <input class="in" id="menuLabel" type="text" placeholder="Only if the name is too long" />
+              </div>
+              <div>
+                <label class="lbl" for="order">Position in menu</label>
+                <input class="in" id="order" type="number" min="1" step="1" />
+              </div>
+            </div>
+            <div>
+              <label class="lbl" for="about">About film</label>
+              <textarea class="ta" id="about" rows="7"></textarea>
+            </div>
+            <div id="slugBox" hidden>
+              <label class="lbl" for="slug">Page address (lowercase words joined by dashes, can't be changed later)</label>
+              <input class="in" id="slug" type="text" placeholder="e.g. maana-homes" />
+            </div>
+            <p class="address" id="address">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+              <span></span>
+            </p>
+          </div>
+
+          <div class="credits">
+            <div class="head" style="margin-bottom: 4px">
+              <h3 style="margin: 0">Credits</h3>
+              <p class="note" style="font-size: 12px">Drag to reorder. Empty rows are hidden on the site.</p>
+            </div>
+            <div id="creditRows" style="display: flex; flex-direction: column; gap: 12px"></div>
+            <button class="btn dark" type="button" id="addCredit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              Add credit
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="head">
+          <h2>Stills</h2>
+          <p class="note">Up to 4, shown in this order in the row on the project page. Drag to reorder.</p>
+        </div>
+        <div class="stills" id="stills"></div>
+      </section>
+
+      <section class="foot">
+        <div>
+          <label class="lbl" for="todo">Private note (shows a yellow reminder on the page until cleared)</label>
+          <input class="in" id="todo" type="text" placeholder="e.g. waiting for final grade" />
+        </div>
+        <div class="links">
+          <a class="btn ghost" id="classic" href="/admin/">Open in old editor</a>
+          <button class="btn ghost red" type="button" id="delete">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+            Delete project
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <input type="file" id="picker" hidden />
+
+    <script>
+      const REPO = 'designkiller2040/designkiller2040.github.io';
+      const RAW = `https://raw.githubusercontent.com/${REPO}/main/public`;
+      const HELPER = 'https://jonah-george-upload.jonahmgeorge.workers.dev';
+      const DIR = 'src/data/projects';
+      const GROUPS = [
+        ['commercial', 'commercial'],
+        ['music', 'music'],
+        ['concept', 'concept'],
+      ];
+      const CREDIT_ORDER = ['Location', 'Producers', 'Co-Director', 'DP', 'Agency', 'Prod Co', 'Edit'];
+      // Where uploads go in the repo, and their size limits (GitHub refuses files over 100 MB).
+      const KINDS = {
+        preview: { dir: '/video/previews', max: 40e6, accept: 'video/*,.mov,.mp4,.m4v', what: 'Preview clip' },
+        image: { dir: '/images/work', max: 20e6, accept: 'image/jpeg,image/png,image/webp', what: 'Image' },
+      };
+      const VIDEO_EXT = /\.(mov|m4v|mkv|webm|mxf)$/i;
+
+      const $ = (id) => document.getElementById(id);
+      const params = new URLSearchParams(location.search);
+      const isNew = params.has('new');
+      let slug = params.get('slug') || '';
+      let path = `${DIR}/${slug}.json`;
+
+      let token = '';
+      try {
+        token = JSON.parse(localStorage.getItem('sveltia-cms.user') || '{}').token || '';
+      } catch {}
+      // Opening this page means the new editor is wanted again (see "Open in old editor").
+      sessionStorage.removeItem('jg-classic');
+
+      // ---------- GitHub ----------
+      async function gh(p, init = {}) {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/${p}`, {
+          cache: 'no-store',
+          ...init,
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', ...(init.body && { 'Content-Type': 'application/json' }), ...init.headers },
+          body: init.body && JSON.stringify(init.body),
+        });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok) throw Object.assign(new Error(out.message || `GitHub said ${res.status}`), { status: res.status });
+        return out;
+      }
+      const decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, '')), (c) => c.charCodeAt(0)));
+      const fileBase64 = (file) =>
+        new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result).split(',')[1]);
+          r.onerror = () => reject(new Error(`Couldn't read ${file.name}.`));
+          r.readAsDataURL(file);
+        });
+
+      // ---------- Model ----------
+      // Files picked but not saved yet are kept as "local:N" until Save uploads them.
+      const locals = new Map(); // "local:N" -> File
+      const savedFiles = new Map(); // site path -> File, so just-saved uploads still show before the site republishes
+      let nextLocal = 1;
+      let original = {}; // the project as loaded (unknown keys are kept on save)
+      let sha = '';
+      let model;
+      let savedSnapshot = '';
+      let saving = false;
+
+      const snapshot = () => JSON.stringify(model);
+      const dirty = () => snapshot() !== savedSnapshot;
+
+      function fromData(d) {
+        // Credit rows: saved ones in their order, plus the usual roles that are missing (empty, at their usual place).
+        const rows = Object.entries(d.credits || {}).map(([role, names]) => ({ role, names: names ?? '' }));
+        CREDIT_ORDER.forEach((role, i) => {
+          if (rows.some((r) => r.role === role)) return;
+          const before = CREDIT_ORDER.slice(0, i).reverse().find((r) => rows.some((x) => x.role === r));
+          const at = before ? rows.findIndex((x) => x.role === before) + 1 : 0;
+          rows.splice(at, 0, { role, names: '' });
+        });
+        return {
+          title: d.title || '',
+          slug: d.slug || '',
+          order: d.order ?? '',
+          group: d.group || 'commercial',
+          menuLabel: d.menuLabel || '',
+          stream: d.stream || '',
+          vimeo: d.vimeo || '',
+          preview: d.preview || '',
+          previewStart: d.previewStart ?? '',
+          poster: d.poster || '',
+          stills: [...(d.stills || [])],
+          about: d.about || '',
+          credits: rows,
+          todo: d.todo || '',
+        };
+      }
+
+      // The JSON file, same shape as the old editor wrote it (empty optional fields left out).
+      function toData(m) {
+        const known = ['title', 'slug', 'order', 'menuLabel', 'group', 'stream', 'vimeo', 'preview', 'previewStart', 'poster', 'stills', 'about', 'credits', 'todo'];
+        const out = {};
+        const put = (k, v) => {
+          if (v === '' || v === undefined || v === null || (Array.isArray(v) && !v.length)) return;
+          out[k] = v;
+        };
+        put('title', m.title.trim());
+        put('slug', m.slug);
+        put('order', m.order === '' ? undefined : Number(m.order));
+        put('menuLabel', m.menuLabel.trim());
+        put('group', m.group);
+        put('stream', m.stream.trim());
+        put('vimeo', m.vimeo.trim());
+        put('preview', m.preview);
+        put('previewStart', m.previewStart === '' ? undefined : Number(m.previewStart));
+        put('poster', m.poster);
+        put('stills', m.stills);
+        put('about', m.about.trim());
+        const credits = {};
+        for (const { role, names } of m.credits) if (role.trim() && names.trim()) credits[role.trim()] = names.trim();
+        out.credits = credits;
+        put('todo', m.todo.trim());
+        for (const [k, v] of Object.entries(original)) if (!known.includes(k)) out[k] = v;
+        return out;
+      }
+
+      // ---------- Helpers ----------
+      const el = (tag, props = {}, ...kids) => {
+        const e = Object.assign(document.createElement(tag), props);
+        for (const k of kids) if (k != null) e.append(k);
+        return e;
+      };
+      const svg = (html, size = 14) => {
+        const t = document.createElement('template');
+        t.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${html}</svg>`;
+        return t.content.firstChild;
+      };
+      const ICON = {
+        up: '<path d="M12 16V4M6 10l6-6 6 6M4 20h16"/>',
+        trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+        x: '<path d="M6 6l12 12M18 6L6 18"/>',
+        plus: '<path d="M12 5v14M5 12h14"/>',
+        image: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/>',
+        film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>',
+        info: '<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/>',
+      };
+      const grip = () => {
+        const t = document.createElement('template');
+        t.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="7" r="1.5"/><circle cx="15" cy="7" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="17" r="1.5"/><circle cx="15" cy="17" r="1.5"/></svg>';
+        return t.content.firstChild;
+      };
+      const setBtn = (b, icon, text) => b.replaceChildren(svg(ICON[icon]), text);
+      const mb = (n) => (n == null ? '–' : n >= 1e8 ? `${Math.round(n / 1e6)} MB` : `${(n / 1e6).toFixed(1)} MB`);
+      const day = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '–');
+      const clock = (s) => (s > 0 ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '');
+      const baseName = (p) => p.split('/').pop();
+      const isLocal = (v) => v?.startsWith('local:');
+      const fileOf = (v) => locals.get(v) ?? savedFiles.get(v);
+
+      // Size and date of a file in the repo (date = last commit that touched it).
+      const infoCache = new Map();
+      function repoInfo(sitePath) {
+        if (!infoCache.has(sitePath)) {
+          const p = `public${sitePath}`;
+          infoCache.set(
+            sitePath,
+            Promise.all([
+              gh(`contents/${encodeURI(p)}?ref=main`).then((d) => d.size).catch(() => null),
+              gh(`commits?sha=main&per_page=1&path=${encodeURIComponent(p)}`).then((c) => c[0]?.commit.committer.date).catch(() => null),
+            ]).then(([size, date]) => ({ size, date })),
+          );
+        }
+        return infoCache.get(sitePath);
+      }
+      async function fileInfo(v) {
+        const f = fileOf(v);
+        if (f) return { name: f.name, size: f.size, date: isLocal(v) ? null : Date.now(), pending: isLocal(v) };
+        return { name: baseName(v), ...(await repoInfo(v)) };
+      }
+      function fillMeta(dl, info) {
+        const cell = (k, v) => el('div', { style: 'min-width:0' }, el('dt', { textContent: k }), el('dd', { textContent: v, title: v }));
+        dl.classList.toggle('none', !info);
+        dl.replaceChildren(
+          cell('File', info ? info.name : 'None yet'),
+          cell('Size', info ? mb(info.size) : '–'),
+          cell('Uploaded', info ? (info.pending ? 'Not saved yet' : day(info.date)) : '–'),
+        );
+        dl.lastChild.querySelector('dd').classList.toggle('unsaved', !!info?.pending);
+      }
+
+      // Where to show a file: a just-picked/just-saved file from memory, else the live
+      // site (.mov clips are published as .mp4), else straight from GitHub.
+      function srcOf(v) {
+        const f = fileOf(v);
+        if (f) return (f._url ||= URL.createObjectURL(f));
+        return VIDEO_EXT.test(v) ? v.replace(VIDEO_EXT, '.mp4') : v;
+      }
+      async function fallbackToGitHub(media, v) {
+        if (fileOf(v) || media.dataset.fallback) return false;
+        media.dataset.fallback = '1';
+        try {
+          const blob = await (await fetch(`${RAW}${v}`)).blob();
+          const type = /\.mov$/i.test(v) ? 'video/quicktime' : /\.mp4$/i.test(v) ? 'video/mp4' : blob.type;
+          media.src = URL.createObjectURL(new Blob([blob], { type }));
+          return true;
+        } catch {
+          return false;
+        }
+      }
+
+      // ---------- File picking ----------
+      function pick(kind, multiple = false) {
+        return new Promise((resolve) => {
+          const input = $('picker');
+          input.accept = KINDS[kind].accept;
+          input.multiple = multiple;
+          input.value = '';
+          input.onchange = () => resolve([...input.files]);
+          input.click();
+        });
+      }
+      function accept(kind, files) {
+        const ok = [];
+        for (const f of files) {
+          const video = f.type.startsWith('video/') || /\.(mov|mp4|m4v)$/i.test(f.name);
+          if (kind === 'preview' ? !video : !f.type.startsWith('image/')) {
+            alert(`${f.name} isn't ${kind === 'preview' ? 'a video' : 'an image'}.`);
+          } else if (f.size > KINDS[kind].max) {
+            alert(`${f.name} is ${mb(f.size)}. ${KINDS[kind].what}s can be up to ${KINDS[kind].max / 1e6} MB.`);
+          } else {
+            const key = `local:${nextLocal++}`;
+            locals.set(key, f);
+            ok.push(key);
+          }
+        }
+        return ok;
+      }
+      function dropZone(node, kind, onFiles) {
+        node.addEventListener('dragover', (e) => {
+          if (![...e.dataTransfer.types].includes('Files')) return;
+          e.preventDefault();
+          node.classList.add('drop');
+        });
+        node.addEventListener('dragleave', () => node.classList.remove('drop'));
+        node.addEventListener('drop', (e) => {
+          if (!e.dataTransfer.files.length) return;
+          e.preventDefault();
+          node.classList.remove('drop');
+          onFiles(accept(kind, [...e.dataTransfer.files]));
+        });
+      }
+
+      // ---------- Video cards ----------
+      const streamId = (s) => s.match(/\b[0-9a-f]{32}\b/i)?.[0];
+      const streamHost = (s) => s.match(/customer-[a-z0-9]+\.cloudflarestream\.com/i)?.[0];
+      const streamInfo = new Map();
+      async function loadStreamInfo(id) {
+        if (!streamInfo.has(id)) {
+          streamInfo.set(
+            id,
+            fetch(`${HELPER}/video/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+              .then((r) => (r.ok ? r.json() : {}))
+              .catch(() => ({})),
+          );
+        }
+        return streamInfo.get(id);
+      }
+
+      async function renderFilm() {
+        const media = $('filmMedia');
+        const id = streamId(model.stream);
+        media.className = 'media';
+        media.replaceChildren();
+        media.onclick = null;
+        setBtn($('filmUpload'), 'up', id ? 'Replace' : 'Upload film');
+        $('filmRemove').hidden = !id;
+        if (!id) {
+          media.className = 'media empty';
+          media.append(svg(ICON.film, 28), el('span', { textContent: 'Upload the full film' }), el('small', { textContent: 'H.264 MP4, up to 1 GB. It goes to Cloudflare.' }));
+          media.onclick = openUpload;
+          fillMeta($('filmMeta'), null);
+          if (model.vimeo) $('filmMeta').querySelector('dd').textContent = 'Plays from Vimeo for now';
+          return;
+        }
+        const host = streamHost(model.stream) || 'videodelivery.net';
+        const img = el('img', { alt: '', src: `https://${host}/${id}/thumbnails/thumbnail.jpg?time=2s&height=480` });
+        img.onerror = () => img.remove();
+        const tag = el('span', { className: 'tag', textContent: 'Cloudflare' });
+        const play = el('button', { className: 'play', type: 'button', ariaLabel: 'Play the film' });
+        play.append(Object.assign(svg('<path d="M8 5v14l11-7z" fill="#111" stroke="none"/>', 18)));
+        play.onclick = () => openPlayer(id, streamHost(model.stream));
+        media.append(img, tag, play);
+        fillMeta($('filmMeta'), { name: 'Cloudflare film', size: null, date: null });
+        const info = await loadStreamInfo(id);
+        if (streamId(model.stream) !== id) return; // changed meanwhile
+        tag.textContent = info.ready ? 'Cloudflare · Ready' : info.state === 'error' ? 'Cloudflare · Failed' : info.state ? `Cloudflare · Processing ${Math.floor(info.percent || 0)}%` : 'Cloudflare';
+        if (info.duration > 0) media.append(el('span', { className: 'time', textContent: clock(info.duration) }));
+        fillMeta($('filmMeta'), { name: info.name || `Cloudflare film ${id.slice(0, 6)}…`, size: info.size ?? null, date: info.uploaded ?? null });
+      }
+
+      async function renderPreview() {
+        const media = $('previewMedia');
+        const v = model.preview;
+        media.className = 'media';
+        media.replaceChildren();
+        media.onclick = null;
+        setBtn($('previewUpload'), 'up', v ? 'Replace' : 'Upload clip');
+        $('previewRemove').hidden = !v;
+        if (!v) {
+          media.className = 'media empty';
+          media.append(svg(ICON.film, 28), el('span', { textContent: 'Drop a clip or click to upload' }), el('small', { textContent: streamId(model.stream) ? 'Until then, 3 s of the full video are used.' : 'Short silent loop, MP4 or MOV, up to 40 MB.' }));
+          media.onclick = choosePreview;
+          fillMeta($('previewMeta'), null);
+          return;
+        }
+        const video = el('video', { muted: true, loop: true, playsInline: true, preload: 'metadata' });
+        video.onerror = async () => (await fallbackToGitHub(video, v)) || (video.hidden = true);
+        video.onloadedmetadata = () => {
+          if (video.paused) video.currentTime = Math.min(1, video.duration / 2);
+          if (!media.querySelector('.time') && video.duration) media.append(el('span', { className: 'time', textContent: `${clock(video.duration)} · loop` }));
+        };
+        video.src = srcOf(v);
+        media.onmouseenter = () => video.play().catch(() => {});
+        media.onmouseleave = () => video.pause();
+        media.append(video, el('span', { className: 'tag', textContent: 'Hover to play' }));
+        fillMeta($('previewMeta'), { name: fileOf(v)?.name ?? baseName(v), size: null, date: null, pending: isLocal(v) });
+        const info = await fileInfo(v);
+        if (model.preview === v) fillMeta($('previewMeta'), info);
+      }
+
+      async function renderPoster() {
+        const media = $('posterMedia');
+        const v = model.poster;
+        media.className = 'media';
+        media.replaceChildren();
+        media.onclick = null;
+        setBtn($('posterUpload'), 'up', v ? 'Replace' : 'Upload');
+        $('posterRemove').hidden = !v;
+        const note = $('posterInfo');
+        note.replaceChildren(svg(ICON.info, 16));
+        if (v) {
+          const img = el('img', { alt: '' });
+          img.onerror = async () => (await fallbackToGitHub(img, v)) || img.remove();
+          img.src = srcOf(v);
+          media.append(img);
+          note.append(el('p', { textContent: 'This image fills the top of the project page. Remove it to use a frame from the preview video instead.' }));
+          fillMeta($('posterMeta'), { name: fileOf(v)?.name ?? baseName(v), size: null, date: null, pending: isLocal(v) });
+          const info = await fileInfo(v);
+          if (model.poster === v) fillMeta($('posterMeta'), info);
+          return;
+        }
+        media.className = 'media empty';
+        media.append(svg(ICON.image, 28), el('span', { textContent: 'Drop an image or click to upload' }), el('small', { textContent: 'JPG or PNG, 1920 px wide or more' }));
+        media.onclick = choosePoster;
+        fillMeta($('posterMeta'), null);
+        // The frame the site uses when there's no image (made from the preview clip at 1 s).
+        const clip = model.preview && !isLocal(model.preview) ? model.preview : `/video/previews/auto/${model.slug}.mp4`;
+        const frame = `/images/frames/${baseName(clip).replace(/\.[^.]+$/, '')}.jpg`;
+        const img = el('img', { alt: '' });
+        img.onload = () => {
+          if (model.poster) return;
+          media.className = 'media';
+          media.replaceChildren(img, el('span', { className: 'tag', textContent: 'Auto · frame from preview' }));
+        };
+        img.src = frame;
+        note.append(el('p', { textContent: model.preview || streamId(model.stream) ? 'Empty, so the page uses a frame from the preview video (at 1 s). Upload an image to choose it yourself.' : 'Empty, so the top of the page stays black until there is an image or a preview video.' }));
+      }
+
+      async function choosePreview() {
+        const [key] = accept('preview', await pick('preview'));
+        if (key) setField('preview', key);
+      }
+      async function choosePoster() {
+        const [key] = accept('image', await pick('image'));
+        if (key) setField('poster', key);
+      }
+
+      function openUpload() {
+        const modal = el('div', { className: 'modal' });
+        const box = el('div');
+        const frame = el('iframe', { title: 'Upload film', src: `/admin/upload/?embed=1&slug=${encodeURIComponent(model.slug || 'new')}` });
+        const close = el('button', { className: 'close', type: 'button', ariaLabel: 'Close', textContent: '×' });
+        close.onclick = () => {
+          const busy = /Step [12] of/.test(frame.contentDocument?.getElementById('status')?.textContent ?? '');
+          if (!busy || confirm('The upload is still running. Closing stops it. Close anyway?')) modal.remove();
+        };
+        box.append(frame, close);
+        modal.append(box);
+        document.body.append(modal);
+      }
+      window.addEventListener('message', (e) => {
+        if (e.origin !== location.origin || e.data?.type !== 'jg-film' || !/^[0-9a-f]{32}$/i.test(e.data.id)) return;
+        setField('stream', e.data.id);
+        setTimeout(() => document.querySelector('.modal')?.remove(), 2500);
+      });
+      function openPlayer(id, host) {
+        const modal = el('div', { className: 'modal player' });
+        const box = el('div');
+        const src = host ? `https://${host}/${id}/iframe?autoplay=true` : `https://iframe.videodelivery.net/${id}?autoplay=true`;
+        const close = el('button', { className: 'close', type: 'button', ariaLabel: 'Close', textContent: '×' });
+        close.onclick = () => modal.remove();
+        modal.onclick = (e) => e.target === modal && modal.remove();
+        box.append(el('iframe', { title: 'Film', src, allow: 'autoplay; fullscreen; picture-in-picture', allowFullscreen: true }), close);
+        modal.append(box);
+        document.body.append(modal);
+      }
+
+      // ---------- Credits ----------
+      let dragFrom = null;
+      function sortable(row, list, i, rerender) {
+        row.addEventListener('dragstart', (e) => {
+          dragFrom = { list, i };
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', '');
+          requestAnimationFrame(() => row.classList.add('dragging'));
+        });
+        row.addEventListener('dragend', () => {
+          row.classList.remove('dragging');
+          if (row.dataset.handle) row.draggable = false;
+          dragFrom = null;
+        });
+        row.addEventListener('dragover', (e) => {
+          if (dragFrom?.list !== list) return;
+          e.preventDefault();
+        });
+        row.addEventListener('drop', (e) => {
+          if (dragFrom?.list !== list || dragFrom.i === i) return;
+          e.preventDefault();
+          const [moved] = list.splice(dragFrom.i, 1);
+          list.splice(i, 0, moved);
+          dragFrom = null;
+          rerender();
+          changed();
+        });
+      }
+      function renderCredits() {
+        const box = $('creditRows');
+        box.replaceChildren(
+          ...model.credits.map((c, i) => {
+            const row = el('div', { className: 'credit' });
+            row.dataset.handle = '1';
+            const handle = el('span', { className: 'grip', title: 'Drag to reorder' }, grip());
+            handle.onpointerdown = () => (row.draggable = true);
+            handle.onpointerup = () => (row.draggable = false);
+            const role = el('input', { className: 'in', type: 'text', value: c.role, placeholder: 'Role', ariaLabel: 'Role' });
+            const names = el('input', { className: 'in', type: 'text', value: c.names, placeholder: 'Names', ariaLabel: c.role || 'Names' });
+            role.oninput = () => {
+              c.role = role.value;
+              names.ariaLabel = c.role || 'Names';
+              changed();
+            };
+            names.oninput = () => {
+              c.names = names.value;
+              changed();
+            };
+            const remove = el('button', { className: 'btn ghost icon', type: 'button', ariaLabel: `Remove ${c.role || 'credit'}` }, svg(ICON.x));
+            remove.onclick = () => {
+              model.credits.splice(i, 1);
+              renderCredits();
+              changed();
+            };
+            row.append(handle, role, names, remove);
+            sortable(row, model.credits, i, renderCredits);
+            return row;
+          }),
+        );
+      }
+      $('addCredit').onclick = () => {
+        model.credits.push({ role: '', names: '' });
+        renderCredits();
+        changed();
+        $('creditRows').lastChild.querySelector('input').focus();
+      };
+
+      // ---------- Stills ----------
+      function renderStills() {
+        const grid = $('stills');
+        const items = model.stills.map((v, i) => {
+          const img = el('img', { alt: `Still ${i + 1}` });
+          img.onerror = async () => (await fallbackToGitHub(img, v)) || (img.hidden = true);
+          img.src = srcOf(v);
+          const replace = el('button', { className: 'btn icon', type: 'button', ariaLabel: `Replace still ${i + 1}` }, svg(ICON.up));
+          replace.onclick = async () => {
+            const [key] = accept('image', await pick('image'));
+            if (!key) return;
+            model.stills[i] = key;
+            renderStills();
+            changed();
+          };
+          const remove = el('button', { className: 'btn icon', type: 'button', ariaLabel: `Remove still ${i + 1}` }, svg(ICON.trash));
+          remove.onclick = () => {
+            model.stills.splice(i, 1);
+            renderStills();
+            changed();
+          };
+          const media = el('div', { className: 'media' }, img, el('span', { className: 'tag num', textContent: String(i + 1) }), el('div', { className: 'tools' }, replace, remove));
+          const cap = el('figcaption', { textContent: fileOf(v)?.name ?? baseName(v) });
+          fileInfo(v).then((info) => (cap.textContent = `${info.name} · ${info.pending ? 'not saved yet' : mb(info.size)}`));
+          const fig = el('figure', { className: 'still', draggable: true }, media, cap);
+          sortable(fig, model.stills, i, renderStills);
+          return fig;
+        });
+        if (model.stills.length < 4) {
+          const add = el('button', { className: 'add', type: 'button' }, svg(ICON.plus, 20), model.stills.length ? 'Add stills' : 'Add stills (drop or click)');
+          const addFiles = (keys) => {
+            const room = 4 - model.stills.length;
+            if (keys.length > room) alert(`Only ${room} more fit (4 stills at most). The first ${room} were added.`);
+            model.stills.push(...keys.slice(0, room));
+            renderStills();
+            changed();
+          };
+          add.onclick = async () => addFiles(accept('image', await pick('image', true)));
+          dropZone(add, 'image', addFiles);
+          items.push(add);
+          for (let n = model.stills.length + 1; n < 4; n++) items.push(el('div', { className: 'slot' }));
+        }
+        grid.replaceChildren(...items);
+      }
+
+      // ---------- Info ----------
+      function renderGroup() {
+        $('group').replaceChildren(
+          ...GROUPS.map(([key, label]) => {
+            const b = el('button', { type: 'button', textContent: label, title: label });
+            b.setAttribute('aria-pressed', String(model.group === key));
+            b.onclick = () => {
+              model.group = key;
+              renderGroup();
+              changed();
+            };
+            return b;
+          }),
+        );
+      }
+      const TEXT = ['title', 'menuLabel', 'about', 'todo', 'vimeo', 'order', 'previewStart'];
+      for (const k of TEXT) {
+        $(k).addEventListener('input', () => {
+          model[k] = $(k).value;
+          if (k === 'title') {
+            $('heading').textContent = model.title || 'New project';
+            if (isNew && !slugTouched) setSlug(slugify(model.title));
+          }
+          changed();
+        });
+      }
+      const slugify = (s) =>
+        s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      let slugTouched = false;
+      function setSlug(v) {
+        model.slug = v;
+        $('slug').value = v;
+        showAddress();
+      }
+      $('slug').addEventListener('input', () => {
+        slugTouched = true;
+        model.slug = slugify($('slug').value);
+        showAddress();
+        changed();
+      });
+      $('slug').addEventListener('change', () => ($('slug').value = model.slug));
+      function showAddress() {
+        $('address').querySelector('span').textContent = `Page address: ${location.host}/work/${model.slug || '…'}`;
+        $('view').href = `/work/${model.slug}/`;
+      }
+
+      function setField(k, v) {
+        model[k] = v;
+        if (k === 'stream') renderFilm(), renderPreview(), renderPoster();
+        if (k === 'preview') renderPreview(), renderPoster();
+        if (k === 'poster') renderPoster();
+        changed();
+      }
+      $('filmUpload').onclick = openUpload;
+      $('filmRemove').onclick = () => confirm('Remove the film from this project? It stays in Cloudflare, so it can be connected again.') && setField('stream', '');
+      $('previewUpload').onclick = choosePreview;
+      $('previewRemove').onclick = () => setField('preview', '');
+      $('posterUpload').onclick = choosePoster;
+      $('posterRemove').onclick = () => setField('poster', '');
+      dropZone($('previewMedia'), 'preview', ([k]) => k && setField('preview', k));
+      dropZone($('posterMedia'), 'image', ([k]) => k && setField('poster', k));
+
+      // ---------- Save state ----------
+      function changed() {
+        const d = dirty();
+        $('save').disabled = !d || saving;
+        if (!saving) setState(d ? 'Unsaved changes' : 'All changes saved');
+      }
+      function setState(text, error = false) {
+        $('saveState').textContent = text;
+        $('saveState').classList.toggle('err', error);
+      }
+      addEventListener('beforeunload', (e) => {
+        if (dirty() || saving) e.preventDefault();
+      });
+      addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+          e.preventDefault();
+          if (!$('save').disabled) save();
+        }
+      });
+
+      function problems() {
+        const out = [];
+        const mark = (id, bad) => $(id).classList.toggle('bad', bad);
+        mark('title', !model.title.trim());
+        if (!model.title.trim()) out.push('The project needs a name.');
+        if (isNew) {
+          mark('slug', !model.slug);
+          if (!model.slug) out.push('The page address is empty.');
+        }
+        const badOrder = model.order !== '' && !(Number.isInteger(Number(model.order)) && Number(model.order) >= 1);
+        mark('order', badOrder);
+        if (badOrder) out.push('Position in menu must be a whole number, 1 or more.');
+        const badVimeo = !!model.vimeo.trim() && !/^[0-9]+$/.test(model.vimeo.trim());
+        mark('vimeo', badVimeo);
+        if (badVimeo) out.push('Vimeo backup takes numbers only (the end of the Vimeo link).');
+        return out;
+      }
+
+      // Unused name in the folder for an upload, like the old editor did (lowercase, dashes).
+      async function freePath(dir, name, taken) {
+        const dot = name.lastIndexOf('.');
+        const stem = slugify(dot > 0 ? name.slice(0, dot) : name) || 'file';
+        const ext = dot > 0 ? name.slice(dot).toLowerCase() : '';
+        for (let n = 1; ; n++) {
+          const p = `${dir}/${stem}${n > 1 ? `-${n}` : ''}${ext}`;
+          if (taken.has(p)) continue;
+          try {
+            await gh(`contents/${encodeURI(`public${p}`)}?ref=main`, { method: 'HEAD' });
+          } catch (e) {
+            if (e.status === 404) return taken.add(p), p;
+            throw e;
+          }
+        }
+      }
+
+      // One commit with the project file and any new uploads, through GitHub's Git API (fine for files up to 100 MB).
+      async function commit(message, entries) {
+        for (let attempt = 0; ; attempt++) {
+          const head = (await gh('git/ref/heads/main')).object.sha;
+          const base = (await gh(`git/commits/${head}`)).tree.sha;
+          const tree = await gh('git/trees', { method: 'POST', body: { base_tree: base, tree: entries } });
+          const c = await gh('git/commits', { method: 'POST', body: { message, tree: tree.sha, parents: [head] } });
+          try {
+            return await gh('git/refs/heads/main', { method: 'PATCH', body: { sha: c.sha, force: false } });
+          } catch (e) {
+            if (e.status !== 422 || attempt >= 2) throw e; // someone else saved at the same moment: try again on top
+          }
+        }
+      }
+
+      async function save() {
+        const issues = problems();
+        if (issues.length) return setState(issues[0], true);
+        saving = true;
+        $('save').disabled = true;
+        try {
+          // Stop if the file was changed elsewhere (old editor, another tab) since this page loaded.
+          setState('Saving…');
+          if (isNew && !sha) {
+            path = `${DIR}/${model.slug}.json`;
+            const exists = await gh(`contents/${path}?ref=main`).then(() => true, (e) => (e.status === 404 ? false : Promise.reject(e)));
+            if (exists) throw new Error('A project with this page address already exists. Pick another address.');
+          } else {
+            const now = await gh(`contents/${path}?ref=main`);
+            if (now.sha !== sha) throw new Error('This project was changed somewhere else since you opened it. Copy your changes, reload the page, and redo them.');
+          }
+
+          const entries = [];
+          const taken = new Set();
+          const uploads = [...new Set([model.preview, model.poster, ...model.stills].filter(isLocal))];
+          const final = new Map();
+          for (const [n, key] of uploads.entries()) {
+            const file = locals.get(key);
+            const kind = key === model.preview ? 'preview' : 'image';
+            setState(`Uploading ${n + 1} of ${uploads.length}: ${file.name}…`);
+            const sitePath = await freePath(KINDS[kind].dir, file.name, taken);
+            const blob = await gh('git/blobs', { method: 'POST', body: { content: await fileBase64(file), encoding: 'base64' } });
+            entries.push({ path: `public${sitePath}`, mode: '100644', type: 'blob', sha: blob.sha });
+            final.set(key, sitePath);
+          }
+          const swap = (v) => final.get(v) ?? v;
+          const data = toData({ ...model, preview: swap(model.preview), poster: swap(model.poster), stills: model.stills.map(swap) });
+          const text = JSON.stringify(data, null, 2) + '\n';
+          setState('Saving…');
+          const json = await gh('git/blobs', { method: 'POST', body: { content: text, encoding: 'utf-8' } });
+          entries.push({ path, mode: '100644', type: 'blob', sha: json.sha });
+          await commit(`${isNew && !sha ? 'Add' : 'Update'} project “${data.slug}”`, entries);
+
+          // Saved: the uploaded files now have their real names.
+          for (const [key, sitePath] of final) {
+            savedFiles.set(sitePath, locals.get(key));
+            locals.delete(key);
+            infoCache.delete(sitePath);
+          }
+          model.preview = swap(model.preview);
+          model.poster = swap(model.poster);
+          model.stills = model.stills.map(swap);
+          original = data;
+          sha = json.sha;
+          savedSnapshot = snapshot();
+          if (isNew) {
+            history.replaceState(null, '', `?slug=${encodeURIComponent(model.slug)}`);
+            $('slugBox').hidden = true;
+          }
+          saving = false;
+          changed();
+          setState('Saved. The website updates in about 2 minutes.');
+          renderPreview();
+          renderPoster();
+          renderStills();
+          checkLive();
+        } catch (e) {
+          saving = false;
+          changed();
+          setState(e.message || 'Saving failed. Check the connection and try again.', true);
+        }
+      }
+      $('save').onclick = save;
+
+      $('delete').onclick = async () => {
+        if (isNew && !sha) return void (location.href = '/admin/#/collections/projects');
+        if (!confirm(`Delete “${model.title}” from the website? Its uploaded files stay in the repo.`)) return;
+        try {
+          setState('Deleting…');
+          await commit(`Delete project “${model.slug}”`, [{ path, mode: '100644', type: 'blob', sha: null }]);
+          savedSnapshot = snapshot();
+          sha = '';
+          location.href = '/admin/#/collections/projects';
+        } catch (e) {
+          setState(e.message, true);
+        }
+      };
+      $('classic').onclick = (e) => {
+        if (dirty() && !confirm('You have unsaved changes here. Open the old editor anyway?')) return e.preventDefault();
+        sessionStorage.setItem('jg-classic', '1');
+      };
+
+      // ---------- Live badge (same check as the editor's publishing badge) ----------
+      let since = 0;
+      async function checkLive() {
+        try {
+          const [head, live] = await Promise.all([
+            fetch(`https://api.github.com/repos/${REPO}/commits/main`, { cache: 'no-store', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.sha' } }).then((r) => (r.ok ? r.text() : Promise.reject())),
+            fetch(`/admin/version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => r.json()),
+          ]);
+          const pill = $('live');
+          pill.hidden = false;
+          if (live.commit === head.trim()) {
+            since = 0;
+            pill.className = 'pill live';
+            pill.textContent = 'Live';
+            pill.title = 'All saved changes are on the website';
+          } else {
+            since ||= Date.now();
+            pill.className = 'pill busy';
+            pill.textContent = Date.now() - since > 8 * 60 * 1000 ? 'Publishing (slow)' : 'Publishing…';
+            pill.title = 'Saved changes appear on the website in about 2 minutes';
+          }
+        } catch {}
+      }
+
+      // ---------- Start ----------
+      function fail(text, link) {
+        $('editor').hidden = true;
+        const box = $('message');
+        box.hidden = false;
+        box.replaceChildren(el('p', { textContent: text }));
+        if (link) box.append(el('a', { className: 'btn', href: link[1], textContent: link[0] }));
+      }
+
+      async function start() {
+        if (!token) return fail('Sign in to the editor first, then open the project again.', ['Go to the editor', '/admin/']);
+        if (!isNew && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return fail('No project chosen.', ['Back to projects', '/admin/#/collections/projects']);
+        let data = { group: 'commercial' };
+        if (!isNew) {
+          try {
+            const file = await gh(`contents/${path}?ref=main`);
+            sha = file.sha;
+            data = JSON.parse(decode(file.content));
+          } catch (e) {
+            return fail(e.status === 404 ? 'This project doesn’t exist (it may have been deleted or renamed).' : `Couldn't load the project: ${e.message}`, ['Back to projects', '/admin/#/collections/projects']);
+          }
+        }
+        original = data;
+        model = fromData(data);
+        if (isNew) {
+          model.slug = '';
+          $('slugBox').hidden = false;
+          $('delete').lastChild.textContent = ' Cancel';
+          $('classic').hidden = true;
+        } else {
+          $('classic').href = `/admin/#/collections/projects/entries/${encodeURIComponent(slug)}`;
+        }
+        savedSnapshot = isNew ? '' : snapshot();
+        document.title = `${model.title || 'New project'} · Jonah George`;
+        $('heading').textContent = model.title || 'New project';
+        for (const k of TEXT) $(k).value = model[k];
+        showAddress();
+        renderGroup();
+        renderCredits();
+        renderStills();
+        renderFilm();
+        renderPreview();
+        renderPoster();
+        $('editor').hidden = false;
+        changed();
+        if (isNew) setState('New project, not saved yet');
+        checkLive();
+        setInterval(checkLive, 15000);
+      }
+      start();
+    </script>
+  </body>
+</html>

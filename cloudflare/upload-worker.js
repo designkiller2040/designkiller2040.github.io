@@ -90,6 +90,11 @@ export default {
         state: result.status?.state ?? '',
         percent: Number(result.status?.pctComplete ?? 0),
         error: result.status?.errorReasonText ?? '',
+        // Shown on the film's card in the project editor.
+        name: result.meta?.name ?? '',
+        size: result.size ?? null,
+        uploaded: result.uploaded ?? null,
+        duration: result.duration ?? 0,
       });
     }
 

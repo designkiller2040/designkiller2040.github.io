@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 
-export type Credits = Partial<Record<CreditLabel, string>>;
+/** Role -> names, in the order shown on the page. The usual roles are in CREDIT_ORDER; any other role works too. */
+export type Credits = Partial<Record<CreditLabel, string>> & Record<string, string | undefined>;
 
 export interface Project {
   slug: string;
@@ -94,14 +95,16 @@ export const previewSrc = (p: Project) => {
 };
 
 /**
- * Big thumbnail for a project page: the frame at 1 second of its preview clip
- * (made by scripts/preview-frames.sh for HD clips), else the "Big thumbnail" image, else none.
+ * Big thumbnail for a project page: the uploaded "Thumbnail image", else the
+ * frame at 1 second of its preview clip (made by scripts/preview-frames.sh for
+ * HD clips), else the old slug-based poster, else none.
  */
 export const posterSrc = (p: Project) => {
+  if (p.poster && existsSync(`public${p.poster}`)) return withVersion(p.poster);
   const clip = clipOf(p);
   const frame = `/images/frames/${clip.split('/').pop()!.replace(/\.[^.]+$/, '')}.jpg`;
   if (existsSync(`public${frame}`)) return withVersion(frame);
-  const poster = p.poster ?? `/images/work/${p.slug}/poster.jpg`;
+  const poster = `/images/work/${p.slug}/poster.jpg`;
   return existsSync(`public${poster}`) ? withVersion(poster) : undefined; // none yet: plain black
 };
 

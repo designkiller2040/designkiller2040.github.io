@@ -43,6 +43,24 @@
   </head>
   <body>
     <!-- Sveltia CMS: edits the files in src/data/ and uploads files straight to the GitHub repo. Setup: config.yml next to this file. -->
+    <script>
+      // Projects open in the new project editor (/admin/project/), for existing and new projects.
+      // "Open in old editor" there sets jg-classic, which keeps this tab on the old form.
+      (() => {
+        const go = () => {
+          if (sessionStorage.getItem('jg-classic')) return;
+          const m = location.hash.match(/^#\/collections\/projects\/(?:entries\/([^/?#]+)|new\b)/);
+          if (m) location.replace(`/admin/project/?${m[1] ? `slug=${m[1]}` : 'new=1'}`);
+        };
+        go();
+        addEventListener('hashchange', go);
+        // The editor changes the address with pushState, so check after each change too.
+        for (const k of ['pushState', 'replaceState']) {
+          const real = history[k].bind(history);
+          history[k] = (...args) => (real(...args), go());
+        }
+      })();
+    </script>
     <script src="/admin/large-files.js"></script>
     <script src="https://unpkg.com/@sveltia/cms@0.233.1/dist/sveltia-cms.js"></script>
     <script>

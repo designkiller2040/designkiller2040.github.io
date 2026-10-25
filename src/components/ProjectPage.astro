@@ -10,16 +10,16 @@
 import Base from '../layouts/Base.astro';
 import Header from './Header.astro';
 import ProjectList from './ProjectList.astro';
-import { CREDIT_ORDER, filmEmbed, posterSrc, stillSrcs, type Project } from '../data/projects';
+import { filmEmbed, posterSrc, stillSrcs, type Project } from '../data/projects';
 
 interface Props {
   project: Project;
 }
 const { project } = Astro.props;
-const credits = CREDIT_ORDER.filter((l) => project.credits[l]).map((l) => ({
-  label: l.toLowerCase(),
-  value: project.credits[l]!,
-}));
+// Credits in the order they're listed in the editor; empty ones are skipped.
+const credits = Object.entries(project.credits ?? {})
+  .filter(([l, v]) => l.trim() && v?.trim())
+  .map(([l, v]) => ({ label: l.toLowerCase(), value: v! }));
 const embed = filmEmbed(project);
 const poster = posterSrc(project);
 ---
