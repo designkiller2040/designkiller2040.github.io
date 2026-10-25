@@ -10,13 +10,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SRC="$ROOT/public/video/previews"
-OUT="$ROOT/dist/video/previews"
 CACHE="$ROOT/.cache/previews"
 mkdir -p "$CACHE"
 
 shopt -s nullglob nocaseglob
-for f in "$SRC"/*.{mp4,mov,m4v,mkv,webm,mxf}; do
+# Clips can sit in the previews folder or in the editor's Global Assets folder.
+for f in "$ROOT"/public/{video/previews,images/uploads}/*.{mp4,mov,m4v,mkv,webm,mxf}; do
+  rel="${f#"$ROOT"/public/}"
+  OUT="$ROOT/dist/$(dirname "$rel")"
   name="$(basename "$f")"
   base="${name%.*}"
   ext="${name##*.}"
