@@ -115,7 +115,7 @@ collections:
             media_library:
               config:
                 max_file_size: 40000000 # 40 MB
-            hint: 'Short silent loop, under 40 MB. MP4 or MOV (ProRes is fine): the site turns it into a small web video by itself, about 2 minutes after saving. Plays when hovering the title.'
+            hint: 'Short silent loop, under 40 MB. MP4 or MOV (ProRes is fine): the site turns it into a small web video by itself, about 2 minutes after saving. Plays when hovering the title. Shortcut: upload clips on the Assets page with the project’s name in the file name (e.g. Givenchy TK 360 Web.mov) and they connect to their projects by themselves.'
           - name: poster
             label: Big thumbnail
             widget: image

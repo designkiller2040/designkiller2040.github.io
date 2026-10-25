@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # to connect newly uploaded preview clips (below)
   pages: write
   id-token: write
 
@@ -25,6 +25,16 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Clips uploaded on the editor's Assets page get connected to their projects by file name.
+      - name: Connect new preview clips to their projects
+        run: |
+          node scripts/link-previews.mjs
+          if ! git diff --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -qam 'Connect new preview clips to their projects'
+            git push || echo 'Could not push the change; this build still uses the new clips.'
+          fi
       # Preview clips uploaded as .mov etc. are converted during the build (scripts/convert-previews.sh).
       - name: Install ffmpeg
         run: command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
