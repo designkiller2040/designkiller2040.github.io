@@ -5,7 +5,8 @@ import Footer from '../components/Footer.astro';
 import { projects, previewSrc } from '../data/projects';
 
 // The 12 previews on the wall, left to right, top to bottom. Change the slugs
-// here to pick different projects.
+// here to pick different projects. Projects without a preview clip are
+// skipped, and other projects with clips fill the gaps.
 const WALL = [
   'every-other-weekend',
   'do-you-ever-feel-nostalgic',
@@ -20,7 +21,9 @@ const WALL = [
   'the-valley-of-souls',
   'truth-of-existence',
 ];
-const tiles = WALL.map((slug) => projects.find((p) => p.slug === slug)!).filter(Boolean);
+const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ...projects]
+  .filter((p, i, all) => p && previewSrc(p) && all.indexOf(p) === i)
+  .slice(0, WALL.length);
 ---
 
 <Base title="Contact">

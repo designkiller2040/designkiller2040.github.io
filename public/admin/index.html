@@ -88,9 +88,9 @@
                 .map((e) => JSON.parse(e.object.text))
                 .map((p) => {
                   const live = published.get(p.slug);
-                  const preview = rooted(p.preview) ?? `/video/previews/${p.slug}.mp4`;
+                  const preview = rooted(p.preview);
                   const poster = rooted(p.poster) ?? `/images/work/${p.slug}/poster.jpg`;
-                  return [p.title, { slug: p.slug, preview: fileURL(preview, live?.preview, true), poster: fileURL(poster, live?.poster) }];
+                  return [p.title, { slug: p.slug, preview: preview && fileURL(preview, live?.preview, true), poster: fileURL(poster, live?.poster) }];
                 }),
             );
             fromGitHub = true;
@@ -170,6 +170,7 @@
           if (video.dataset.loading) return;
           video.dataset.loading = '1';
           const src = video.dataset.src;
+          if (!src || src === 'undefined') return;
           if (!src.startsWith(RAW)) return void (video.src = `${src}#t=1`);
           try {
             const blob = await (await fetch(src)).blob();
