@@ -98,7 +98,7 @@ collections:
             label: Cloudflare video (full film)
             widget: string
             required: false
-            hint: 'Easiest: upload the film on the [upload page](/admin/upload/), which fills this in for you. Or upload it in the Cloudflare dashboard (Stream), open the video and paste its Video ID (32 letters and numbers) or embed link here. Plays when "Play full" is clicked, instead of Vimeo.'
+            hint: 'Easiest: click "Upload film" below, which fills this in for you; then Save. Or upload it in the Cloudflare dashboard (Stream), open the video and paste its Video ID (32 letters and numbers) or embed link here. Plays when "Play full" is clicked, instead of Vimeo.'
             pattern: ['[0-9a-fA-F]{32}', 'Paste the 32-character Video ID from Cloudflare Stream, or a link that contains it']
           - name: vimeo
             label: Vimeo ID (old, optional)

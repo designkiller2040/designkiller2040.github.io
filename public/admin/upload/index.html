@@ -115,12 +115,19 @@
       [hidden] {
         display: none !important;
       }
+      /* Inside the editor (opened from a project's "Upload film" button). */
+      .embed main {
+        padding: 20px 16px;
+      }
+      .embed .page-only {
+        display: none !important;
+      }
     </style>
   </head>
   <body>
     <main>
       <h1>Upload a film</h1>
-      <p class="muted">
+      <p class="muted page-only">
         The film goes to Cloudflare and is connected to the project you pick. About two minutes later, “Play full”
         on that project's page plays it. Titles, credits and images are edited in the <a href="/admin/">editor</a>.
       </p>
@@ -131,14 +138,14 @@
       <p id="setup" hidden class="muted">The upload helper isn't connected yet, so uploading is switched off.</p>
 
       <form id="form" hidden>
-        <label for="project">Project</label>
-        <select id="project" required></select>
+        <label for="project" class="page-only">Project</label>
+        <select id="project" class="page-only" required></select>
         <p class="now muted" id="current"></p>
-        <p class="now muted">New project? Add it in the <a href="/admin/">editor</a> first, then reload this page.</p>
+        <p class="now muted page-only">New project? Add it in the <a href="/admin/">editor</a> first, then reload this page.</p>
 
         <label for="file">Film file</label>
         <input id="file" type="file" accept="video/*" required />
-        <p class="now muted">H.264 MP4 works best. ProRes and other uncompressed exports are too heavy for Cloudflare (over 200 Mbps).</p>
+        <p class="now muted">Up to 1 GB. H.264 MP4 works best. ProRes and other uncompressed exports are too heavy for Cloudflare (over 200 Mbps).</p>
 
         <button id="go" type="submit">Upload and connect</button>
         <div class="bar" hidden><span></span></div>
@@ -152,6 +159,11 @@
       const HELPER = 'https://jonah-george-upload.jonahmgeorge.workers.dev';
       const REPO = 'designkiller2040/designkiller2040.github.io';
       const DIR = 'src/data/projects'; // one JSON file per project
+      // Opened from the editor: ?embed=1&slug=<project>. The film's ID then goes
+      // back into the editor's field (saved with the project), not straight to GitHub.
+      const params = new URLSearchParams(location.search);
+      const EMBED = params.has('embed') && window.parent !== window;
+      if (EMBED) document.documentElement.classList.add('embed');
 
       const $ = (id) => document.getElementById(id);
       const status = (text, error = false) => {
@@ -239,6 +251,13 @@
       async function start() {
         if (!token) return ($('signin').hidden = false);
         $('form').hidden = false;
+        if (EMBED) {
+          $('go').textContent = 'Upload';
+          $('current').textContent = 'The film goes to Cloudflare. When it is ready, its ID is filled in for you.';
+          projects = [{ slug: params.get('slug') || 'new', title: '' }];
+          $('project').innerHTML = `<option value="${projects[0].slug}"></option>`;
+          return;
+        }
         if (!HELPER) {
           $('setup').hidden = false;
           $('go').disabled = true;
@@ -360,7 +379,9 @@
           v.src = url;
         });
       }
+      const MAX_BYTES = 1e9; // 1 GB
       async function checkFile(file) {
+        if (file.size > MAX_BYTES) throw new Error(`This file is ${(file.size / 1e9).toFixed(1)} GB; the limit is 1 GB. ${EXPORT_TIP}`);
         const secs = await durationOf(file);
         if (secs) {
           const mbps = (file.size * 8) / secs / 1e6;
@@ -384,6 +405,12 @@
           await checkFile(file);
           const id = await upload(file);
           await waitUntilReady(id);
+          if (EMBED) {
+            busy = false;
+            window.parent.postMessage({ type: 'jg-film', id }, location.origin);
+            showStep('Done. The film is filled in.', 'Click Save in the editor to publish it.');
+            return;
+          }
           showStep('Step 3 of 3 · Connecting the video to the project…', 'Keep this page open until it says Done.');
           await connect(slug, id);
           busy = false;
