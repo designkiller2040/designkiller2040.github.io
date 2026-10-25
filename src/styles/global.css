@@ -152,3 +152,64 @@ video::-webkit-media-controls-play-button {
   display: block;
   pointer-events: none;
 }
+
+/*
+ * Page transitions
+ * ----------------
+ * Going from one page to another, the browser crossfades the two pages
+ * (Chrome, Edge and Safari 18.2+; other browsers just switch). The header and
+ * the project list are in the same place on every page, so they stay put and
+ * only change look: from one project's pill to the next, or from the
+ * homepage's difference blend to plain white.
+ * Each page is still a normal page load, so every page script runs as usual.
+ */
+@view-transition {
+  navigation: auto;
+}
+.header {
+  view-transition-name: site-header;
+}
+@media (min-width: 768px) {
+  .project-list {
+    view-transition-name: project-list;
+  }
+}
+::view-transition-group(*) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+::view-transition-old(root) {
+  animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) both vt-fade-out;
+}
+::view-transition-new(root) {
+  animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) both vt-fade-in;
+}
+::view-transition-old(site-header),
+::view-transition-new(site-header),
+::view-transition-old(project-list),
+::view-transition-new(project-list) {
+  animation-duration: 0.5s;
+}
+/* To or from the homepage (class set in Base.astro) they stay in the page
+   crossfade instead, which keeps the homepage's difference blend intact. */
+html.vt-home .header,
+html.vt-home .project-list {
+  view-transition-name: none;
+}
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

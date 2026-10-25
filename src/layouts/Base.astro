@@ -21,6 +21,26 @@ const fullTitle = title ? `${title} | Jonah George` : 'Jonah George';
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- Page transitions (global.css). To or from the homepage, the header
+         and list are left in the page-wide crossfade, so they change
+         between the homepage's difference blend and plain white in place. -->
+    <script is:inline>
+      (function () {
+        var html = document.documentElement;
+        function path(u) { try { return new URL(u).pathname; } catch (e) { return ''; } }
+        addEventListener('pageswap', function (e) {
+          if (e.viewTransition && (location.pathname === '/' || path(e.activation && e.activation.entry.url) === '/')) html.classList.add('vt-home');
+        });
+        addEventListener('pageshow', function () { html.classList.remove('vt-home'); });
+        addEventListener('pagereveal', function (e) {
+          if (!e.viewTransition) return;
+          var from = window.navigation && navigation.activation && navigation.activation.from;
+          if (location.pathname !== '/' && path(from && from.url) !== '/') return;
+          html.classList.add('vt-home');
+          e.viewTransition.finished.finally(function () { html.classList.remove('vt-home'); });
+        });
+      })();
+    </script>
     <slot name="head" />
   </head>
   <body class={theme}>
