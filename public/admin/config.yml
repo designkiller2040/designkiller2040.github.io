@@ -37,6 +37,11 @@ collections:
         file: src/data/home.json
         format: json
         fields:
+          - name: stream
+            label: Showreel from Cloudflare
+            widget: string
+            required: false
+            hint: 'Video ID (or any link) of a film in Cloudflare Stream. When filled in, the homepage plays this instead of the uploaded video below, and takes its still frame from it. Leave empty to use the upload.'
           - name: reel
             label: Showreel video
             widget: file

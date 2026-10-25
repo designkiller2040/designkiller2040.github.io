@@ -4,10 +4,14 @@ import Header from '../components/Header.astro';
 import ProjectList from '../components/ProjectList.astro';
 import home from '../data/home.json';
 import { withVersion } from '../data/projects';
+import { existsSync } from 'node:fs';
 
 // Showreel, its still frame and label are edited in /admin/ (Homepage).
-const reel = withVersion(home.reel);
-const poster = withVersion(home.poster);
+// A Cloudflare video there wins over the uploaded MP4: the build copies it
+// to /video/stream/reel.mp4 with its first frame (scripts/stream-reel.sh).
+const fromStream = existsSync('public/video/stream/reel.mp4');
+const reel = withVersion(fromStream ? '/video/stream/reel.mp4' : home.reel);
+const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jpg') ? '/video/stream/reel.jpg' : home.poster);
 ---
 
 <Base theme="dark">

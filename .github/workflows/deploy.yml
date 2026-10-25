@@ -25,13 +25,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # The build converts .mov previews (scripts/convert-previews.sh) takes thumbnails from them (scripts/preview-frames.sh), and cuts clips from Cloudflare films (scripts/stream-previews.sh).
+      # The build converts .mov previews (scripts/convert-previews.sh) takes thumbnails from them (scripts/preview-frames.sh), cuts clips from Cloudflare films (scripts/stream-previews.sh), and copies a Cloudflare showreel (scripts/stream-reel.sh).
       - name: Install ffmpeg
         run: command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
       - uses: actions/cache@v4
         with:
           path: .cache
-          key: previews-${{ hashFiles('public/video/previews/**', 'public/images/uploads/**', 'src/data/projects/**') }}
+          key: previews-${{ hashFiles('public/video/previews/**', 'public/images/uploads/**', 'src/data/projects/**', 'src/data/home.json') }}
           restore-keys: previews-
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
