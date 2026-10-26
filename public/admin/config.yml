@@ -15,6 +15,7 @@ site_url: https://designkiller2040.github.io
 app_title: Jonah George
 logo:
   src: /admin/logo.svg
+  show_in_header: false
 # Global Assets = the preview clips folder, so bulk uploads on the Assets page land with the other clips.
 media_folder: public/video/previews
 public_folder: /video/previews

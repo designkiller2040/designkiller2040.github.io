@@ -22,9 +22,10 @@
       .preview.no-thumbnail:has(> .jg-file:not([hidden])) > .icon { display: none; }
       .jg-file { width: 100%; height: 100%; object-fit: cover; }
 
-      /* Jonah George logo on the sign-in screen: logo size, and white when the editor is dark. */
+      /* Sign-in screen: white, with the black Jonah George logo (light theme forced by the script below). */
       img[src='/admin/logo.svg'] { width: 174px !important; height: auto !important; }
-      @media (prefers-color-scheme: dark) { img[src='/admin/logo.svg'] { filter: invert(1); } }
+      .app-shell:has(img[src='/admin/logo.svg']),
+      .app-shell:has(img[src='/admin/logo.svg']) .main { background: #fff !important; }
 
       /* "Publishing" badge, bottom right (see the last script). */
       .jg-publish { position: fixed; right: 16px; bottom: 16px; z-index: 10000; display: flex; align-items: center; gap: 8px;
@@ -47,6 +48,26 @@
   </head>
   <body>
     <script src="/admin/loading.js" data-auto></script>
+    <script>
+      // The sign-in screen is always light (white page, black logo), even when the Mac is in dark mode.
+      // The editor's own theme comes back after signing in.
+      (() => {
+        const html = document.documentElement;
+        let theirs = null;
+        const sync = () => {
+          const signIn = !!document.querySelector("img[src='/admin/logo.svg']");
+          const now = html.getAttribute('data-theme');
+          if (signIn && now !== 'light') {
+            theirs = now;
+            html.setAttribute('data-theme', 'light');
+          } else if (!signIn && theirs !== null) {
+            html.setAttribute('data-theme', theirs);
+            theirs = null;
+          }
+        };
+        new MutationObserver(sync).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-theme'] });
+      })();
+    </script>
     <!-- Sveltia CMS: edits the files in src/data/ and uploads files straight to the GitHub repo. Setup: config.yml next to this file. -->
     <script>
       // Admin 2.0: the project list (/admin/projects/) and project editor (/admin/project/)
