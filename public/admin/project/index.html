@@ -167,6 +167,7 @@
     </style>
   </head>
   <body>
+    <script src="/admin/loading.js"></script>
     <header>
       <div class="bar">
         <div>
@@ -321,7 +322,6 @@
           <input class="in" id="todo" type="text" placeholder="e.g. waiting for final grade" />
         </div>
         <div class="links">
-          <a class="btn ghost" id="classic" href="/admin/">Open in old editor</a>
           <button class="btn ghost red" type="button" id="delete">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
             Delete project
@@ -360,7 +360,7 @@
       try {
         token = JSON.parse(localStorage.getItem('sveltia-cms.user') || '{}').token || '';
       } catch {}
-      // Opening this page means the new editor is wanted again (see "Open in old editor").
+      // Clears the old "keep this tab on the old screens" switch, if a tab still has it.
       sessionStorage.removeItem('jg-classic');
 
       // ---------- GitHub ----------
@@ -1060,10 +1060,6 @@
           setState(e.message, true);
         }
       };
-      $('classic').onclick = (e) => {
-        if (dirty() && !confirm('You have unsaved changes here. Open the old editor anyway?')) return e.preventDefault();
-        sessionStorage.setItem('jg-classic', '1');
-      };
 
       // ---------- Live badge (same check as the editor's publishing badge) ----------
       let since = 0;
@@ -1094,6 +1090,7 @@
         $('editor').hidden = true;
         const box = $('message');
         box.hidden = false;
+        jgLoaded();
         box.replaceChildren(el('p', { textContent: text }));
         if (link) box.append(el('a', { className: 'btn', href: link[1], textContent: link[0] }));
       }
@@ -1117,9 +1114,6 @@
           model.slug = '';
           $('slugBox').hidden = false;
           $('delete').lastChild.textContent = ' Cancel';
-          $('classic').hidden = true;
-        } else {
-          $('classic').href = `/admin/#/collections/projects/entries/${encodeURIComponent(slug)}`;
         }
         savedSnapshot = isNew ? '' : snapshot();
         document.title = `${model.title || 'New project'} · Jonah George`;
@@ -1133,6 +1127,7 @@
         renderPreview();
         renderPoster();
         $('editor').hidden = false;
+        jgLoaded();
         changed();
         if (isNew) setState('New project, not saved yet');
         checkLive();

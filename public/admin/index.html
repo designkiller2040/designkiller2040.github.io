@@ -22,6 +22,10 @@
       .preview.no-thumbnail:has(> .jg-file:not([hidden])) > .icon { display: none; }
       .jg-file { width: 100%; height: 100%; object-fit: cover; }
 
+      /* Jonah George logo on the sign-in screen: logo size, and white when the editor is dark. */
+      img[src='/admin/logo.svg'] { width: 174px !important; height: auto !important; }
+      @media (prefers-color-scheme: dark) { img[src='/admin/logo.svg'] { filter: invert(1); } }
+
       /* "Publishing" badge, bottom right (see the last script). */
       .jg-publish { position: fixed; right: 16px; bottom: 16px; z-index: 10000; display: flex; align-items: center; gap: 8px;
         padding: 8px 14px; border-radius: 999px; background: #222; color: #fff; font: 13px/1.2 system-ui, sans-serif;
@@ -42,6 +46,7 @@
     </style>
   </head>
   <body>
+    <script src="/admin/loading.js" data-auto></script>
     <!-- Sveltia CMS: edits the files in src/data/ and uploads files straight to the GitHub repo. Setup: config.yml next to this file. -->
     <script>
       // Admin 2.0: the project list (/admin/projects/) and project editor (/admin/project/)

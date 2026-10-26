@@ -115,6 +115,7 @@
     </style>
   </head>
   <body>
+    <script src="/admin/loading.js"></script>
     <header>
       <div class="bar">
         <div>
@@ -338,8 +339,7 @@
           if (!q && all.length > 1) head.append(el('p', { className: 'note', textContent: 'Drag cards to change the order in the menu.' }));
           return el('section', {}, head, grid);
         });
-        const foot = el('section', { className: 'foot' }, el('a', { className: 'btn ghost', href: '/admin/#/collections/projects', textContent: 'Open old list', onclick: () => sessionStorage.setItem('jg-classic', '1') }));
-        main.replaceChildren(...sections.filter(Boolean), foot);
+        main.replaceChildren(...sections.filter(Boolean));
         if (q && !sections.some(Boolean)) main.prepend(el('p', { className: 'note', textContent: `No project matches “${$('q').value}”.` }));
         const changed = orderKey() !== saved;
         $('saveOrder').hidden = !changed;
@@ -424,6 +424,7 @@
         const fail = (text, link) => {
           const box = $('message');
           box.hidden = false;
+          jgLoaded();
           box.replaceChildren(el('p', { textContent: text }));
           if (link) box.append(el('a', { className: 'btn', href: link[1], textContent: link[0] }));
         };
@@ -435,6 +436,7 @@
         }
         render();
         $('list').hidden = false;
+        jgLoaded();
         checkLive();
         setInterval(checkLive, 15000);
       }
