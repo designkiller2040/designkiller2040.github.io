@@ -70,6 +70,9 @@ html,
 body {
   margin: 0;
   padding: 0;
+  /* No rubber-band bounce past the top or bottom (Safari, desktop and iOS),
+     so full-screen videos and images never show their edges. */
+  overscroll-behavior: none;
 }
 
 body {
