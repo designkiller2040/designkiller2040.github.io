@@ -273,6 +273,11 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
       grid-template-rows: auto auto auto;
       padding-bottom: 50px;
     }
+    /* 2026-10-29: the phone menu is the white bar with black text everywhere. */
+    .hero :global(.header) {
+      color: #000;
+      mix-blend-mode: normal;
+    }
     .hero :global(.legal) {
       display: flex;
       grid-row: 3;

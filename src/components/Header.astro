@@ -23,7 +23,7 @@ const links = [
     }
   </nav>
   <span class="insta">
-    instagram: <a class="u" href="https://www.instagram.com/jonahgeorge/" target="_blank" rel="noopener">@jonahgeorge</a>
+    <span class="ig-long">instagram: </span><span class="ig-short">ig: </span><a class="u" href="https://www.instagram.com/jonahgeorge/" target="_blank" rel="noopener"><span class="at">@</span>jonahgeorge</a>
   </span>
 </header>
 
@@ -111,6 +111,9 @@ const links = [
     grid-column: 17 / -1;
     justify-self: end;
   }
+  .ig-short {
+    display: none;
+  }
   .nav a:hover,
   .insta a:hover {
     color: var(--hover);
@@ -119,19 +122,54 @@ const links = [
   @media (max-width: 767px) {
     .header {
       /* 2026-10-29: the logo is twice its desktop design size on phones. */
-      --logo-w: calc(224 * var(--rm));
-      row-gap: 10px;
-      /* Phones: 14px, the same as the project list, project info and
-         Contact (2026-10-29). */
-      font-size: 14px;
-      line-height: 17px;
+      --logo-w: 180px;
+      --logo-h: calc(180px * 65 / 192);
+      row-gap: 12px;
+      /* 2026-10-29: a white bar 32px tall across the top with the menu in
+         black, and the logo (180px wide) sits below it over the page. */
+      position: sticky;
+      top: 0;
+      margin-top: calc(-1 * var(--top));
+      padding-bottom: 0;
+      color: #000;
+      mix-blend-mode: normal;
+      align-items: center;
+      /* The text is centred in the 32px bar. */
+      line-height: 32px;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      top: 0;
+      left: 50%;
+      width: 100vw;
+      height: 32px;
+      translate: -50% 0;
+      background: #fff;
     }
     .logo {
-      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+    /* Phones: "ig: jonahgeorge". */
+    .ig-long,
+    .at {
+      display: none;
+    }
+    .ig-short {
+      display: inline;
     }
     .nav,
     .insta {
-      grid-row: 2;
+      grid-row: 1;
+    }
+    .header {
+      /* Phones: 14px, the same as the project list, project info and
+         Contact (2026-10-29). */
+      font-size: 14px;
+    }
+    .logo {
+      grid-column: 1 / -1;
     }
     .logo-mark {
       margin-bottom: 0;
@@ -149,7 +187,7 @@ const links = [
       transition: translate 0.3s ease;
     }
     :global(html.header-hidden) .header {
-      translate: 0 calc(-100% - var(--top) - 20px);
+      translate: 0 calc(-100% - 20px);
     }
   }
 </style>
