@@ -76,8 +76,9 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
     pointer-events: none;
   }
   /* Until its clip is actually playing, each tile is covered by a solid
-     black layer (white once blended), so Safari's play button, which
-     ignores opacity and CSS hiding, is never seen. */
+     black layer (white once blended, so the card isn't there at all), which
+     also keeps Safari's play button out of sight. Cards pop in one by one,
+     in whatever order their clips load, and can't be grabbed before. */
   .tile::after {
     content: '';
     position: absolute;
@@ -85,10 +86,12 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
     z-index: 1;
     background: #000;
     pointer-events: none;
-    transition: opacity 200ms linear;
   }
   .tile.playing::after {
-    opacity: 0;
+    display: none;
+  }
+  .tile:not(.playing) {
+    pointer-events: none;
   }
   .say {
     position: absolute;
