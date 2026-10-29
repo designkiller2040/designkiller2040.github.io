@@ -164,7 +164,7 @@
       </section>
 
       <p class="note">
-        Counted by Cloudflare, usually a few minutes behind. Months run from the 1st (UTC). Storage is paid ahead each month; minutes watched are billed after
+        Counted by Cloudflare, usually a few minutes behind. Months run from the 1st (UTC). Storage is paid ahead each month; minutes watched beyond the plan are billed after
         the month ends at $1 per 1,000 minutes.
       </p>
     </main>
@@ -177,6 +177,9 @@
         return e;
       };
       const num = (n) => Math.round(n).toLocaleString('en-US');
+      // Minutes watched each month that Jonah's $5 Stream plan includes. The
+      // helper's INCLUDED_DELIVERY_MINUTES variable wins when it's set.
+      const PLAN_WATCHED = 5000;
       const usd = (n) => `$${n < 10 && n % 1 ? n.toFixed(2) : num(n)}`;
 
       let token = '';
@@ -234,13 +237,13 @@
           $('daily').hidden = true;
         } else {
           $('watched').textContent = num(u.watched);
-          const inc = u.watchedIncluded || 0;
+          const inc = u.watchedIncluded || PLAN_WATCHED;
           $('watchedNote').textContent = inc
             ? u.watched <= inc
               ? `Included in your plan (${num(inc)} a month), ${num(inc - u.watched)} left.`
               : `${num(inc)} included in your plan, ${num(u.watched - inc)} over.`
             : 'Each 1,000 minutes watched costs $1.';
-          const extra = u.extraCost || 0;
+          const extra = (Math.max(0, u.watched - inc) / 1000) * 1;
           if (extra < 0.005) {
             $('cost').replaceChildren(u.planPrice != null ? usd(u.planPrice) : '$0', u.planPrice != null ? el('small', { textContent: ' plan' }) : null);
             $('costNote').replaceChildren(el('span', { className: 'ok', textContent: 'Nothing extra so far: all within your plan.' }));
