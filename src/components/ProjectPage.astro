@@ -479,6 +479,13 @@ const poster = posterSrc(project);
   .top :global(.header:hover) {
     opacity: 1;
   }
+  /* On a computer the page slides sideways under nothing, so no band
+     behind the menu (Header.astro); phones scroll the stills under it. */
+  @media (min-width: 768px) {
+    .top :global(.header-band) {
+      display: none;
+    }
+  }
 
   /*
    * Left column (columns 1-6) with the about text and credits, and the

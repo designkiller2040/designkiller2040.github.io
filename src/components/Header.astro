@@ -26,6 +26,7 @@ const links = [
     instagram: <a class="u" href="https://www.instagram.com/jonahgeorge/" target="_blank" rel="noopener">@jonahgeorge</a>
   </span>
 </header>
+<div class="header-band" aria-hidden="true"></div>
 
 <style>
   /*
@@ -39,8 +40,14 @@ const links = [
     display: grid;
     grid-template-columns: subgrid;
     align-items: baseline;
-    position: relative;
-    z-index: 10;
+    /*
+     * 2026-10-29: the menu stays on screen while the page scrolls, on every
+     * page. It starts where it always was and sticks there, so nothing is
+     * hidden under it. z-index above the band below and the contact page's text.
+     */
+    position: sticky;
+    top: var(--top);
+    z-index: 100002;
     white-space: nowrap;
     /* Fixed here, not inherited, so the header is identical on every page. */
     font-family: var(--font-sans);
@@ -62,6 +69,35 @@ const links = [
     --logo-h: calc(var(--logo-w) * 65 / 192);
     padding-bottom: calc(var(--logo-h) * 0.41);
   }
+  /*
+   * Once the page is scrolled, a band behind the menu (from the top of the
+   * screen to just below it) hides the text scrolling underneath: white on
+   * white pages; on dark ones (Legal's video, project pages on phones) a
+   * dark blur, like frosted glass. Its lower edge fades out. At the top of
+   * the page it's invisible, so nothing changes there. It's a separate
+   * element so the blur can see the page behind it.
+   */
+  .header-band {
+    position: fixed;
+    inset: 0 0 auto;
+    height: calc(var(--header-bottom, 100px) + 2 * var(--top));
+    z-index: 100000;
+    pointer-events: none;
+    background: #fff;
+    -webkit-mask: linear-gradient(#000 50%, transparent);
+    mask: linear-gradient(#000 50%, transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  :global(body.dark) .header-band {
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+  :global(html.scrolled) .header-band {
+    opacity: 1;
+  }
+
   .logo {
     grid-row: 1;
     grid-column: 9 / 17;
@@ -126,3 +162,18 @@ const links = [
     }
   }
 </style>
+
+<script>
+  // Shows the band behind the menu once the page has been scrolled, and
+  // keeps it as tall as the menu (which is taller on phones).
+  const html = document.documentElement;
+  const header = document.querySelector<HTMLElement>('.header');
+  const scrolled = () => html.classList.toggle('scrolled', scrollY > 0);
+  scrolled();
+  addEventListener('scroll', scrolled, { passive: true });
+  if (header) {
+    const measure = () => html.style.setProperty('--header-bottom', `${header.getBoundingClientRect().bottom}px`);
+    measure();
+    new ResizeObserver(measure).observe(header);
+  }
+</script>
