@@ -26,11 +26,9 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     }
   </script>
   <!-- Loader: white logo on black while the showreel and the project
-       thumbnails load (script below), then the black opens like cinema
-       letterbox bars and the logo glides up into its place in the menu. -->
+       thumbnails load (script below), then the black fades away and the
+       showreel slowly fades up behind the logo. -->
   <div class="loader" aria-hidden="true">
-    <div class="bar top"></div>
-    <div class="bar bottom"></div>
     <span class="loader-logo"></span>
   </div>
   <main class="hero grid">
@@ -178,36 +176,22 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   }
 
   /*
-   * Loader (first visit in a tab only, see Base.astro). Two black halves with
-   * the logo over them. Reveal: the logo glides into the menu while the
-   * halves part to 2.39:1 cinema bars, hold for a beat, then slide away; the
-   * menu, list and label fade in last. If the script never runs, the CSS
-   * takes the loader away by itself after 7 seconds.
+   * Loader (first visit in a tab only, see Base.astro): the white logo on
+   * black. Reveal: the black slowly fades away so the showreel comes up
+   * behind the logo, then the logo fades out and the menu, list and label
+   * fade in. If the script never runs, the CSS takes the loader away by
+   * itself after 7 seconds.
    */
   .loader {
     position: fixed;
     inset: 0;
     z-index: 100010; /* above the sticky menu */
     pointer-events: none;
+    background: #000;
     animation: loader-bail 0s 7s forwards;
-    /* half of a 2.39:1 frame, never taller than the window */
-    --slit: calc(min(100vw / 2.39, 100svh) / 2);
   }
   :global(html.visited) .loader {
     display: none;
-  }
-  .bar {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 50%;
-    background: #000;
-  }
-  .bar.top {
-    top: 0;
-  }
-  .bar.bottom {
-    bottom: 0;
   }
   .loader-logo {
     position: absolute;
@@ -219,62 +203,30 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     background: #fff;
     -webkit-mask: url(/images/logo.svg) center / 100% 100% no-repeat;
     mask: url(/images/logo.svg) center / 100% 100% no-repeat;
-    transform-origin: 0 0;
-    animation: loader-breathe 1.6s ease-in-out infinite alternate;
-  }
-  @keyframes loader-breathe {
-    from { opacity: 1; }
-    to { opacity: 0.65; }
   }
   @keyframes loader-bail {
     to { visibility: hidden; }
   }
 
+  .loader.open {
+    background: transparent;
+    transition: background-color 1.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
   .loader.open .loader-logo {
-    animation: none;
-    transition: transform 1s cubic-bezier(0.7, 0, 0.2, 1);
-  }
-  .loader.open .bar.top {
-    animation: bar-top 1.5s cubic-bezier(0.7, 0, 0.2, 1) forwards;
-  }
-  .loader.open .bar.bottom {
-    animation: bar-bottom 1.5s cubic-bezier(0.7, 0, 0.2, 1) forwards;
-  }
-  @keyframes bar-top {
-    45%, 62% { translate: 0 calc(-1 * var(--slit)); }
-    to { translate: 0 -100%; }
-  }
-  @keyframes bar-bottom {
-    45%, 62% { translate: 0 var(--slit); }
-    to { translate: 0 100%; }
+    opacity: 0;
+    transition: opacity 1s ease 0.9s;
   }
 
-  /* While the loader is up: the menu logo waits for the gliding one, the
-     rest of the page waits to fade in. */
-  :global(html.loading) .hero :global(.logo-mark) {
-    visibility: hidden;
-  }
-  :global(html.loading) .hero :global(:is(.nav, .insta, .menu li, .group-label)),
+  /* While the loader is up the page's own text waits, then fades in. */
+  :global(html.loading) .hero :global(:is(.logo-mark, .nav, .insta, .menu)),
   :global(html.loading) .reel-label {
     opacity: 0;
   }
-  :global(html.revealing) .hero :global(:is(.nav, .insta, .menu li, .group-label)),
+  :global(html.revealing) .hero :global(:is(.logo-mark, .nav, .insta, .menu)),
   :global(html.revealing) .reel-label {
-    transition: opacity 600ms ease calc(1100ms + var(--i, 0) * 25ms);
+    transition: opacity 900ms ease 1.4s;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .loader.open {
-      transition: opacity 400ms linear;
-      opacity: 0;
-    }
-    .loader.open .bar {
-      animation: none;
-    }
-    .loader.open .loader-logo {
-      transition: none;
-    }
-  }
 
   /*
    * Phone: the showreel stays fixed behind the page and the menu scrolls up
@@ -494,26 +446,13 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   }
 
   function reveal(loader: HTMLElement) {
-    const logo = loader.querySelector<HTMLElement>('.loader-logo')!;
-    const target = document.querySelector('.hero .logo-mark')!.getBoundingClientRect();
-    const from = logo.getBoundingClientRect();
-    // The menu and list fade in one line after another.
-    document.querySelectorAll<HTMLElement>('.menu li, .menu .group-label').forEach((el, i) => el.style.setProperty('--i', String(i)));
     html.classList.add('revealing');
     loader.classList.add('open');
-    logo.style.transform = `translate(${target.left - from.left}px, ${target.top - from.top}px) scale(${target.width / from.width})`;
     requestAnimationFrame(() => html.classList.remove('loading'));
-    // The real menu logo takes over once the gliding one has landed.
-    const logoMark = document.querySelector<HTMLElement>('.hero .logo-mark')!;
-    logoMark.style.visibility = 'hidden';
-    setTimeout(() => {
-      logoMark.style.visibility = '';
-      logo.style.visibility = 'hidden';
-    }, 1000);
     setTimeout(() => {
       loader.remove();
       html.classList.remove('revealing');
-    }, 2400);
+    }, 2500);
   }
 
   if (canHover) {
