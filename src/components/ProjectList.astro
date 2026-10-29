@@ -100,19 +100,20 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
     box-decoration-break: clone;
   }
 
-  /* Phones keep the homepage's phone sizes. */
+  /* Phones: 12px text, centred, 4px between titles. */
   @media (max-width: 767px) {
     .project-list {
-      --text: 10px;
-      --line: 12px;
+      --text: 12px;
+      --line: 14px;
       width: auto;
       overflow: visible;
+      text-align: center;
     }
     .group + .group {
       margin-top: 20px;
     }
     li {
-      padding: 3px 0;
+      padding: 2px 0;
     }
   }
 </style>
