@@ -213,8 +213,8 @@
                 <button class="btn ghost" type="button" id="filmRemove">Remove</button>
               </div>
               <div class="extra">
-                <label class="lbl" for="vimeo">Vimeo backup (used only if Cloudflare is empty)</label>
-                <input class="in" id="vimeo" type="text" inputmode="numeric" placeholder="e.g. 1109700480" />
+                <label class="lbl" for="vimeo">Vimeo backup (plays if Cloudflare is empty or not working)</label>
+                <input class="in" id="vimeo" type="text" placeholder="Paste the Vimeo link or its number" />
               </div>
             </div>
           </article>
@@ -862,9 +862,23 @@
           }),
         );
       }
+      // A pasted Vimeo link becomes its number (plus the private-link code
+      // after it, for unlisted films): vimeo.com/123/abc, player.vimeo.com/video/123?h=abc.
+      function vimeoId(s) {
+        const v = s.trim();
+        if (/^[0-9]+(\/[0-9a-f]+)?$/i.test(v)) return v;
+        const m = v.match(/vimeo\.com\/(?:.*\/)?([0-9]{5,})(?:\/([0-9a-f]{6,}))?/i);
+        if (!m) return null;
+        const h = m[2] || v.match(/[?&]h=([0-9a-f]+)/i)?.[1];
+        return h ? `${m[1]}/${h}` : m[1];
+      }
       const TEXT = ['title', 'menuLabel', 'about', 'todo', 'vimeo', 'order', 'previewStart'];
       for (const k of TEXT) {
         $(k).addEventListener('input', () => {
+          if (k === 'vimeo') {
+            const id = vimeoId($(k).value);
+            if (id && id !== $(k).value) $(k).value = id;
+          }
           model[k] = $(k).value;
           if (k === 'title') {
             $('heading').textContent = model.title || 'New project';
@@ -941,9 +955,9 @@
         const badOrder = model.order !== '' && !(Number.isInteger(Number(model.order)) && Number(model.order) >= 1);
         mark('order', badOrder);
         if (badOrder) out.push('Position in menu must be a whole number, 1 or more.');
-        const badVimeo = !!model.vimeo.trim() && !/^[0-9]+$/.test(model.vimeo.trim());
+        const badVimeo = !!model.vimeo.trim() && !vimeoId(model.vimeo);
         mark('vimeo', badVimeo);
-        if (badVimeo) out.push('Vimeo backup takes numbers only (the end of the Vimeo link).');
+        if (badVimeo) out.push('Vimeo backup: paste the film’s Vimeo link (or the number at its end).');
         return out;
       }
 

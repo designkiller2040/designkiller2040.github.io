@@ -47,7 +47,7 @@ const poster = posterSrc(project);
       <div class="track">
         <div class="hero">
           {embed && (
-            <button class="play" type="button" data-embed={embed} data-title={project.title}>
+            <button class="play" type="button" data-embed={embed.embed} data-backup={embed.backup} data-check={embed.check} data-title={project.title}>
               <span class="play-label">Play full</span>
             </button>
           )}
@@ -255,6 +255,8 @@ const poster = posterSrc(project);
   }
 
   // "Play full" opens the film (Cloudflare Stream or Vimeo) over the whole window.
+  // When there's a Vimeo backup, the Stream playlist is checked at the same
+  // time; if Cloudflare can't serve it within 6 s, the player switches to Vimeo.
   const play = document.querySelector<HTMLButtonElement>('.play');
   const player = document.querySelector<HTMLElement>('.player');
   const close = () => {
@@ -267,6 +269,15 @@ const poster = posterSrc(project);
     if (!player) return;
     const iframe = document.createElement('iframe');
     iframe.src = play.dataset.embed ?? '';
+    const { check, backup } = play.dataset;
+    if (check && backup) {
+      fetch(check, { signal: AbortSignal.timeout(6000) })
+        .then((r) => r.ok)
+        .catch(() => false)
+        .then((ok) => {
+          if (!ok && iframe.isConnected) iframe.src = backup;
+        });
+    }
     iframe.title = play.dataset.title ?? '';
     iframe.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
     iframe.allowFullscreen = true;

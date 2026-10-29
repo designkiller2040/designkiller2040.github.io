@@ -58,20 +58,30 @@ export const menuLabel = (p: Project) => p.menuLabel ?? p.title;
  * video, else Vimeo. Accepts a bare Stream ID or any Stream link (watch page,
  * embed code, iframe URL); a customer-xxxx.cloudflarestream.com address in the
  * link is kept, otherwise Cloudflare's general player address is used.
+ *
+ * With both set, `check` is the Stream film's playlist and `backup` the Vimeo
+ * player: the page tries the playlist when the film opens and switches to
+ * Vimeo if Cloudflare can't play it (still processing, failed, or down).
  */
-export function filmEmbed(p: Project): string | undefined {
+export function filmEmbed(p: Project): { embed: string; backup?: string; check?: string } | undefined {
+  const vimeo = vimeoEmbed(p.vimeo);
   const stream = p.stream?.trim();
-  if (stream) {
-    const id = stream.match(/\b[0-9a-f]{32}\b/i)?.[0];
-    if (id) {
-      const host = stream.match(/customer-[a-z0-9]+\.cloudflarestream\.com/i)?.[0];
-      const base = host ? `https://${host}/${id}/iframe` : `https://iframe.videodelivery.net/${id}`;
-      return `${base}?autoplay=true&letterboxColor=black`;
-    }
+  const id = stream?.match(/\b[0-9a-f]{32}\b/i)?.[0];
+  if (stream && id) {
+    const host = stream.match(/customer-[a-z0-9]+\.cloudflarestream\.com/i)?.[0];
+    const base = host ? `https://${host}/${id}/iframe` : `https://iframe.videodelivery.net/${id}`;
+    const check = host ? `https://${host}/${id}/manifest/video.m3u8` : `https://videodelivery.net/${id}/manifest/video.m3u8`;
+    return { embed: `${base}?autoplay=true&letterboxColor=black`, backup: vimeo, check: vimeo && check };
   }
-  const vimeo = p.vimeo?.trim();
-  if (vimeo) return `https://player.vimeo.com/video/${vimeo}?dnt=1&title=0&byline=0&portrait=0&autoplay=1`;
-  return undefined;
+  return vimeo ? { embed: vimeo } : undefined;
+}
+
+/** Vimeo player address from a Vimeo number, "number/code" (unlisted films) or a pasted Vimeo link. */
+function vimeoEmbed(v?: string) {
+  const m = v?.trim().match(/^(?:.*vimeo\.com\/(?:.*\/)?)?([0-9]{5,})(?:\/([0-9a-f]{6,}))?/i);
+  if (!m) return undefined;
+  const h = m[2] ?? v!.match(/[?&]h=([0-9a-f]+)/i)?.[1];
+  return `https://player.vimeo.com/video/${m[1]}?${h ? `h=${h}&` : ''}dnt=1&title=0&byline=0&portrait=0&autoplay=1`;
 }
 
 /**
