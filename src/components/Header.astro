@@ -181,13 +181,14 @@ const links = [
     .insta {
       grid-column: 13 / -1;
     }
-    /* 2026-10-29: the menu slides away while you scroll down and comes back
+    /* 2026-10-29: the menu fades out while you scroll down and comes back
        as soon as you scroll up (script below). */
     .header {
-      transition: translate 0.3s ease;
+      transition: opacity 0.3s ease;
     }
     :global(html.header-hidden) .header {
-      translate: 0 calc(-100% - 20px);
+      opacity: 0 !important; /* beats the project page's own dimming */
+      pointer-events: none;
     }
   }
 </style>
