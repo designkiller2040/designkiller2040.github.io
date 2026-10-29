@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import ProjectList from '../components/ProjectList.astro';
+import Footer from '../components/Footer.astro';
 import home from '../data/home.json';
 import { withVersion } from '../data/projects';
 import { existsSync } from 'node:fs';
@@ -50,6 +51,9 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
 
     <!-- The same element as the list on every project page. -->
     <ProjectList class="menu" previews />
+
+    <!-- Phones only: the page scrolls, so legal x privacy ends it. -->
+    <Footer />
   </main>
 </Base>
 
@@ -135,6 +139,11 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   }
   .stage :global(.preview.ready img) {
     visibility: hidden;
+  }
+
+  /* Desktop is one screen with no footer; phones show it under the list. */
+  .hero :global(.legal) {
+    display: none;
   }
 
   /* Logo and menu take the same difference blend as the project list. */
@@ -286,18 +295,32 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     .stage {
       position: fixed;
     }
+    /* The list now starts near the top, so the label would sit on it. */
     .reel-label {
-      position: absolute;
-      left: var(--margin);
-      top: calc(100svh - var(--margin) - 1em);
+      display: none;
     }
     .hero :global(.menu) {
       grid-row: 2;
       grid-column: 1 / -1;
       justify-self: stretch;
       max-height: none;
-      margin-top: 40svh;
-      padding-bottom: 48px;
+      /* The list text starts 111px below the top menu's text (the row gap
+         and the header's own spacing add the rest). */
+      margin-top: calc(96px - var(--top));
+    }
+    /* legal x privacy under the list, then 50px to the bottom edge. */
+    .hero {
+      grid-template-rows: auto auto auto;
+      padding-bottom: 50px;
+    }
+    .hero :global(.legal) {
+      display: flex;
+      grid-row: 3;
+      justify-content: center;
+      font-size: 16px;
+      line-height: 18px;
+      mix-blend-mode: difference;
+      color: #fff;
     }
   }
 </style>
