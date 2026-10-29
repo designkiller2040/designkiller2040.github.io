@@ -987,13 +987,12 @@ const poster = posterSrc(project);
   /* The progress line: white for what's played, faint for the rest. A taller
      invisible strip around it makes it easy to grab. */
   .progress {
+    /* Runs up to the time, the same gap away as the other controls. */
     flex: 1;
-    max-width: calc(170 * var(--rm));
-    margin-right: auto;
     height: calc(10 * var(--rm));
     display: flex;
     align-items: center;
-    background: linear-gradient(rgb(255 255 255 / 0.25), rgb(255 255 255 / 0.25)) center / 100% 1px no-repeat;
+    background: linear-gradient(rgb(255 255 255 / 0.25), rgb(255 255 255 / 0.25)) center / 100% 2px no-repeat;
     cursor: pointer;
     touch-action: none;
     outline: none;
@@ -1001,7 +1000,7 @@ const poster = posterSrc(project);
   .progress span {
     display: block;
     width: 0;
-    height: 1.5px;
+    height: 2px;
     background: #fff;
   }
   .time {
