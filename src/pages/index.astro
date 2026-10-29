@@ -42,15 +42,15 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
    * bottom line with "Showreel 2025". The menu fills the right-hand columns
    * from the bottom up, level with the showreel label.
    *
-   * All homepage text (header, menu, showreel label) is SF Pro Display, 8.2
-   * design px on 9.4 (see --rm in global.css), so it scales with the window
+   * All homepage text (header, menu, showreel label) is SF Pro Display, 9.45
+   * design px on 10.7 (see --rm in global.css), so it scales with the window
    * like Readymag. The header and the menu are the same as on every project
    * page, so they don't move when you switch pages.
    */
   .hero {
-    /* 13px on 15px on alona's 14" MacBook, like the project pages. */
-    --text: calc(8.2 * var(--rm));
-    --line: calc(9.4 * var(--rm));
+    /* 15px on 17px on alona's 14" MacBook, like the project pages. */
+    --text: calc(9.45 * var(--rm));
+    --line: calc(10.7 * var(--rm));
     --tracking: -0.06em;
     font-family: var(--font-sans);
     font-size: var(--text);

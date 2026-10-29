@@ -27,9 +27,9 @@
   --gutter: calc(5 * var(--rm));
   --top: max(12px, calc(12.6 * var(--rm)));
 
-  --text: calc(8.8 * var(--rm));
-  --line: calc(10.6 * var(--rm));
-  --title: calc(8.8 * var(--rm));
+  --text: calc(10.1 * var(--rm));
+  --line: calc(11.9 * var(--rm));
+  --title: calc(10.1 * var(--rm));
   --row: calc(16 * var(--rm));
   --tracking: -0.005em;
 
