@@ -289,7 +289,7 @@ const poster = posterSrc(project);
     destroy(): void;
   };
   let film: Film | undefined;
-  let state = { playing: false, t: 0, d: 0, muted: false };
+  let state = { playing: false, t: 0, d: 0, muted: false, ended: false };
 
   const clock = (s: number) => {
     s = Math.max(0, Math.floor(s || 0));
@@ -303,6 +303,9 @@ const poster = posterSrc(project);
     if (time) time.textContent = `${clock(state.t)} / ${clock(state.d)}`;
     if (fill) fill.style.width = `${state.d ? (state.t / state.d) * 100 : 0}%`;
     if (audio) audio.textContent = `Audio (${state.muted ? 'OFF' : 'ON'})`;
+    // "End" once the film has finished, "Pause" when it's stopped before.
+    if (state.playing) state.ended = false;
+    if (toggle) toggle.textContent = state.ended ? 'End' : 'Pause';
     player?.classList.toggle('paused', !state.playing);
   };
 
@@ -337,7 +340,7 @@ const poster = posterSrc(project);
     ['play', 'pause', 'timeupdate', 'durationchange', 'volumechange', 'loadedmetadata'].forEach((e) =>
       v.addEventListener(e, sync)
     );
-    v.addEventListener('ended', () => show({ playing: false }));
+    v.addEventListener('ended', () => show({ playing: false, ended: true }));
     if (v.canPlayType('application/vnd.apple.mpegurl')) {
       v.src = src;
     } else {
@@ -383,7 +386,7 @@ const poster = posterSrc(project);
       vp = p;
       p.on('play', () => ((paused = false), show({ playing: true })));
       p.on('pause', () => ((paused = true), show({ playing: false })));
-      p.on('ended', () => ((paused = true), show({ playing: false })));
+      p.on('ended', () => ((paused = true), show({ playing: false, ended: true })));
       p.on('timeupdate', (d: { seconds: number; duration: number }) => show({ t: d.seconds, d: d.duration }));
       p.on('volumechange', (d: { volume: number }) => show({ muted: d.volume === 0 }));
       p.getDuration().then((d) => show({ d }), () => {});
@@ -415,7 +418,7 @@ const poster = posterSrc(project);
   play?.addEventListener('click', () => {
     if (!player) return;
     const { hls, vimeo } = play.dataset;
-    show({ playing: true, t: 0, d: 0, muted: false });
+    show({ playing: true, t: 0, d: 0, muted: false, ended: false });
     const toVimeo = () => {
       film?.destroy();
       film = vimeo ? vimeoFilm(vimeo) : undefined;
@@ -967,8 +970,11 @@ const poster = posterSrc(project);
     top: var(--top);
     right: var(--margin);
   }
-  /* Pause: difference-blended so it reads on light and dark frames. */
-  .toggle {
+  /* Pause / End: bigger than the other controls (about 23px on alona's
+     MacBook), difference-blended so it reads on light and dark frames. */
+  .controls .toggle {
+    font-size: calc(var(--text) * 1.65);
+    line-height: 1;
     position: absolute;
     top: 50%;
     left: 50%;
