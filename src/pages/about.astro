@@ -4,6 +4,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 
 const TITLE = 'film director from NY, based worldwide, filmed mood videos, video clips, personal videos, commercials';
+const words = TITLE.split(' ');
 ---
 
 <Base title="About">
@@ -11,7 +12,20 @@ const TITLE = 'film director from NY, based worldwide, filmed mood videos, video
     <Header current="about" />
 
     <div class="stage">
-      <h1 class="title box">{TITLE}</h1>
+      <h1 class="title box" aria-label={TITLE}>
+        {
+          words.map((w, i) => (
+            <>
+              <span class="word" aria-hidden="true">
+                {[...w].map((ch) => (
+                  <span class="ch">{ch}</span>
+                ))}
+              </span>
+              {i < words.length - 1 && ' '}
+            </>
+          ))
+        }
+      </h1>
     </div>
 
     <!-- TODO: swap in the original photo. This one is cropped from a screenshot. -->
@@ -74,8 +88,23 @@ const TITLE = 'film director from NY, based worldwide, filmed mood videos, video
     font-weight: 700;
     text-indent: 3.4em;
   }
-  .title {
+  .title,
+  .title :global(*) {
     letter-spacing: -0.06em;
+  }
+  /* Each letter is its own box so it can fly away when the mouse hits it. */
+  .title {
+    user-select: none;
+    cursor: default;
+  }
+  .word {
+    display: inline-block;
+    white-space: nowrap;
+    text-indent: 0;
+  }
+  .ch {
+    display: inline-block;
+    will-change: transform;
   }
 
   /*
@@ -144,4 +173,99 @@ const TITLE = 'film director from NY, based worldwide, filmed mood videos, video
     }
   }
 </style>
+
+<script>
+  // Title letters sit in place; when the mouse runs into them they get
+  // knocked away (harder the faster the mouse moves), spin, and then float
+  // back to their spot. Same spring idea as the old test page, in reverse.
+  const box = document.querySelector<HTMLElement>('.about .title');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (box && !still) {
+    type L = { el: HTMLElement; hx: number; hy: number; x: number; y: number; r: number; vx: number; vy: number; vr: number };
+    const letters: L[] = [...box.querySelectorAll<HTMLElement>('.ch')].map((el) => ({
+      el, hx: 0, hy: 0, x: 0, y: 0, r: 0, vx: 0, vy: 0, vr: 0,
+    }));
+
+    const STIFF = 0.012; // pull back to place (lower = they stay away longer)
+    const DAMP = 0.93; // how quickly motion settles (lower = calmer)
+    const RADIUS = 46; // mouse reach, px
+    const PUSH = 7; // knock from the mouse itself
+    const FLING = 0.9; // extra knock from mouse speed
+
+    // Home position of each letter's centre, relative to the title.
+    function measure() {
+      for (const l of letters) {
+        l.hx = l.el.offsetLeft + l.el.offsetWidth / 2;
+        l.hy = l.el.offsetTop + l.el.offsetHeight / 2;
+      }
+    }
+
+    // Mouse position on screen, and how far it moved since the last frame.
+    let cx = -1e4;
+    let cy = -1e4;
+    let pdx = 0;
+    let pdy = 0;
+    addEventListener('pointermove', (e) => {
+      if (cx > -1e4) {
+        pdx += e.clientX - cx;
+        pdy += e.clientY - cy;
+      }
+      cx = e.clientX;
+      cy = e.clientY;
+      wake();
+    });
+    document.addEventListener('pointerleave', () => {
+      cx = cy = -1e4;
+    });
+
+    let running = false;
+    function wake() {
+      if (!running) {
+        running = true;
+        requestAnimationFrame(step);
+      }
+    }
+
+    function step() {
+      const b = box!.getBoundingClientRect();
+      const mx = cx - b.left;
+      const my = cy - b.top;
+      const speed = Math.min(Math.hypot(pdx, pdy), 80);
+      let moving = false;
+      for (const l of letters) {
+        // Spring back home.
+        let ax = -l.x * STIFF;
+        let ay = -l.y * STIFF;
+        let ar = -l.r * STIFF;
+        // Knock away from the mouse, only while the mouse is moving.
+        const dx = l.hx + l.x - mx;
+        const dy = l.hy + l.y - my;
+        const d = Math.hypot(dx, dy);
+        if (speed > 0.5 && d < RADIUS && d > 0.01) {
+          const f = (1 - d / RADIUS) * (PUSH + speed * FLING);
+          ax += (dx / d) * f + pdx * 0.15;
+          ay += (dy / d) * f + pdy * 0.15;
+          ar += (dx > 0 ? 1 : -1) * f * 1.2;
+        }
+        l.vx = (l.vx + ax) * DAMP;
+        l.vy = (l.vy + ay) * DAMP;
+        l.vr = (l.vr + ar) * DAMP;
+        l.x += l.vx;
+        l.y += l.vy;
+        l.r += l.vr;
+        if (Math.abs(l.x) + Math.abs(l.y) + Math.abs(l.r) + Math.abs(l.vx) + Math.abs(l.vy) > 0.05) moving = true;
+        else l.x = l.y = l.r = l.vx = l.vy = l.vr = 0;
+        l.el.style.transform = l.x || l.y || l.r ? `translate(${l.x}px, ${l.y}px) rotate(${l.r}deg)` : '';
+      }
+      pdx = pdy = 0;
+      if (moving) requestAnimationFrame(step);
+      else running = false;
+    }
+
+    measure();
+    addEventListener('resize', measure);
+    document.fonts?.ready.then(measure);
+  }
+</script>
 
