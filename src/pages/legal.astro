@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
 import { projects, previewSrc } from '../data/projects';
 
 // Background: the 3-second hover preview of "Every Other Weekend", looping.
@@ -94,7 +93,6 @@ const bg = bgProject && previewSrc(bgProject);
       <p class="date">Last updated: October 2026</p>
     </article>
 
-    <Footer />
   </main>
 </Base>
 

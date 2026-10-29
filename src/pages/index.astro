@@ -2,7 +2,6 @@
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import ProjectList from '../components/ProjectList.astro';
-import Footer from '../components/Footer.astro';
 import home from '../data/home.json';
 import { withVersion } from '../data/projects';
 import { existsSync } from 'node:fs';
@@ -50,8 +49,6 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     <!-- The same element as the list on every project page. -->
     <ProjectList class="menu" previews />
 
-    <!-- Phones only: the page scrolls, so legal x privacy ends it. -->
-    <Footer />
   </main>
 </Base>
 
@@ -137,11 +134,6 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   }
   .stage :global(.preview.ready img) {
     visibility: hidden;
-  }
-
-  /* Desktop is one screen with no footer; phones show it under the list. */
-  .hero :global(.legal) {
-    display: none;
   }
 
   /* Logo and menu take the same difference blend as the project list. */
@@ -280,15 +272,6 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     }
     /* The homepage logo stays white over the showreel. */
     .hero :global(.logo-mark) {
-      color: #fff;
-    }
-    .hero :global(.legal) {
-      display: flex;
-      grid-row: 3;
-      justify-content: center;
-      font-size: 16px;
-      line-height: 18px;
-      mix-blend-mode: difference;
       color: #fff;
     }
   }

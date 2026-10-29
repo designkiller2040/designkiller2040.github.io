@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
 import { projects, previewSrc } from '../data/projects';
 import contact from '../data/contact.json';
 
@@ -32,8 +31,6 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
         {contact.email && <a href={`mailto:${contact.email.trim()}`}>email: {contact.email.trim()}</a>}
       </address>
     </section>
-
-    <Footer />
   </main>
 </Base>
 
@@ -48,7 +45,7 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
   .contact {
     min-height: 100vh;
     min-height: 100svh;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr;
     padding-block: var(--top) var(--margin);
   }
   .wall {
@@ -92,6 +89,9 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
   }
   .tile:not(.playing) {
     pointer-events: none;
+    /* 2026-10-29: fully invisible while loading, so no thin lines show at
+       the edges of the tiles. */
+    opacity: 0;
   }
   .say {
     position: absolute;
@@ -141,6 +141,32 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
        screen and doesn't scroll. */
     .tile:nth-child(n + 11) {
       display: none;
+    }
+    /* The page never scrolls: it is exactly one screen tall and the five
+       rows of clips share the space between the menu and the footer. */
+    :global(html:has(.contact)) {
+      overflow: hidden;
+    }
+    .contact {
+      height: 100svh;
+      overflow: hidden;
+    }
+    .wall {
+      align-self: stretch;
+      height: calc(100% - 24px);
+      grid-template-rows: repeat(5, minmax(0, 1fr));
+    }
+    .contact {
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+    .tile {
+      aspect-ratio: auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .tile video {
+      position: absolute;
+      inset: 0;
     }
     .say {
       /* 14px, the same as the phone top menu (2026-10-29). */

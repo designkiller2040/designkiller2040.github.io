@@ -1,5 +1,5 @@
 ---
-/** Legal links at the bottom of a page. Sits inside a .grid, full width. */
+/** Legal links at the bottom of the About page (only there). Sits inside a .grid, full width. */
 ---
 
 <footer class="legal">
@@ -13,6 +13,9 @@
     gap: calc(22 * var(--rm));
     margin-top: calc(28 * var(--rm));
     position: relative;
+    /* 2026-10-29: small and grey, and only on the About page. */
+    font-size: max(11px, calc(7 * var(--rm)));
+    color: #8a8a8a;
   }
   .legal a:hover {
     color: var(--hover);
