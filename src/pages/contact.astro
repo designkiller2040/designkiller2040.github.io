@@ -75,23 +75,20 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
     object-fit: cover;
     pointer-events: none;
   }
-  /* Each clip (and Safari's canvas copy of it) stays hidden until it is
-     actually playing, so the browser's play button never flashes on load;
-     the black tile shows meanwhile. */
-  .tile :global(:is(video, .video-canvas)) {
-    opacity: 0;
+  /* Until its clip is actually playing, each tile is covered by a solid
+     black layer (white once blended), so Safari's play button, which
+     ignores opacity and CSS hiding, is never seen. */
+  .tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: #000;
+    pointer-events: none;
     transition: opacity 200ms linear;
   }
-  .tile.playing :global(:is(video, .video-canvas)) {
-    opacity: 1;
-  }
-  /* Safari's own play button, hidden outright where CSS reaches it. */
-  .tile video::-webkit-media-controls,
-  .tile video::-webkit-media-controls-start-playback-button,
-  .tile video::-webkit-media-controls-overlay-play-button {
-    display: none !important;
-    -webkit-appearance: none;
-    opacity: 0 !important;
+  .tile.playing::after {
+    opacity: 0;
   }
   .say {
     position: absolute;
