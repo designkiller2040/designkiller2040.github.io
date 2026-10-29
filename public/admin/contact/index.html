@@ -424,7 +424,7 @@
       }
 
       async function start() {
-        if (!token) return fail('Sign in to the editor first.', ['Go to sign in', '/admin/']);
+        if (!token) return window.JG_SIGN_IN();
         try {
           const [f, list] = await Promise.all([gh(`contents/${PATH}?ref=main`), fetch('/admin/cards.json', { cache: 'no-cache' }).then((r) => r.json()).catch(() => [])]);
           sha = f.sha;

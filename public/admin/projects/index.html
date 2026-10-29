@@ -430,7 +430,7 @@
           box.replaceChildren(el('p', { textContent: text }));
           if (link) box.append(el('a', { className: 'btn', href: link[1], textContent: link[0] }));
         };
-        if (!token) return fail('Sign in to the editor first.', ['Go to sign in', '/admin/']);
+        if (!token) return window.JG_SIGN_IN();
         try {
           await load();
         } catch (e) {

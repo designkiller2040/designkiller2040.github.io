@@ -155,7 +155,10 @@
               const out = await res.json().catch(() => ({}));
               if (!res.ok || !out.token) throw new Error(res.status === 401 ? 'Wrong password.' : out.error || "Couldn't sign in. Try again in a minute.");
               localStorage.setItem('sveltia-cms.user', JSON.stringify({ backendName: 'github', token: out.token }));
-              location.reload();
+              // Back to the page that sent us here (see JG_SIGN_IN in github-proxy.js), else the projects list.
+              const next = sessionStorage.getItem('jg-after-signin');
+              sessionStorage.removeItem('jg-after-signin');
+              location.replace(next?.startsWith('/admin/') ? next : '/admin/projects/');
             } catch (error) {
               note.textContent = error instanceof TypeError ? "Couldn't reach the sign-in helper. Check the connection and try again." : error.message;
               submit.disabled = false;

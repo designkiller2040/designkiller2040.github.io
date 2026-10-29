@@ -476,7 +476,7 @@
       }
 
       async function start() {
-        if (!token) return fail('Sign in to the editor first.', ['Go to sign in', '/admin/']);
+        if (!token) return window.JG_SIGN_IN();
         try {
           const f = await gh(`contents/${PATH}?ref=main`);
           sha = f.sha;

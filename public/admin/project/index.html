@@ -1111,7 +1111,7 @@
       }
 
       async function start() {
-        if (!token) return fail('Sign in to the editor first, then open the project again.', ['Go to the editor', '/admin/']);
+        if (!token) return window.JG_SIGN_IN();
         if (!isNew && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return fail('No project chosen.', ['Back to projects', '/admin/projects/']);
         let data = { group: GROUPS.some(([k]) => k === params.get('group')) ? params.get('group') : 'commercial' };
         if (!isNew) {
