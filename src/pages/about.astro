@@ -2,8 +2,11 @@
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import about from '../data/about.json';
 
-const TITLE = 'film director from NY, based worldwide, filmed mood videos, video clips, personal videos, commercials';
+// Title, photo and text are edited in the admin panel (/admin/about/).
+const TITLE = about.title.trim();
+const paragraphs = about.bio.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 const words = TITLE.split(' ');
 ---
 
@@ -28,27 +31,10 @@ const words = TITLE.split(' ');
       </h1>
     </div>
 
-    <!-- TODO: swap in the original photo. This one is cropped from a screenshot. -->
-    <img class="photo" src="/images/jonah-about.jpg" width="1330" height="1426" alt="Jonah George" />
+    {about.photo && <img class="photo" src={about.photo} width={about.photoWidth} height={about.photoHeight} alt="Jonah George" />}
 
     <div class="bio box">
-      <p>
-        Born and raised in Bethlehem Pennsylvania, Jonah George is a self taught commercial, narrative, and
-        music video director whos work is inspired by nostalgic moments from real life. He started creating
-        video at the age of 5 when receiving a VHS camera as a gift from his parents. From there he began his
-        work in the music industry capturing music tours and soon after that began directing for artists.
-        Currently he's focused on commercial campaigns and documentary work.
-      </p>
-      <p>
-        Jonah George is focused on the efficient execution of creative ideas for brands, artists and narrative
-        projects. He has eight years of professional experience in directing, creative producing and
-        cinematography. Favoring shooting on location, Jonah's started in the United states but is currently
-        working on projects worldwide with production experience in 26 countries worldwide.
-      </p>
-      <p>
-        Clients: Nike. Omega. Sony Music. Givenchy. UMG. Kasina. Coach. Play Station. Backbone. Lauv. Paul
-        Mitchell. Starface. Jeremy Zucker. ayokay. and more
-      </p>
+      {paragraphs.map((p) => <p>{p}</p>)}
     </div>
 
     <Footer />

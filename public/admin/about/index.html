@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>About · Jonah George</title>
+    <!--
+      About page editor (admin 2.0 style). Reads and writes src/data/about.json
+      with the editor's GitHub sign-in: the big title (its letters fly away on
+      hover on the site), the photo and the text under it. Every Save is one
+      commit to main, which republishes the site.
+    -->
+    <style>
+      :root {
+        --bg: #fff;
+        --fg: #111;
+        --muted: #6b6b6b;
+        --faint: #8a8a8a;
+        --line: #e6e6e6;
+        --field: #dcdcdc;
+        --empty: #f6f6f6;
+        --media: #dadada;
+        --red: #b42318;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.4 -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+        letter-spacing: 0.01em;
+      }
+      a { color: inherit; }
+      h1, h2, h3, p, dl, dd { margin: 0; }
+      .lbl { display: block; font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+      .ta { width: 100%; border: 1px solid var(--field); border-radius: 8px; background: var(--bg); font: inherit; color: var(--fg); padding: 12px; line-height: 1.5; resize: vertical; }
+      .ta::placeholder { color: var(--faint); }
+      .ta:focus { outline: 2px solid #111; outline-offset: -1px; }
+      .ta.bad { border-color: var(--red); }
+      #title { min-height: 96px; font-size: 18px; font-weight: 600; line-height: 1.3; }
+      #bio { min-height: 360px; }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 14px;
+        border: 1px solid var(--field);
+        border-radius: 8px;
+        background: var(--bg);
+        font: inherit;
+        font-size: 13px;
+        color: var(--fg);
+        text-decoration: none;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn:hover { border-color: #b5b5b5; }
+      .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+      .btn.ghost:hover { color: var(--fg); }
+      .btn.dark { background: #111; border-color: #111; color: #fff; }
+      .btn.dark:disabled { background: #e6e6e6; border-color: #e6e6e6; color: #8a8a8a; cursor: default; }
+      svg { flex-shrink: 0; }
+
+      header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+      .bar { max-width: 1280px; margin: 0 auto; padding: 14px 48px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+      .bar > div { display: flex; align-items: center; gap: 16px; min-width: 0; }
+      .brand { font-size: 16px; font-weight: 600; white-space: nowrap; }
+      .sep { width: 1px; height: 20px; background: var(--line); }
+      nav { display: flex; gap: 4px; }
+      nav a { height: 32px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 8px; font-size: 13px; color: var(--muted); text-decoration: none; }
+      nav a:hover { color: var(--fg); }
+      nav a[aria-current='page'] { background: #f0f0f0; color: var(--fg); }
+      .pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; white-space: nowrap; }
+      .pill::before { content: ''; width: 6px; height: 6px; border-radius: 3px; background: currentColor; }
+      .pill.live { background: #eef6ef; color: #1f6b33; }
+      .pill.busy { background: #fdf4e3; color: #8a5a00; }
+      .pill.busy::before { animation: pulse 1s ease-in-out infinite alternate; }
+      @keyframes pulse { to { opacity: 0.3; } }
+      .actions { gap: 8px !important; }
+      #saveState { font-size: 12px; color: var(--muted); margin-right: 8px; }
+      #saveState.err { color: var(--red); }
+
+      main { max-width: 1280px; margin: 0 auto; padding: 48px 48px 96px; display: flex; flex-direction: column; gap: 64px; }
+      section { display: flex; flex-direction: column; gap: 20px; }
+      .head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+      h2 { font-size: 22px; font-weight: 600; }
+      h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+      .note { font-size: 13px; color: var(--muted); }
+
+      .split { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+      .fields { flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+      .card { flex: 1 1 300px; max-width: 380px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+      .media { position: relative; aspect-ratio: 1330 / 1426; background: var(--media); overflow: hidden; }
+      .media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      .media.empty { background: var(--empty); border-bottom: 1px dashed #cfcfcf; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-align: center; padding: 16px; }
+      .media.empty span { font-size: 13px; color: #444; }
+      .media.empty small { font-size: 12px; color: var(--muted); }
+      .media.drop { outline: 2px dashed #111; outline-offset: -8px; }
+      .body { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 16px; }
+      .meta { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; font-size: 13px; }
+      .meta dt { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+      .meta dd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .meta.none dd { color: var(--faint); }
+      .unsaved { color: #8a5a00; }
+      .row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+      .center { max-width: 480px; margin: 120px auto; padding: 0 16px; text-align: center; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+
+      @media (max-width: 700px) {
+        .bar { padding: 12px 16px; }
+        main { padding: 32px 16px 64px; gap: 48px; }
+        .card { max-width: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <script src="/admin/loading.js"></script>
+    <header>
+      <div class="bar">
+        <div>
+          <h1 class="brand">Jonah George</h1>
+          <span class="sep"></span>
+          <nav aria-label="Sections">
+            <a href="/admin/projects/">Projects</a>
+            <a href="/admin/showreel/">Showreel</a>
+            <a href="/admin/about/" aria-current="page">About</a>
+            <a href="/admin/contact/">Contact</a>
+            <a href="/admin/upload/">Upload a film</a>
+          </nav>
+          <span id="live" class="pill" hidden></span>
+        </div>
+        <div class="actions">
+          <span id="saveState" role="status"></span>
+          <a class="btn" href="/about/" target="_blank" rel="noopener">
+            View page
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg>
+          </a>
+          <button id="save" class="btn dark" type="button" disabled>Save</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="message" class="center" hidden></div>
+
+    <main id="editor" hidden>
+      <section>
+        <div class="head">
+          <h2>About page</h2>
+          <p class="note">The big title at the top, the photo, and the text under it.</p>
+        </div>
+        <div class="split">
+          <div class="fields">
+            <div>
+              <label class="lbl" for="title">Title (its letters fly away when the mouse runs into them)</label>
+              <textarea class="ta" id="title" rows="3"></textarea>
+            </div>
+            <div>
+              <label class="lbl" for="bio">Text (leave an empty line between paragraphs)</label>
+              <textarea class="ta" id="bio" rows="16"></textarea>
+            </div>
+          </div>
+
+          <article class="card">
+            <div class="media" id="photoMedia"></div>
+            <div class="body">
+              <div>
+                <h3>Photo</h3>
+                <p class="note">Shown between the title and the text.</p>
+              </div>
+              <dl class="meta" id="photoMeta"></dl>
+              <div class="row">
+                <button class="btn" type="button" id="photoUpload"></button>
+                <button class="btn ghost" type="button" id="photoRemove">Remove</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <input type="file" id="picker" accept="image/jpeg,image/png,image/webp" hidden />
+
+    <script>
+      const REPO = 'designkiller2040/designkiller2040.github.io';
+      const RAW = `https://raw.githubusercontent.com/${REPO}/main/public`;
+      const PATH = 'src/data/about.json';
+      const PHOTO_DIR = '/images/about';
+      const MAX = 20e6;
+
+      const $ = (id) => document.getElementById(id);
+      let token = '';
+      try {
+        token = JSON.parse(localStorage.getItem('sveltia-cms.user') || '{}').token || '';
+      } catch {}
+
+      // ---------- GitHub ----------
+      async function gh(p, init = {}) {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/${p}`, {
+          cache: 'no-store',
+          ...init,
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', ...(init.body && { 'Content-Type': 'application/json' }) },
+          body: init.body && JSON.stringify(init.body),
+        });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok) throw Object.assign(new Error(out.message || `GitHub said ${res.status}`), { status: res.status });
+        return out;
+      }
+      const decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, '')), (c) => c.charCodeAt(0)));
+      const fileBase64 = (file) =>
+        new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result).split(',')[1]);
+          r.onerror = () => reject(new Error(`Couldn't read ${file.name}.`));
+          r.readAsDataURL(file);
+        });
+
+      // One commit with the page file and the new photo, if any; retried on top if someone saved at the same moment.
+      async function commit(message, entries) {
+        for (let attempt = 0; ; attempt++) {
+          const head = (await gh('git/ref/heads/main')).object.sha;
+          const base = (await gh(`git/commits/${head}`)).tree.sha;
+          const tree = await gh('git/trees', { method: 'POST', body: { base_tree: base, tree: entries } });
+          const c = await gh('git/commits', { method: 'POST', body: { message, tree: tree.sha, parents: [head] } });
+          try {
+            return await gh('git/refs/heads/main', { method: 'PATCH', body: { sha: c.sha, force: false } });
+          } catch (e) {
+            if (e.status !== 422 || attempt >= 2) throw e;
+          }
+        }
+      }
+
+      // ---------- Helpers ----------
+      const el = (tag, props = {}, ...kids) => {
+        const e = Object.assign(document.createElement(tag), props);
+        for (const k of kids) if (k != null) e.append(k);
+        return e;
+      };
+      const svg = (html, size = 14) => {
+        const t = document.createElement('template');
+        t.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${html}</svg>`;
+        return t.content.firstChild;
+      };
+      const ICON = {
+        up: '<path d="M12 16V4M6 10l6-6 6 6M4 20h16"/>',
+        image: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/>',
+      };
+      const mb = (n) => (n == null ? '–' : `${(n / 1e6).toFixed(1)} MB`);
+      const slugify = (s) => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+      // ---------- Model ----------
+      let original = {}; // the file as loaded (unknown keys are kept on save)
+      let sha = '';
+      let model; // { title, bio, photo, photoWidth, photoHeight }
+      let file = null; // photo picked but not saved yet
+      let fileURL = '';
+      let savedSnapshot = '';
+      let saving = false;
+      const snapshot = () => JSON.stringify({ ...model, file: file && [file.name, file.size, file.lastModified] });
+      const dirty = () => snapshot() !== savedSnapshot;
+
+      function toData(m) {
+        const out = { ...original, title: m.title.trim(), bio: m.bio.trim().replace(/\n{3,}/g, '\n\n') };
+        delete out.photo;
+        delete out.photoWidth;
+        delete out.photoHeight;
+        if (m.photo) Object.assign(out, { photo: m.photo, photoWidth: m.photoWidth, photoHeight: m.photoHeight });
+        return out;
+      }
+
+      // ---------- Photo ----------
+      async function renderPhoto() {
+        const media = $('photoMedia');
+        const src = file ? fileURL : model.photo;
+        media.replaceChildren();
+        media.className = 'media';
+        media.onclick = null;
+        if (src) {
+          const img = el('img', { alt: '', src });
+          img.onerror = () => {
+            // Not on the live site yet (just saved): show it from GitHub.
+            if (!file && !img.dataset.gh) img.dataset.gh = img.src = `${RAW}${model.photo}`;
+          };
+          media.append(img);
+        } else {
+          media.classList.add('empty');
+          media.onclick = choose;
+          media.append(svg(ICON.image, 28), el('span', { textContent: 'Drop a photo or click to upload' }), el('small', { textContent: 'JPG or PNG, about 1300 px wide' }));
+        }
+        $('photoUpload').replaceChildren(svg(ICON.up), src ? 'Replace' : 'Upload');
+        $('photoRemove').hidden = !src;
+
+        const dl = $('photoMeta');
+        const cell = (k, v, cls) => el('div', { style: 'min-width:0' }, el('dt', { textContent: k }), el('dd', { textContent: v, title: v, className: cls || '' }));
+        dl.classList.toggle('none', !src);
+        if (!src) return dl.replaceChildren(cell('File', 'None'), cell('Size', '–'));
+        if (file) return dl.replaceChildren(cell('File', file.name), cell('Size', `${mb(file.size)}, not saved yet`, 'unsaved'));
+        dl.replaceChildren(cell('File', model.photo.split('/').pop()), cell('Size', '…'));
+        const size = await gh(`contents/${encodeURI(`public${model.photo}`)}?ref=main`).then((d) => d.size).catch(() => null);
+        if (!file && dl.lastChild) dl.lastChild.querySelector('dd').textContent = mb(size);
+      }
+
+      // Width and height go into the file, so the page keeps the photo's shape while it loads.
+      const sizeOf = (url) =>
+        new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve([img.naturalWidth, img.naturalHeight]);
+          img.onerror = () => resolve([undefined, undefined]);
+          img.src = url;
+        });
+
+      async function usePhoto(f) {
+        if (!f) return;
+        if (!f.type.startsWith('image/')) return alert(`${f.name} isn't an image.`);
+        if (f.size > MAX) return alert(`${f.name} is ${mb(f.size)}. Photos can be up to ${MAX / 1e6} MB.`);
+        if (fileURL) URL.revokeObjectURL(fileURL);
+        file = f;
+        fileURL = URL.createObjectURL(f);
+        [model.photoWidth, model.photoHeight] = await sizeOf(fileURL);
+        renderPhoto();
+        changed();
+      }
+      function choose() {
+        $('picker').value = '';
+        $('picker').click();
+      }
+      $('picker').onchange = () => usePhoto($('picker').files[0]);
+      $('photoUpload').onclick = choose;
+      $('photoRemove').onclick = () => {
+        file = null;
+        model.photo = '';
+        renderPhoto();
+        changed();
+      };
+      const media = $('photoMedia');
+      media.addEventListener('dragover', (e) => {
+        if (![...e.dataTransfer.types].includes('Files')) return;
+        e.preventDefault();
+        media.classList.add('drop');
+      });
+      media.addEventListener('dragleave', () => media.classList.remove('drop'));
+      media.addEventListener('drop', (e) => {
+        if (!e.dataTransfer.files.length) return;
+        e.preventDefault();
+        media.classList.remove('drop');
+        usePhoto(e.dataTransfer.files[0]);
+      });
+
+      // ---------- Save ----------
+      function changed() {
+        const d = dirty();
+        $('save').disabled = !d || saving;
+        if (!saving) setState(d ? 'Unsaved changes' : 'All changes saved');
+      }
+      function setState(text, error = false) {
+        $('saveState').textContent = text;
+        $('saveState').classList.toggle('err', error);
+      }
+      for (const k of ['title', 'bio']) {
+        $(k).addEventListener('input', () => {
+          model[k] = $(k).value;
+          $(k).classList.remove('bad');
+          changed();
+        });
+      }
+      addEventListener('beforeunload', (e) => {
+        if (dirty() || saving) e.preventDefault();
+      });
+      addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+          e.preventDefault();
+          if (!$('save').disabled) save();
+        }
+      });
+
+      // Unused name for the new photo, so browsers never show an old copy.
+      async function freePath(name) {
+        const dot = name.lastIndexOf('.');
+        const stem = slugify(dot > 0 ? name.slice(0, dot) : name) || 'photo';
+        const ext = dot > 0 ? name.slice(dot).toLowerCase() : '.jpg';
+        for (let n = 1; ; n++) {
+          const p = `${PHOTO_DIR}/${stem}${n > 1 ? `-${n}` : ''}${ext}`;
+          try {
+            await gh(`contents/${encodeURI(`public${p}`)}?ref=main`, { method: 'HEAD' });
+          } catch (e) {
+            if (e.status === 404) return p;
+            throw e;
+          }
+        }
+      }
+
+      async function save() {
+        if (!model.title.trim()) {
+          $('title').classList.add('bad');
+          return setState('The title is empty.', true);
+        }
+        saving = true;
+        $('save').disabled = true;
+        try {
+          setState('Saving…');
+          const now = await gh(`contents/${PATH}?ref=main`);
+          if (now.sha !== sha) throw new Error('The About page was changed somewhere else since you opened it. Copy your changes, reload the page, and redo them.');
+          const entries = [];
+          let photo = model.photo;
+          if (file) {
+            setState(`Uploading ${file.name}…`);
+            photo = await freePath(file.name);
+            const blob = await gh('git/blobs', { method: 'POST', body: { content: await fileBase64(file), encoding: 'base64' } });
+            entries.push({ path: `public${photo}`, mode: '100644', type: 'blob', sha: blob.sha });
+          }
+          setState('Saving…');
+          const data = toData({ ...model, photo });
+          const text = JSON.stringify(data, null, 2) + '\n';
+          const json = await gh('git/blobs', { method: 'POST', body: { content: text, encoding: 'utf-8' } });
+          entries.push({ path: PATH, mode: '100644', type: 'blob', sha: json.sha });
+          await commit('Update the About page', entries);
+
+          model.photo = photo;
+          original = data;
+          sha = json.sha;
+          saving = false;
+          const uploaded = file;
+          file = null;
+          savedSnapshot = snapshot();
+          changed();
+          if (uploaded) {
+            renderPhoto();
+            // The site doesn't have the new photo for a couple of minutes: keep showing it from memory.
+            const img = $('photoMedia').querySelector('img');
+            if (img) (img.onerror = null), (img.src = fileURL);
+          }
+          setState('Saved. The website updates in about 2 minutes.');
+          checkLive();
+        } catch (e) {
+          saving = false;
+          changed();
+          setState(e.message || 'Saving failed. Check the connection and try again.', true);
+        }
+      }
+      $('save').onclick = save;
+
+      // ---------- Live badge ----------
+      let since = 0;
+      async function checkLive() {
+        try {
+          const [head, live] = await Promise.all([
+            fetch(`https://api.github.com/repos/${REPO}/commits/main`, { cache: 'no-store', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.sha' } }).then((r) => (r.ok ? r.text() : Promise.reject())),
+            fetch(`/admin/version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => r.json()),
+          ]);
+          const pill = $('live');
+          pill.hidden = false;
+          if (live.commit === head.trim()) {
+            since = 0;
+            pill.className = 'pill live';
+            pill.textContent = 'Live';
+            pill.title = 'All saved changes are on the website';
+          } else {
+            since ||= Date.now();
+            pill.className = 'pill busy';
+            pill.textContent = Date.now() - since > 8 * 60 * 1000 ? 'Publishing (slow)' : 'Publishing…';
+            pill.title = 'Saved changes appear on the website in about 2 minutes';
+          }
+        } catch {}
+      }
+
+      // ---------- Start ----------
+      function fail(text, link) {
+        $('editor').hidden = true;
+        const box = $('message');
+        box.hidden = false;
+        jgLoaded();
+        box.replaceChildren(el('p', { textContent: text }));
+        if (link) box.append(el('a', { className: 'btn', href: link[1], textContent: link[0] }));
+      }
+
+      async function start() {
+        if (!token) return fail('Sign in to the editor first.', ['Go to sign in', '/admin/']);
+        try {
+          const f = await gh(`contents/${PATH}?ref=main`);
+          sha = f.sha;
+          original = JSON.parse(decode(f.content));
+        } catch (e) {
+          return fail(`Couldn't load the About page: ${e.message}`, ['Try again', location.href]);
+        }
+        model = { title: original.title || '', bio: original.bio || '', photo: original.photo || '', photoWidth: original.photoWidth, photoHeight: original.photoHeight };
+        $('title').value = model.title;
+        $('bio').value = model.bio;
+        savedSnapshot = snapshot();
+        renderPhoto();
+        $('editor').hidden = false;
+        jgLoaded();
+        changed();
+        checkLive();
+        setInterval(checkLive, 15000);
+      }
+      start();
+    </script>
+  </body>
+</html>

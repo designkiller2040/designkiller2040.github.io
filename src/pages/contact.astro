@@ -3,27 +3,16 @@ import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { projects, previewSrc } from '../data/projects';
+import contact from '../data/contact.json';
 
-// The 12 previews on the wall, left to right, top to bottom. Change the slugs
-// here to pick different projects. Projects without a preview clip are
-// skipped, and other projects with clips fill the gaps.
-const WALL = [
-  'every-other-weekend',
-  'do-you-ever-feel-nostalgic',
-  'backbone-xbox-sunriver',
-  'nike-the-unreal-lookbook',
-  'can-you-keep-a-secret',
-  'chamberlain-coffee-valentines-day',
-  'jeremy-zucker-therapist',
-  'that-winter-in-nagano',
-  'nike-snkrs-newsstand',
-  'nike-snkrs-wait-is-over',
-  'the-valley-of-souls',
-  'truth-of-existence',
-];
+// The 12 previews on the wall, left to right, top to bottom, are picked in the
+// admin panel (/admin/contact/). Projects without a preview clip are skipped,
+// and other projects with clips fill the gaps.
+const WALL = contact.wall;
+const handle = contact.instagram.trim().replace(/^@/, '');
 const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ...projects]
   .filter((p, i, all) => p && previewSrc(p) && all.indexOf(p) === i)
-  .slice(0, WALL.length);
+  .slice(0, 12);
 ---
 
 <Base title="Contact">
@@ -39,8 +28,8 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
         ))
       }
       <address class="say">
-        <a href="https://www.instagram.com/jonahgeorge/" target="_blank" rel="noopener">ig: jonahgeorge</a>
-        <a href="mailto:jonahmgeorge@gmail.com">email: jonahmgeorge@gmail.com</a>
+        {handle && <a href={`https://www.instagram.com/${handle}/`} target="_blank" rel="noopener">ig: {handle}</a>}
+        {contact.email && <a href={`mailto:${contact.email.trim()}`}>email: {contact.email.trim()}</a>}
       </address>
     </section>
 
