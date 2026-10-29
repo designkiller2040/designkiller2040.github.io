@@ -2,7 +2,19 @@
 // short line of text. Load it first thing in <body>. Pages call jgLoaded()
 // once they're ready; with data-auto (the Sveltia editor at /admin/) it goes
 // away by itself as soon as the editor shows its sign-in or its screens.
+//
+// Coming from another admin page (switching tabs), it only covers the content
+// under the top menu, and shows its text only if loading takes a moment; the
+// menu itself stays put (see tabs.css).
 (() => {
+  const auto = document.currentScript?.hasAttribute('data-auto');
+  let from = '';
+  try {
+    const ref = new URL(document.referrer);
+    if (ref.origin === location.origin) from = ref.pathname;
+  } catch {}
+  const soft = !auto && from.startsWith('/admin/') && from !== '/admin/';
+
   const style = document.createElement('style');
   style.textContent = `
     #jg-loading { position: fixed; inset: 0; z-index: 100000; display: flex; flex-direction: column; align-items: center;
@@ -13,13 +25,18 @@
       letter-spacing: 0.01em; color: #6b6b6b; }
     #jg-loading p::after { content: ''; display: inline-block; width: 1.2em; text-align: left; animation: jg-dots 1.2s steps(4) infinite; }
     @keyframes jg-dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+    #jg-loading.soft { z-index: 4; }
+    #jg-loading.soft img { display: none; }
+    #jg-loading.soft p { opacity: 0; animation: jg-show 0.3s 0.4s forwards; }
+    @keyframes jg-show { to { opacity: 1; } }
   `;
   document.head.append(style);
 
   const box = document.createElement('div');
   box.id = 'jg-loading';
+  if (soft) box.className = 'soft';
   box.setAttribute('role', 'status');
-  box.innerHTML = '<img src="/admin/logo.svg" alt="Jonah George" /><p>Loading the admin panel for you</p>';
+  box.innerHTML = `<img src="/admin/logo.svg" alt="Jonah George" /><p>${soft ? 'Loading' : 'Loading the admin panel for you'}</p>`;
   document.body.prepend(box);
 
   window.jgLoaded = () => {
@@ -28,7 +45,7 @@
     setTimeout(() => box.remove(), 300);
   };
 
-  if (document.currentScript?.hasAttribute('data-auto')) {
+  if (auto) {
     const ready = () => [...document.body.children].some((el) => el !== box && el.tagName !== 'SCRIPT' && el.querySelector('button, input'));
     const watch = new MutationObserver(() => ready() && (watch.disconnect(), window.jgLoaded()));
     watch.observe(document.body, { childList: true, subtree: true });

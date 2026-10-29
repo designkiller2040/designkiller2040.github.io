@@ -11,6 +11,9 @@
       within a group changes their Position in menu (saved in one commit).
       /admin/ sends people here instead of the old list (see the redirect script there).
     -->
+    <!-- Wait for the top menu before showing the page, so switching tabs never blinks. -->
+    <link rel="expect" href="#message" blocking="render" />
+    <link rel="stylesheet" href="/admin/tabs.css" />
     <style>
       :root {
         --bg: #fff;

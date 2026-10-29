@@ -12,6 +12,9 @@
       /admin/cards.json, the same list the Projects page uses. Every Save is one
       commit to main, which republishes the site.
     -->
+    <!-- Wait for the top menu before showing the page, so switching tabs never blinks. -->
+    <link rel="expect" href="#message" blocking="render" />
+    <link rel="stylesheet" href="/admin/tabs.css" />
     <style>
       :root {
         --bg: #fff;

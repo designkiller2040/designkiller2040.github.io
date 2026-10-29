@@ -1,0 +1,15 @@
+/* Switching between admin pages (Projects, Home, About, ...): the browser
+   crossfades from one page to the next (a view transition) while the top menu
+   stands still and the grey tab slides over to the new one. Linked in the
+   <head> of every admin 2.0 page, so the browser sees it before showing the
+   page. Works in Chrome, Edge and Safari 18.2+; others just switch pages. */
+@view-transition { navigation: auto; }
+body > header { view-transition-name: jg-header; }
+body > header nav { view-transition-name: jg-nav; }
+body > header nav a[aria-current='page'] { view-transition-name: jg-tab; }
+::view-transition-group(*) { animation-duration: 0.3s; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*) { animation-duration: 0s; } }
+
+/* Same height on every page, so the content never jumps when switching. */
+body > header .bar { min-height: 64px; }
+@media (max-width: 700px) { body > header .bar { min-height: 0; } }

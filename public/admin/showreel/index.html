@@ -11,6 +11,9 @@
       GitHub sign-in; every Save is one commit to main, which republishes the site.
       /admin/ sends people here instead of the old form (see the redirect script there).
     -->
+    <!-- Wait for the top menu before showing the page, so switching tabs never blinks. -->
+    <link rel="expect" href="#message" blocking="render" />
+    <link rel="stylesheet" href="/admin/tabs.css" />
     <style>
       :root {
         --bg: #fff;
