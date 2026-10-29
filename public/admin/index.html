@@ -24,6 +24,7 @@
 
       /* Sign-in screen: white, with the black Jonah George logo (light theme forced by the script below). */
       img[src='/admin/logo.svg'] { width: 174px !important; height: auto !important; }
+      img[src='/admin/logo.svg'] ~ h1 { display: none !important; } /* the logo already says Jonah George */
       .app-shell:has(img[src='/admin/logo.svg']),
       .app-shell:has(img[src='/admin/logo.svg']) .main { background: #fff !important; }
 
