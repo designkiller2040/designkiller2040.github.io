@@ -103,8 +103,9 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
   /* Phones: 16px text, centred, 4px between titles. */
   @media (max-width: 767px) {
     .project-list {
-      --text: 16px;
-      --line: 18px;
+      /* 14px, the same as the phone top menu (2026-10-29). */
+      --text: 14px;
+      --line: 16px;
       width: auto;
       overflow: visible;
       text-align: center;

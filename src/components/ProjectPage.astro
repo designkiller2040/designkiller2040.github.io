@@ -1040,11 +1040,11 @@ const poster = posterSrc(project);
       --line: 14px;
     }
 
-    /* Phones keep the site's usual phone sizes. */
+    /* Phones: 14px, the same as the top menu and project list. */
     .top,
     .info {
-      --text: 12px;
-      --line: calc(10.6 * var(--rm));
+      --text: 14px;
+      --line: 16px;
     }
     .info {
       position: relative;
@@ -1062,7 +1062,8 @@ const poster = posterSrc(project);
       grid-column: 1 / -1;
       height: auto;
       width: auto;
-      padding-block: 0 calc(var(--row) * 2);
+      /* The same space below the info as at its sides (2026-10-29). */
+      padding-block: 0 var(--margin);
     }
     .about,
     .about .text {

@@ -121,9 +121,10 @@ const links = [
       /* 2026-10-29: the logo is twice its desktop design size on phones. */
       --logo-w: calc(224 * var(--rm));
       row-gap: 10px;
-      /* Phones: 16px, the same as the homepage project list. */
-      font-size: 16px;
-      line-height: 19px;
+      /* Phones: 14px, the same as the project list, project info and
+         Contact (2026-10-29). */
+      font-size: 14px;
+      line-height: 17px;
     }
     .logo {
       grid-column: 1 / -1;
@@ -142,6 +143,29 @@ const links = [
     .insta {
       grid-column: 13 / -1;
     }
+    /* 2026-10-29: the menu slides away while you scroll down and comes back
+       as soon as you scroll up (script below). */
+    .header {
+      transition: translate 0.3s ease;
+    }
+    :global(html.header-hidden) .header {
+      translate: 0 calc(-100% - var(--top) - 20px);
+    }
   }
 </style>
+
+<script>
+  // Phones (CSS above): hide the menu on scroll down, show it on scroll up.
+  let lastY = window.scrollY;
+  window.addEventListener(
+    'scroll',
+    () => {
+      const y = window.scrollY;
+      if (Math.abs(y - lastY) < 6) return;
+      document.documentElement.classList.toggle('header-hidden', y > lastY && y > 60);
+      lastY = y;
+    },
+    { passive: true },
+  );
+</script>
 
