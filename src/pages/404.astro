@@ -1,0 +1,76 @@
+---
+import Base from '../layouts/Base.astro';
+
+// GitHub Pages shows this page (built as /404.html) for any address that
+// doesn’t exist. Sizes are design px (--rm), measured from alona's mockup.
+---
+
+<Base title="Page not found">
+  <main class="nf">
+    <h1>404</h1>
+    <p>This page doesn’t exist</p>
+    <a class="home" href="/">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 14 4 9l5-5" />
+        <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
+      </svg>
+      Go home
+    </a>
+  </main>
+</Base>
+
+<style>
+  .nf {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--margin);
+    text-align: center;
+    background: #c9d6cd url('/images/404.jpg') center / cover no-repeat;
+  }
+
+  /* White with a difference blend, so it takes the inverse colour of the
+     photo behind it (dark maroon over the pale sand). */
+  h1 {
+    margin: 0;
+    font-size: calc(53 * var(--rm));
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: #fff;
+    mix-blend-mode: difference;
+  }
+
+  p {
+    margin: calc(10 * var(--rm)) 0 0;
+    font-size: max(17px, calc(11.7 * var(--rm)));
+    line-height: 1.2;
+    color: #000;
+  }
+
+  .home {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(9.7 * var(--rm));
+    height: max(40px, calc(21 * var(--rm)));
+    margin-top: calc(25 * var(--rm));
+    padding: 0 calc(9.7 * var(--rm)) 0 calc(6.6 * var(--rm));
+    border-radius: max(7px, calc(4 * var(--rm)));
+    background: #fff;
+    color: #000;
+    font-size: max(14px, calc(8.83 * var(--rm)));
+    text-decoration: none;
+  }
+  .home svg {
+    width: max(19px, calc(10.5 * var(--rm)));
+    height: max(19px, calc(10.5 * var(--rm)));
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>
