@@ -46,12 +46,12 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
 
 <style>
   /*
-   * Text 8.83 design px on 10.05 (14px on 16px on alona's 14" MacBook), lines
+   * Text 8.83 design px on 11.4 (about 15px on 20px on alona's MacBook in full screen), lines
    * 2% further apart, 179.3 design px wide (285px), 20 (32px) between groups.
    */
   .project-list {
     --text: calc(8.83 * var(--rm));
-    --line: calc(10.05 * var(--rm));
+    --line: calc(11.4 * var(--rm));
     --tracking: -0.06em;
     width: calc(179.3 * var(--rm));
     font-family: var(--font-sans);
