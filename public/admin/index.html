@@ -72,7 +72,7 @@
     <script>
       // Admin 2.0: the project list (/admin/projects/) and project editor (/admin/project/)
       // replace this editor's own screens for projects; this editor still handles
-      // sign-in, the showreel and the Assets library. "Open in old editor/list" there
+      // sign-in and the Assets library; the showreel opens in /admin/showreel/. "Open in old editor/list" there
       // sets jg-classic, which keeps this tab on the old screens.
       (() => {
         const signedIn = () => {
@@ -84,6 +84,7 @@
           if (sessionStorage.getItem('jg-classic')) return;
           const m = location.hash.match(/^#\/collections\/projects\/(?:entries\/([^/?#]+)|new\b)/);
           if (m) return location.replace(`/admin/project/?${m[1] ? `slug=${m[1]}` : 'new=1'}`);
+          if (/^#\/collections\/homepage\/entries\/home\b/.test(location.hash)) return location.replace('/admin/showreel/');
           if (signedIn() && /^(#\/?)?$|^#\/collections\/(projects|homepage)\/?$/.test(location.hash)) location.replace('/admin/projects/');
         };
         go();
