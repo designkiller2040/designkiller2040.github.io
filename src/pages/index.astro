@@ -278,6 +278,10 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
       color: #000;
       mix-blend-mode: normal;
     }
+    /* The homepage logo stays white over the showreel. */
+    .hero :global(.logo-mark) {
+      color: #fff;
+    }
     .hero :global(.legal) {
       display: flex;
       grid-row: 3;
