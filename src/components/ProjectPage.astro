@@ -47,7 +47,7 @@ const poster = posterSrc(project);
       <div class="track">
         <div class="hero">
           {embed && (
-            <button class="play" type="button" data-embed={embed.embed} data-backup={embed.backup} data-check={embed.check} data-title={project.title}>
+            <button class="play" type="button" data-hls={embed.hls} data-vimeo={embed.vimeo} data-title={project.title}>
               <span class="play-label">Play full</span>
             </button>
           )}
@@ -87,8 +87,20 @@ const poster = posterSrc(project);
   <!-- With a mouse, "Play full" follows the pointer over the thumbnail. -->
   <div class="cursor" aria-hidden="true"><span class="play-label">Play full</span></div>
 
+  <!-- The film: full screen, with text controls on top that fade out while
+       the mouse rests. Clicking the picture pauses and plays. -->
   <div class="player" hidden>
-    <button class="close" type="button" aria-label="Close film">close</button>
+    <div class="screen"></div>
+    <div class="controls">
+      <button class="close" type="button">Close</button>
+      <button class="toggle" type="button">Pause</button>
+      <div class="bar">
+        <div class="progress" role="slider" aria-label="Seek" tabindex="0"><span></span></div>
+        <span class="time">0:00 / 0:00</span>
+        <button class="audio" type="button">Audio (ON)</button>
+        <button class="full" type="button">Full screen</button>
+      </div>
+    </div>
   </div>
 </Base>
 
@@ -254,41 +266,209 @@ const poster = posterSrc(project);
     playArea.addEventListener('pointerleave', () => cursor.classList.remove('on'));
   }
 
-  // "Play full" opens the film (Cloudflare Stream or Vimeo) over the whole window.
-  // When there's a Vimeo backup, the Stream playlist is checked at the same
-  // time; if Cloudflare can't serve it within 6 s, the player switches to Vimeo.
+  // "Play full" opens the film over the whole window, in our own player:
+  // Cloudflare Stream plays in a <video> (Safari natively, other browsers via
+  // hls.js); if it can't play within 6 s, or there's no Stream film, the
+  // Vimeo player is used instead, with Vimeo's own controls hidden.
   const play = document.querySelector<HTMLButtonElement>('.play');
   const player = document.querySelector<HTMLElement>('.player');
+  const screen = player?.querySelector<HTMLElement>('.screen');
+  const toggle = player?.querySelector<HTMLButtonElement>('.toggle');
+  const fill = player?.querySelector<HTMLElement>('.progress span');
+  const bar = player?.querySelector<HTMLElement>('.progress');
+  const time = player?.querySelector<HTMLElement>('.time');
+  const audio = player?.querySelector<HTMLButtonElement>('.audio');
+  const full = player?.querySelector<HTMLButtonElement>('.full');
+
+  /** What the controls drive, whichever player is showing. */
+  type Film = {
+    toggle(): void;
+    seek(fraction: number): void;
+    setMuted(m: boolean): void;
+    fullscreen?(): void;
+    destroy(): void;
+  };
+  let film: Film | undefined;
+  let state = { playing: false, t: 0, d: 0, muted: false };
+
+  const clock = (s: number) => {
+    s = Math.max(0, Math.floor(s || 0));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const ss = String(s % 60).padStart(2, '0');
+    return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
+  };
+  const show = (next: Partial<typeof state>) => {
+    state = { ...state, ...next };
+    if (time) time.textContent = `${clock(state.t)} / ${clock(state.d)}`;
+    if (fill) fill.style.width = `${state.d ? (state.t / state.d) * 100 : 0}%`;
+    if (audio) audio.textContent = `Audio (${state.muted ? 'OFF' : 'ON'})`;
+    player?.classList.toggle('paused', !state.playing);
+  };
+
+  // The controls show while the mouse moves and fade after 2 s of rest.
+  let idle: number | undefined;
+  const wake = () => {
+    player?.classList.add('awake');
+    clearTimeout(idle);
+    idle = window.setTimeout(() => player?.classList.remove('awake'), 2000);
+  };
+  player?.addEventListener('pointermove', wake);
+  player?.addEventListener('pointerdown', wake);
+
+  function streamFilm(src: string, onFail: () => void): Film {
+    const v = document.createElement('video');
+    v.playsInline = true;
+    v.autoplay = true;
+    v.title = play?.dataset.title ?? '';
+    screen?.append(v);
+    let hls: { destroy(): void } | undefined;
+    let failed = false;
+    const fail = () => {
+      if (failed || started) return;
+      failed = true;
+      onFail();
+    };
+    let started = false;
+    const timer = window.setTimeout(fail, 6000);
+    v.addEventListener('playing', () => ((started = true), clearTimeout(timer)), { once: true });
+    v.addEventListener('error', fail);
+    const sync = () => show({ playing: !v.paused, t: v.currentTime, d: v.duration || 0, muted: v.muted });
+    ['play', 'pause', 'timeupdate', 'durationchange', 'volumechange', 'loadedmetadata'].forEach((e) =>
+      v.addEventListener(e, sync)
+    );
+    v.addEventListener('ended', () => show({ playing: false }));
+    if (v.canPlayType('application/vnd.apple.mpegurl')) {
+      v.src = src;
+    } else {
+      import('hls.js').then(({ default: Hls }) => {
+        if (!Hls.isSupported() || !v.isConnected) return fail();
+        const h = new Hls({ capLevelToPlayerSize: true });
+        hls = h;
+        h.on(Hls.Events.ERROR, (_e, data) => data.fatal && fail());
+        h.loadSource(src);
+        h.attachMedia(v);
+      }, fail);
+    }
+    v.play().catch(() => {});
+    return {
+      toggle: () => (v.paused ? v.play().catch(() => {}) : v.pause()),
+      seek: (f) => v.duration && (v.currentTime = f * v.duration),
+      setMuted: (m) => (v.muted = m),
+      // iPhone can't put a page element in full screen, only the video itself.
+      fullscreen: () => (v as HTMLVideoElement & { webkitEnterFullscreen?(): void }).webkitEnterFullscreen?.(),
+      destroy: () => {
+        clearTimeout(timer);
+        hls?.destroy();
+        v.removeAttribute('src');
+        v.load();
+        v.remove();
+      },
+    };
+  }
+
+  function vimeoFilm(src: string): Film {
+    const iframe = document.createElement('iframe');
+    iframe.src = src;
+    iframe.title = play?.dataset.title ?? '';
+    iframe.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
+    iframe.allowFullscreen = true;
+    screen?.append(iframe);
+    type VimeoPlayer = import('@vimeo/player').default;
+    let vp: VimeoPlayer | undefined;
+    let paused = false;
+    const ready = import('@vimeo/player').then(({ default: Player }) => {
+      if (!iframe.isConnected) return;
+      const p = new Player(iframe);
+      vp = p;
+      p.on('play', () => ((paused = false), show({ playing: true })));
+      p.on('pause', () => ((paused = true), show({ playing: false })));
+      p.on('ended', () => ((paused = true), show({ playing: false })));
+      p.on('timeupdate', (d: { seconds: number; duration: number }) => show({ t: d.seconds, d: d.duration }));
+      p.on('volumechange', (d: { volume: number }) => show({ muted: d.volume === 0 }));
+      p.getDuration().then((d) => show({ d }), () => {});
+      return p;
+    });
+    return {
+      toggle: () => ready.then((p) => (paused ? p?.play() : p?.pause())).catch(() => {}),
+      seek: (f) => vp?.getDuration().then((d) => vp?.setCurrentTime(f * d)).catch(() => {}),
+      setMuted: (m) => {
+        vp?.setMuted(m).catch(() => {});
+        show({ muted: m });
+      },
+      fullscreen: () => vp?.requestFullscreen().catch(() => {}),
+      destroy: () => {
+        vp?.destroy().catch(() => {});
+        iframe.remove();
+      },
+    };
+  }
+
   const close = () => {
-    if (!player) return;
-    player.querySelector('iframe')?.remove();
+    if (!player || player.hidden) return;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    film?.destroy();
+    film = undefined;
     player.hidden = true;
     document.body.classList.remove('watching');
   };
   play?.addEventListener('click', () => {
     if (!player) return;
-    const iframe = document.createElement('iframe');
-    iframe.src = play.dataset.embed ?? '';
-    const { check, backup } = play.dataset;
-    if (check && backup) {
-      fetch(check, { signal: AbortSignal.timeout(6000) })
-        .then((r) => r.ok)
-        .catch(() => false)
-        .then((ok) => {
-          if (!ok && iframe.isConnected) iframe.src = backup;
-        });
-    }
-    iframe.title = play.dataset.title ?? '';
-    iframe.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
-    iframe.allowFullscreen = true;
-    player.prepend(iframe);
+    const { hls, vimeo } = play.dataset;
+    show({ playing: true, t: 0, d: 0, muted: false });
+    const toVimeo = () => {
+      film?.destroy();
+      film = vimeo ? vimeoFilm(vimeo) : undefined;
+    };
+    film = hls ? streamFilm(hls, () => vimeo && toVimeo()) : undefined;
+    if (!film) toVimeo();
     player.hidden = false;
+    wake();
     document.body.classList.add('watching');
     cursor?.classList.remove('on');
   });
   player?.querySelector('.close')?.addEventListener('click', close);
+  toggle?.addEventListener('click', () => film?.toggle());
+  screen?.addEventListener('click', () => film?.toggle());
+  audio?.addEventListener('click', () => {
+    film?.setMuted(!state.muted);
+    show({ muted: !state.muted });
+  });
+  full?.addEventListener('click', () => {
+    if (!player) return;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else if (player.requestFullscreen) player.requestFullscreen().catch(() => film?.fullscreen?.());
+    else film?.fullscreen?.();
+  });
+  document.addEventListener('fullscreenchange', () => {
+    if (full) full.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+  });
+  // Click or drag along the line to jump through the film.
+  if (bar) {
+    const seekTo = (e: PointerEvent) => {
+      const r = bar.getBoundingClientRect();
+      const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+      show({ t: f * state.d });
+      film?.seek(f);
+    };
+    bar.addEventListener('pointerdown', (e) => {
+      bar.setPointerCapture(e.pointerId);
+      seekTo(e);
+      bar.addEventListener('pointermove', seekTo);
+    });
+    bar.addEventListener('pointerup', () => bar.removeEventListener('pointermove', seekTo));
+    bar.addEventListener('keydown', (e) => {
+      const step = e.key === 'ArrowRight' ? 5 : e.key === 'ArrowLeft' ? -5 : 0;
+      if (step && state.d) film?.seek(Math.min(1, Math.max(0, (state.t + step) / state.d)));
+    });
+  }
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') close();
+    if (e.key === 'Escape' && !document.fullscreenElement) close();
+    if (e.key === ' ' && player && !player.hidden && !(e.target instanceof HTMLButtonElement)) {
+      e.preventDefault();
+      film?.toggle();
+      wake();
+    }
   });
 </script>
 
@@ -721,34 +901,115 @@ const poster = posterSrc(project);
     }
   }
 
-  /* The film, over everything. */
+  /*
+   * The film, over everything. Its controls are plain text in the projects
+   * menu's font and size (8.83 design px, 14px on alona's MacBook): Close at
+   * the top right, Pause in the middle while paused, a thin progress line at the
+   * bottom left and time, audio and full screen at the bottom right. The bottom
+   * ones fade out while the mouse rests and stay while the film is paused.
+   */
   .player {
+    --text: calc(8.83 * var(--rm));
+    --line: calc(10.05 * var(--rm));
+    --tracking: -0.06em;
     position: fixed;
     inset: 0;
     z-index: 20;
     background: #000;
+    font-family: var(--font-sans);
+    font-size: var(--text);
+    line-height: var(--line);
+    color: #fff;
   }
   .player[hidden] {
     display: none;
   }
-  .player :global(iframe) {
+  .screen,
+  .screen :global(video),
+  .screen :global(iframe) {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     border: 0;
   }
+  .screen :global(video) {
+    object-fit: contain;
+    background: #000;
+  }
+  .player:not(.awake):not(.paused) {
+    cursor: none;
+  }
+  .bar,
+  .toggle {
+    transition: opacity 0.4s;
+  }
+  /* The bottom controls fade a moment after the mouse stops. */
+  .player:not(.awake):not(.paused) .bar {
+    opacity: 0;
+  }
+  /* "Pause" shows only once the film is paused (click the picture). */
+  .player:not(.paused) .toggle {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .controls button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    line-height: var(--line);
+    cursor: pointer;
+  }
   .close {
     position: absolute;
     top: var(--top);
     right: var(--margin);
-    z-index: 1;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: #fff;
-    font: inherit;
+  }
+  /* Pause: difference-blended so it reads on light and dark frames. */
+  .toggle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    mix-blend-mode: difference;
+  }
+  .bar {
+    position: absolute;
+    left: var(--margin);
+    right: var(--margin);
+    bottom: var(--margin);
+    display: flex;
+    align-items: center;
+    gap: calc(22 * var(--rm));
+  }
+  /* The progress line: white for what's played, faint for the rest. A taller
+     invisible strip around it makes it easy to grab. */
+  .progress {
+    flex: 1;
+    max-width: calc(170 * var(--rm));
+    margin-right: auto;
+    height: calc(10 * var(--rm));
+    display: flex;
+    align-items: center;
+    background: linear-gradient(rgb(255 255 255 / 0.25), rgb(255 255 255 / 0.25)) center / 100% 1px no-repeat;
     cursor: pointer;
+    touch-action: none;
+    outline: none;
+  }
+  .progress span {
+    display: block;
+    width: 0;
+    height: 1.5px;
+    background: #fff;
+  }
+  .time {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .bar button {
+    white-space: nowrap;
   }
   :global(body.watching) {
     overflow: hidden;
@@ -759,6 +1020,12 @@ const poster = posterSrc(project);
    * into the page under the first screen, followed by the stills.
    */
   @media (max-width: 767px) {
+    /* The film's controls keep the phone text size. */
+    .player {
+      --text: 12px;
+      --line: 14px;
+    }
+
     /* Phones keep the site's usual phone sizes. */
     .top,
     .info {
