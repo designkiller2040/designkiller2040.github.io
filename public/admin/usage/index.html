@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Usage · Jonah George</title>
+    <!--
+      Cloudflare Stream usage (admin 2.0 style). Asks the editor helper (the
+      Cloudflare Worker, GET /usage) how many minutes of film are stored against
+      the plan and how many minutes people watched this month, and shows any
+      cost on top of the plan. Read only: nothing here changes the site.
+    -->
+    <style>
+      :root {
+        --bg: #fff;
+        --fg: #111;
+        --muted: #6b6b6b;
+        --faint: #8a8a8a;
+        --line: #e6e6e6;
+        --track: #efefef;
+        --red: #b42318;
+        --green: #1f6b33;
+        --amber: #8a5a00;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.4 -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+        letter-spacing: 0.01em;
+      }
+      a { color: inherit; }
+      h1, h2, h3, p { margin: 0; }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 14px;
+        border: 1px solid #dcdcdc;
+        border-radius: 8px;
+        background: var(--bg);
+        font: inherit;
+        font-size: 13px;
+        color: var(--fg);
+        text-decoration: none;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn:hover { border-color: #b5b5b5; }
+      svg { flex-shrink: 0; }
+
+      header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+      .bar { max-width: 1280px; margin: 0 auto; padding: 14px 48px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+      .bar > div { display: flex; align-items: center; gap: 16px; min-width: 0; }
+      .brand { font-size: 16px; font-weight: 600; white-space: nowrap; }
+      .sep { width: 1px; height: 20px; background: var(--line); }
+      nav { display: flex; gap: 4px; }
+      nav a { height: 32px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 8px; font-size: 13px; color: var(--muted); text-decoration: none; }
+      nav a:hover { color: var(--fg); }
+      nav a[aria-current='page'] { background: #f0f0f0; color: var(--fg); }
+
+      main { max-width: 1280px; margin: 0 auto; padding: 48px 48px 96px; display: flex; flex-direction: column; gap: 48px; }
+      section { display: flex; flex-direction: column; gap: 20px; }
+      .head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+      h2 { font-size: 22px; font-weight: 600; }
+      h3 { font-size: 13px; font-weight: 400; color: var(--muted); }
+      .note { font-size: 13px; color: var(--muted); }
+
+      .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+      .tile { border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+      .big { font-size: 32px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+      .big small { font-size: 15px; font-weight: 400; color: var(--muted); }
+      .meter { height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
+      .meter span { display: block; height: 100%; background: var(--fg); border-radius: 3px; }
+      .meter.warn span { background: var(--amber); }
+      .meter.full span { background: var(--red); }
+      .ok { color: var(--green); }
+      .warn-text { color: var(--amber); }
+      .bad { color: var(--red); }
+
+      .chart { border: 1px solid var(--line); border-radius: 12px; padding: 20px 20px 12px; }
+      .bars { display: flex; align-items: flex-end; gap: 3px; height: 160px; }
+      .bars div { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
+      .bars span { display: block; width: 100%; min-height: 1px; background: var(--fg); border-radius: 2px 2px 0 0; }
+      .bars div.empty span { background: var(--track); }
+      .bars div:hover span { background: #555; }
+      .axis { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+      #tip { min-height: 18px; font-size: 12px; color: var(--muted); margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+
+      .center { max-width: 480px; margin: 120px auto; padding: 0 16px; text-align: center; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+
+      @media (max-width: 700px) {
+        .bar { padding: 12px 16px; }
+        .bar > div:first-child { flex-wrap: wrap; row-gap: 8px; }
+        .bar .sep { display: none; }
+        nav { max-width: 100%; overflow-x: auto; margin-left: -12px; }
+        main { padding: 32px 16px 64px; gap: 40px; }
+        .bars { gap: 1px; height: 120px; }
+      }
+    </style>
+  </head>
+  <body>
+    <script src="/admin/github-proxy.js"></script>
+    <script src="/admin/sign-out.js"></script>
+    <script src="/admin/loading.js"></script>
+    <header>
+      <div class="bar">
+        <div>
+          <h1 class="brand">Jonah George</h1>
+          <span class="sep"></span>
+          <nav aria-label="Sections">
+            <a href="/admin/projects/">Projects</a>
+            <a href="/admin/showreel/">Home</a>
+            <a href="/admin/about/">About</a>
+            <a href="/admin/contact/">Contact</a>
+            <a href="/admin/usage/" aria-current="page">Usage</a>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <div id="message" class="center" hidden></div>
+
+    <main id="page" hidden>
+      <section>
+        <div class="head">
+          <h2>Video usage</h2>
+          <p class="note" id="month"></p>
+        </div>
+        <div class="tiles">
+          <article class="tile">
+            <h3>Films stored on Cloudflare</h3>
+            <p class="big" id="stored"></p>
+            <div class="meter" id="storedMeter"><span></span></div>
+            <p class="note" id="storedNote"></p>
+          </article>
+          <article class="tile">
+            <h3>Minutes watched this month</h3>
+            <p class="big" id="watched"></p>
+            <p class="note" id="watchedNote"></p>
+          </article>
+          <article class="tile">
+            <h3>Cost this month</h3>
+            <p class="big" id="cost"></p>
+            <p class="note" id="costNote"></p>
+          </article>
+        </div>
+      </section>
+
+      <section id="daily">
+        <div class="head">
+          <h2>Minutes watched per day</h2>
+          <p class="note">Every film on the site, all viewers together.</p>
+        </div>
+        <div class="chart">
+          <p id="tip" aria-live="polite"></p>
+          <div class="bars" id="bars"></div>
+          <div class="axis" id="axis"></div>
+        </div>
+      </section>
+
+      <p class="note">
+        Counted by Cloudflare, usually a few minutes behind. Months run from the 1st (UTC). Storage is paid ahead each month; minutes watched are billed after
+        the month ends at $1 per 1,000 minutes.
+      </p>
+    </main>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const el = (tag, props = {}, ...kids) => {
+        const e = Object.assign(document.createElement(tag), props);
+        for (const k of kids) if (k != null) e.append(k);
+        return e;
+      };
+      const num = (n) => Math.round(n).toLocaleString('en-US');
+      const usd = (n) => `$${n < 10 && n % 1 ? n.toFixed(2) : num(n)}`;
+
+      let token = '';
+      try {
+        token = JSON.parse(localStorage.getItem('sveltia-cms.user') || '{}').token || '';
+      } catch {}
+
+      function fail(text, link) {
+        $('page').hidden = true;
+        const box = $('message');
+        box.hidden = false;
+        jgLoaded();
+        box.replaceChildren(el('p', { textContent: text }));
+        if (link) box.append(el('a', { className: 'btn', href: link[1], textContent: link[0] }));
+      }
+
+      function render(u) {
+        const [y, m] = u.month.split('-').map(Number);
+        const monthName = new Date(Date.UTC(y, m - 1, 1)).toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+        $('month').textContent = monthName;
+
+        // Storage: the prepaid part of the plan.
+        if (u.stored == null) {
+          $('stored').textContent = '–';
+          $('storedMeter').hidden = true;
+          $('storedNote').textContent = "Cloudflare didn't answer. Try again in a minute.";
+        } else if (u.storageLimit) {
+          const share = u.stored / u.storageLimit;
+          $('stored').replaceChildren(`${num(u.stored)} min `, el('small', { textContent: `of ${num(u.storageLimit)}` }));
+          $('storedMeter').className = `meter${share >= 1 ? ' full' : share >= 0.85 ? ' warn' : ''}`;
+          $('storedMeter').firstChild.style.width = `${Math.min(100, share * 100)}%`;
+          const films = u.videos != null ? `${u.videos} ${u.videos === 1 ? 'film' : 'films'}. ` : '';
+          $('storedNote').replaceChildren(
+            films,
+            share >= 1
+              ? el('span', { className: 'bad', textContent: 'Storage is full: new uploads will fail until films are deleted or the plan is raised in Cloudflare.' })
+              : share >= 0.85
+                ? el('span', { className: 'warn-text', textContent: `Almost full: ${num(u.storageLimit - u.stored)} min left in the plan.` })
+                : el('span', { className: 'ok', textContent: `Included in your plan, ${num(u.storageLimit - u.stored)} min left.` }),
+          );
+        } else {
+          $('stored').textContent = `${num(u.stored)} min`;
+          $('storedMeter').hidden = true;
+          $('storedNote').textContent = 'No storage plan found on the Cloudflare account.';
+        }
+
+        // Minutes watched and what they cost on top of the plan.
+        if (u.watched == null) {
+          $('watched').textContent = '–';
+          $('watchedNote').textContent = u.analytics
+            ? "Cloudflare didn't answer. Try again in a minute."
+            : 'Shows up once the Cloudflare analytics key is added to the helper.';
+          $('cost').textContent = u.planPrice != null ? usd(u.planPrice) : '–';
+          $('costNote').textContent = u.planPrice != null ? 'The storage plan. Minutes watched not counted yet.' : '';
+          $('daily').hidden = true;
+        } else {
+          $('watched').textContent = num(u.watched);
+          const inc = u.watchedIncluded || 0;
+          $('watchedNote').textContent = inc
+            ? u.watched <= inc
+              ? `Included in your plan (${num(inc)} a month), ${num(inc - u.watched)} left.`
+              : `${num(inc)} included in your plan, ${num(u.watched - inc)} over.`
+            : 'Each 1,000 minutes watched costs $1.';
+          const extra = u.extraCost || 0;
+          if (extra < 0.005) {
+            $('cost').replaceChildren(u.planPrice != null ? usd(u.planPrice) : '$0', u.planPrice != null ? el('small', { textContent: ' plan' }) : null);
+            $('costNote').replaceChildren(el('span', { className: 'ok', textContent: 'Nothing extra so far: all within your plan.' }));
+          } else {
+            const total = (u.planPrice || 0) + extra;
+            $('cost').replaceChildren(usd(total));
+            $('costNote').textContent =
+              u.planPrice != null
+                ? `${usd(u.planPrice)} plan + ${usd(extra)} for minutes watched, billed at the end of the month.`
+                : `${usd(extra)} for minutes watched, billed at the end of the month.`;
+          }
+          renderDays(u, y, m);
+        }
+
+        $('page').hidden = false;
+        jgLoaded();
+      }
+
+      function renderDays(u, y, m) {
+        const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+        const today = new Date().getUTCDate();
+        const by = Object.fromEntries((u.watchedByDay || []).map((d) => [Number(d.date.slice(8, 10)), d.minutes]));
+        const max = Math.max(1, ...Object.values(by));
+        const bars = $('bars');
+        bars.replaceChildren();
+        const tip = $('tip');
+        const idle = 'Point at a day to see its minutes.';
+        tip.textContent = idle;
+        for (let d = 1; d <= days; d++) {
+          const v = by[d] || 0;
+          const label = `${new Date(Date.UTC(y, m - 1, d)).toLocaleString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}: ${d > today ? 'still to come' : `${num(v)} min`}`;
+          const col = el('div', { title: label, className: v ? '' : 'empty' }, el('span'));
+          col.firstChild.style.height = `${v ? Math.max(2, (v / max) * 100) : 1}%`;
+          col.onmouseenter = () => (tip.textContent = label);
+          col.onmouseleave = () => (tip.textContent = idle);
+          bars.append(col);
+        }
+        $('axis').replaceChildren(el('span', { textContent: '1' }), el('span', { textContent: String(Math.ceil(days / 2)) }), el('span', { textContent: String(days) }));
+      }
+
+      async function start() {
+        if (!token) return window.JG_SIGN_IN();
+        let res;
+        try {
+          res = await fetch(`${window.JG_HELPER}/usage`, { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } });
+        } catch {
+          return fail("Couldn't reach the Cloudflare helper. Check the connection and try again.", ['Try again', location.href]);
+        }
+        if (res.status === 401) return window.JG_SIGN_IN();
+        if (res.status === 404) return fail("The Cloudflare helper doesn't have the usage code yet. Paste the new upload-worker.js into it (see the setup guide).");
+        const u = await res.json().catch(() => ({}));
+        if (!res.ok) return fail(u.error || `The Cloudflare helper said ${res.status}.`, ['Try again', location.href]);
+        render(u);
+      }
+      start();
+    </script>
+  </body>
+</html>

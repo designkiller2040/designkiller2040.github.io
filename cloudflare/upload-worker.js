@@ -18,13 +18,16 @@
  *   Variable  CF_ACCOUNT_ID   your Cloudflare account ID
  *   Secret    ADMIN_PASSWORD  the editor's password
  *   Secret    GITHUB_TOKEN    GitHub key with write access to the site's repository
- * Optional variables (defaults below): GITHUB_REPO, ALLOWED_ORIGINS, MAX_MINUTES.
+ *   Secret    CF_ANALYTICS_TOKEN  API token with "Account Analytics: Read", for minutes watched
+ * Optional variables (defaults below): GITHUB_REPO, ALLOWED_ORIGINS, MAX_MINUTES,
+ * INCLUDED_DELIVERY_MINUTES, DELIVERY_PRICE.
  *
  * Routes:
  *   POST /login       { password } -> { token, expires }: a sign-in pass
  *   *    /github/...  GitHub's API (api.github.com/...), for a sign-in pass
  *   POST /upload      tus "create upload" request; answers with Location = Cloudflare's upload address
  *   GET  /video/<id>  whether a video has finished processing
+ *   GET  /usage       Stream minutes stored (vs the plan) and watched this month
  */
 
 const DEFAULTS = {
@@ -32,7 +35,15 @@ const DEFAULTS = {
   ALLOWED_ORIGINS: 'https://designkiller2040.github.io,https://jonah-george.com,https://www.jonah-george.com',
   // Longest film accepted, in minutes. Caps what one upload can cost.
   MAX_MINUTES: '60',
+  // Minutes watched per month that the Stream plan already covers (0 on the
+  // standard plan, where every watched minute is billed).
+  INCLUDED_DELIVERY_MINUTES: '0',
+  // Dollars per 1,000 minutes watched beyond that.
+  DELIVERY_PRICE: '1',
 };
+
+// Dollars a month for each 1,000 minutes of storage in the plan.
+const STORAGE_PRICE = 5;
 
 // Sign-in passes look like "jg1.<expiry>.<signature>"; the editor pages
 // recognise the prefix and send GitHub requests here instead of to GitHub.
@@ -145,6 +156,61 @@ export default {
         size: result.size ?? null,
         uploaded: result.uploaded ?? null,
         duration: result.duration ?? 0,
+      });
+    }
+
+    if (request.method === 'GET' && url.pathname === '/usage') {
+      const now = new Date();
+      const day = (d) => d.toISOString().slice(0, 10);
+      const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+
+      const storage = fetch(`${stream}/storage-usage`, { headers: auth })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d?.result ?? null)
+        .catch(() => null);
+      const watched = conf.CF_ANALYTICS_TOKEN
+        ? fetch('https://api.cloudflare.com/client/v4/graphql', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${conf.CF_ANALYTICS_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: `query ($account: string!, $start: Date!, $end: Date!) {
+                viewer { accounts(filter: { accountTag: $account }) {
+                  streamMinutesViewedAdaptiveGroups(filter: { date_geq: $start, date_lt: $end }, orderBy: [date_ASC], limit: 40) {
+                    sum { minutesViewed }
+                    dimensions { date }
+                  }
+                } }
+              }`,
+              variables: { account: conf.CF_ACCOUNT_ID, start: day(start), end: day(end) },
+            }),
+          })
+            .then((r) => r.json())
+            .then((d) => {
+              const rows = d?.data?.viewer?.accounts?.[0]?.streamMinutesViewedAdaptiveGroups;
+              if (!rows) return null;
+              return rows.map((r) => ({ date: r.dimensions.date, minutes: Math.round(r.sum.minutesViewed) }));
+            })
+            .catch(() => null)
+        : Promise.resolve(null);
+
+      const [store, days] = await Promise.all([storage, watched]);
+      const minutes = days ? days.reduce((n, d) => n + d.minutes, 0) : null;
+      const included = Number(conf.INCLUDED_DELIVERY_MINUTES) || 0;
+      const limit = store?.totalStorageMinutesLimit ?? null;
+      return reply(200, {
+        month: day(start).slice(0, 7),
+        stored: store ? Math.round(store.totalStorageMinutes) : null,
+        storageLimit: limit,
+        videos: store?.videoCount ?? null,
+        // What the storage part of the plan costs a month.
+        planPrice: limit ? (limit / 1000) * STORAGE_PRICE : null,
+        watched: minutes,
+        watchedIncluded: included,
+        watchedByDay: days,
+        // Billed on top of the plan at the end of the month.
+        extraCost: minutes === null ? null : (Math.max(0, minutes - included) / 1000) * (Number(conf.DELIVERY_PRICE) || 0),
+        analytics: !!conf.CF_ANALYTICS_TOKEN,
       });
     }
 

@@ -40,3 +40,12 @@ through the Worker, which adds the GitHub key. The key never reaches the browser
 
 To change the password, edit `ADMIN_PASSWORD` and deploy; everyone signed in is signed out.
 "GitHub token instead" under the password field still allows signing in with a personal GitHub token.
+
+## Usage tab
+
+`/admin/usage/` shows Stream minutes stored (against the plan) and minutes
+watched this month, with any cost on top of the plan. The Worker answers it at
+`GET /usage`. Storage comes from `CF_API_TOKEN`; minutes watched need one more
+secret, `CF_ANALYTICS_TOKEN`: an API token with **Account** · **Account Analytics** · **Read**.
+If the Stream plan includes some watched minutes each month, set the Text
+variable `INCLUDED_DELIVERY_MINUTES` to that number (default 0).
