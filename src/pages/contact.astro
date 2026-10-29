@@ -85,6 +85,14 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
   .tile.playing :global(:is(video, .video-canvas)) {
     opacity: 1;
   }
+  /* Safari's own play button, hidden outright where CSS reaches it. */
+  .tile video::-webkit-media-controls,
+  .tile video::-webkit-media-controls-start-playback-button,
+  .tile video::-webkit-media-controls-overlay-play-button {
+    display: none !important;
+    -webkit-appearance: none;
+    opacity: 0 !important;
+  }
   .say {
     position: absolute;
     inset: 0;
@@ -179,6 +187,8 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
     const show = () => v.parentElement!.classList.add('playing');
     if (!v.paused && v.readyState > 2) show();
     else v.addEventListener('playing', show, { once: true });
+    // Safari sometimes leaves a few clips waiting; nudge each once it can play.
+    v.addEventListener('canplay', () => v.paused && v.play().catch(() => {}));
   }
   for (const v of clips) v.play().catch(() => {});
   addEventListener('pointerdown', () => clips.forEach((v) => v.paused && v.play().catch(() => {})), { once: true });
