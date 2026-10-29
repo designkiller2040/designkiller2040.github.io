@@ -28,11 +28,26 @@
       .app-shell:has(img[src='/admin/logo.svg']),
       .app-shell:has(img[src='/admin/logo.svg']) .main { background: #fff !important; }
 
+      /* Password sign-in (see the script below): the editor's own sign-in buttons only show after "Use a GitHub token instead". */
+      html.jg-pw .app-shell .inner > .buttons,
+      html:not(.jg-pw) .jg-login form { display: none !important; }
+      .jg-login { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 320px; max-width: 100%;
+        font: 14px/1.3 system-ui, -apple-system, sans-serif; color: #000; }
+      .jg-login form { display: contents; }
+      .jg-login input { box-sizing: border-box; width: 100%; height: 40px; padding: 0 14px; border: 1px solid #ccc; border-radius: 6px;
+        background: #fff; color: #000; font: inherit; outline: none; }
+      .jg-login input:focus { border-color: #000; }
+      .jg-login [type='submit'] { width: 100%; height: 40px; border: 0; border-radius: 6px; background: #000; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+      .jg-login [type='submit']:disabled { opacity: 0.5; cursor: default; }
+      .jg-login p { min-height: 1.3em; margin: 0; color: #d0281e; text-align: center; }
+      .jg-login .jg-switch { border: 0; padding: 0; background: none; color: #888; font: 12px/1.3 system-ui, sans-serif; text-decoration: underline; cursor: pointer; }
+
       /* "Publishing" badge, bottom right (see the last script). */
       .jg-publish { position: fixed; right: 16px; bottom: 16px; z-index: 10000; display: flex; align-items: center; gap: 8px;
         padding: 8px 14px; border-radius: 999px; background: #222; color: #fff; font: 13px/1.2 system-ui, sans-serif;
         box-shadow: 0 2px 12px rgb(0 0 0 / 0.3); pointer-events: none; }
       .jg-publish::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #3ecf6e; }
+      .jg-publish[hidden] { display: none; }
       .jg-publish.busy::before { background: #f5b730; animation: jg-pulse 1s ease-in-out infinite alternate; }
       .jg-publish.slow::before { background: #f0603c; }
       @keyframes jg-pulse { to { opacity: 0.3; } }
@@ -48,6 +63,7 @@
     </style>
   </head>
   <body>
+    <script src="/admin/github-proxy.js"></script>
     <script src="/admin/loading.js" data-auto></script>
     <script>
       // The sign-in screen is always light (white page, black logo), even when the Mac is in dark mode.
@@ -95,6 +111,61 @@
           const real = history[k].bind(history);
           history[k] = (...args) => (real(...args), go());
         }
+      })();
+    </script>
+    <script>
+      // Password sign-in: a password field instead of the editor's "Sign In Using Access Token".
+      // The password goes to the editor helper (a Cloudflare Worker), which answers with a
+      // sign-in pass; the editor keeps the pass as its sign-in, and github-proxy.js sends
+      // its GitHub requests through the helper. "Use a GitHub token instead" brings back
+      // the editor's own sign-in.
+      (() => {
+        document.documentElement.classList.add('jg-pw');
+        const add = () => {
+          const buttons = document.querySelector('.app-shell .inner > .buttons');
+          if (!buttons || buttons.previousElementSibling?.classList.contains('jg-login')) return;
+          const box = document.createElement('div');
+          box.className = 'jg-login';
+          box.innerHTML = `<form>
+              <input type="password" name="password" placeholder="Password" aria-label="Password" autocomplete="current-password" required />
+              <button type="submit">Sign in</button>
+              <p role="alert"></p>
+            </form>
+            <button type="button" class="jg-switch"></button>`;
+          const form = box.querySelector('form');
+          const note = box.querySelector('p');
+          const submit = box.querySelector('[type="submit"]');
+          const swap = box.querySelector('.jg-switch');
+          const label = () => (swap.textContent = document.documentElement.classList.contains('jg-pw') ? 'Use a GitHub token instead' : 'Sign in with the password');
+          label();
+          swap.onclick = () => {
+            document.documentElement.classList.toggle('jg-pw');
+            label();
+          };
+          form.onsubmit = async (e) => {
+            e.preventDefault();
+            submit.disabled = true;
+            note.textContent = '';
+            try {
+              const res = await fetch(`${window.JG_HELPER}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: form.password.value }),
+              });
+              const out = await res.json().catch(() => ({}));
+              if (!res.ok || !out.token) throw new Error(res.status === 401 ? 'Wrong password.' : out.error || "Couldn't sign in. Try again in a minute.");
+              localStorage.setItem('sveltia-cms.user', JSON.stringify({ backendName: 'github', token: out.token }));
+              location.reload();
+            } catch (error) {
+              note.textContent = error instanceof TypeError ? "Couldn't reach the sign-in helper. Check the connection and try again." : error.message;
+              submit.disabled = false;
+              form.password.select();
+            }
+          };
+          buttons.before(box);
+          setTimeout(() => form.password.focus());
+        };
+        new MutationObserver(add).observe(document.documentElement, { childList: true, subtree: true });
       })();
     </script>
     <script src="/admin/large-files.js"></script>

@@ -1,4 +1,4 @@
-# Upload helper (Cloudflare Worker)
+# Editor helper (Cloudflare Worker): film uploads and password sign-in
 
 `upload-worker.js` lets the upload page at `/admin/upload/` send films straight
 to Cloudflare Stream and connect them to a project. It keeps the Cloudflare API
@@ -22,3 +22,21 @@ It is set up once, by hand, in the Cloudflare dashboard. No secrets go in this r
    into `HELPER` near the top of the script in `public/admin/upload/index.html`. The address is not secret.
 
 When the site moves to jonah-george.com, that domain is already allowed (see `ALLOWED_ORIGINS` in the Worker).
+
+## Password sign-in
+
+The same Worker also runs the editor's password sign-in. Whoever types the
+password gets a sign-in pass (30 days); the editor sends its GitHub requests
+through the Worker, which adds the GitHub key. The key never reaches the browser.
+
+1. **GitHub key.** On GitHub: profile picture → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens** → **Generate new token**.
+   Name `jonah-george-editor`, expiration **No expiration** (or the longest offered),
+   Repository access **Only select repositories** → `designkiller2040.github.io`.
+   Permissions → Repository: **Contents: Read and write** (Metadata: Read-only is added automatically). Generate and copy it.
+2. **Secrets.** In the Worker: **Settings** → **Variables and Secrets** → **Add**:
+   - `GITHUB_TOKEN`, type **Secret**, value = the GitHub key from step 1
+   - `ADMIN_PASSWORD`, type **Secret**, value = the password (a few random words is good)
+3. **Code.** **Edit code**, replace everything with the new `upload-worker.js`, **Deploy**.
+
+To change the password, edit `ADMIN_PASSWORD` and deploy; everyone signed in is signed out.
+"GitHub token instead" under the password field still allows signing in with a personal GitHub token.
