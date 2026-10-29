@@ -24,6 +24,18 @@ const fullTitle = title ? `${title} | Jonah George` : 'Jonah George';
     <!-- Page transitions (global.css). To or from the homepage, the header
          and list are left in the page-wide crossfade, so they change
          between the homepage's difference blend and plain white in place. -->
+    <!-- The homepage's loader (index.astro) plays once per visit: the first
+         page opened in a tab marks the visit, so later visits to the
+         homepage in that tab skip it. ?loader on the homepage forces it. -->
+    <script is:inline>
+      (function () {
+        var html = document.documentElement;
+        try {
+          if (sessionStorage.getItem('jg-visit') && !/[?&]loader/.test(location.search)) html.classList.add('visited');
+          sessionStorage.setItem('jg-visit', '1');
+        } catch (e) { html.classList.add('visited'); }
+      })();
+    </script>
     <script is:inline>
       (function () {
         var html = document.documentElement;

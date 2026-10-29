@@ -16,6 +16,22 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
 
 <Base theme="dark">
   <link slot="head" rel="preload" href={poster} as="image" />
+  <noscript slot="head"><style>.loader { display: none; }</style></noscript>
+  <script slot="head" is:inline>
+    if (!document.documentElement.classList.contains('visited')) {
+      document.documentElement.classList.add('loading');
+      // Safety net in case the page script never runs.
+      setTimeout(function () { document.documentElement.classList.remove('loading'); }, 7000);
+    }
+  </script>
+  <!-- Loader: white logo on black while the showreel and the project
+       thumbnails load (script below), then the black opens like cinema
+       letterbox bars and the logo glides up into its place in the menu. -->
+  <div class="loader" aria-hidden="true">
+    <div class="bar top"></div>
+    <div class="bar bottom"></div>
+    <span class="loader-logo"></span>
+  </div>
   <main class="hero grid">
     <div class="stage" aria-hidden="true" style={`background-image: url("${poster}")`}>
       <!-- The reel is used as exported, no re-encoding. It stays invisible
@@ -150,6 +166,105 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     max-height: 100%;
     position: relative;
     mix-blend-mode: difference;
+  }
+
+  /*
+   * Loader (first visit in a tab only, see Base.astro). Two black halves with
+   * the logo over them. Reveal: the logo glides into the menu while the
+   * halves part to 2.39:1 cinema bars, hold for a beat, then slide away; the
+   * menu, list and label fade in last. If the script never runs, the CSS
+   * takes the loader away by itself after 7 seconds.
+   */
+  .loader {
+    position: fixed;
+    inset: 0;
+    z-index: 100010; /* above the sticky menu */
+    pointer-events: none;
+    animation: loader-bail 0s 7s forwards;
+    /* half of a 2.39:1 frame, never taller than the window */
+    --slit: calc(min(100vw / 2.39, 100svh) / 2);
+  }
+  :global(html.visited) .loader {
+    display: none;
+  }
+  .bar {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    background: #000;
+  }
+  .bar.top {
+    top: 0;
+  }
+  .bar.bottom {
+    bottom: 0;
+  }
+  .loader-logo {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(112 * var(--rm) * 1.35);
+    aspect-ratio: 192 / 65;
+    translate: -50% -50%;
+    background: #fff;
+    -webkit-mask: url(/images/logo.svg) center / 100% 100% no-repeat;
+    mask: url(/images/logo.svg) center / 100% 100% no-repeat;
+    transform-origin: 0 0;
+    animation: loader-breathe 1.6s ease-in-out infinite alternate;
+  }
+  @keyframes loader-breathe {
+    from { opacity: 1; }
+    to { opacity: 0.65; }
+  }
+  @keyframes loader-bail {
+    to { visibility: hidden; }
+  }
+
+  .loader.open .loader-logo {
+    animation: none;
+    transition: transform 1s cubic-bezier(0.7, 0, 0.2, 1);
+  }
+  .loader.open .bar.top {
+    animation: bar-top 1.5s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+  }
+  .loader.open .bar.bottom {
+    animation: bar-bottom 1.5s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+  }
+  @keyframes bar-top {
+    45%, 62% { translate: 0 calc(-1 * var(--slit)); }
+    to { translate: 0 -100%; }
+  }
+  @keyframes bar-bottom {
+    45%, 62% { translate: 0 var(--slit); }
+    to { translate: 0 100%; }
+  }
+
+  /* While the loader is up: the menu logo waits for the gliding one, the
+     rest of the page waits to fade in. */
+  :global(html.loading) .hero :global(.logo-mark) {
+    visibility: hidden;
+  }
+  :global(html.loading) .hero :global(:is(.nav, .insta, .menu li, .group-label)),
+  :global(html.loading) .reel-label {
+    opacity: 0;
+  }
+  :global(html.revealing) .hero :global(:is(.nav, .insta, .menu li, .group-label)),
+  :global(html.revealing) .reel-label {
+    transition: opacity 600ms ease calc(1100ms + var(--i, 0) * 25ms);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loader.open {
+      transition: opacity 400ms linear;
+      opacity: 0;
+    }
+    .loader.open .bar {
+      animation: none;
+    }
+    .loader.open .loader-logo {
+      transition: none;
+    }
   }
 
   /*
@@ -318,6 +433,63 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   // page), no clip may stay over the showreel.
   function hideAll() {
     for (const v of clips.values()) hide(v);
+  }
+
+  // Loader. It waits for the showreel to be ready to play and for every
+  // project thumbnail (so a hover shows something straight away). It stays
+  // at least MIN so the logo doesn't just flash, and at most MAX so a slow
+  // connection never sits on a black screen: whatever isn't loaded by then
+  // keeps loading behind the page. The hover clips themselves (about 60 MB)
+  // aren't waited for; they follow one by one as before.
+  const MIN = 1200;
+  const MAX = 3500;
+  const html = document.documentElement;
+  const loader = document.querySelector<HTMLElement>('.loader');
+  if (loader && html.classList.contains('loading')) {
+    const t0 = performance.now();
+    const reelReady = new Promise<void>((done) => {
+      if (reel.readyState >= 4) return done();
+      reel.addEventListener('canplaythrough', () => done(), { once: true });
+      reel.addEventListener('playing', () => done(), { once: true });
+      // A video that fails reports it on its <source>, not on the video.
+      reel.querySelector('source')?.addEventListener('error', () => done(), { once: true });
+    });
+    const thumbs = [...new Set(links.map((a) => a.dataset.thumb).filter(Boolean))].map(
+      (src) =>
+        new Promise<void>((done) => {
+          const img = new Image();
+          img.onload = img.onerror = () => done();
+          img.src = src!;
+        }),
+    );
+    const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
+    Promise.race([Promise.all([reelReady, ...thumbs, wait(MIN)]), wait(MAX)]).then(() => {
+      console.info(`Loader: ${Math.round(performance.now() - t0)} ms`);
+      reveal(loader);
+    });
+  }
+
+  function reveal(loader: HTMLElement) {
+    const logo = loader.querySelector<HTMLElement>('.loader-logo')!;
+    const target = document.querySelector('.hero .logo-mark')!.getBoundingClientRect();
+    const from = logo.getBoundingClientRect();
+    // The menu and list fade in one line after another.
+    document.querySelectorAll<HTMLElement>('.menu li, .menu .group-label').forEach((el, i) => el.style.setProperty('--i', String(i)));
+    html.classList.add('revealing');
+    loader.classList.add('open');
+    logo.style.transform = `translate(${target.left - from.left}px, ${target.top - from.top}px) scale(${target.width / from.width})`;
+    requestAnimationFrame(() => html.classList.remove('loading'));
+    // The real menu logo takes over once the gliding one has landed.
+    const logoMark = document.querySelector<HTMLElement>('.hero .logo-mark')!;
+    logoMark.style.visibility = 'hidden';
+    setTimeout(() => {
+      logoMark.style.visibility = '';
+      logo.style.visibility = 'hidden';
+    }, 1000);
+    setTimeout(() => {
+      loader.remove();
+      html.classList.remove('revealing');
+    }, 2400);
   }
 
   if (canHover) {
