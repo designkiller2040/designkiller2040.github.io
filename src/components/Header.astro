@@ -118,6 +118,8 @@ const links = [
 
   @media (max-width: 767px) {
     .header {
+      /* 2026-10-29: the logo is twice its desktop design size on phones. */
+      --logo-w: calc(224 * var(--rm));
       row-gap: 10px;
       /* Phones: 16px, the same as the homepage project list. */
       font-size: 16px;

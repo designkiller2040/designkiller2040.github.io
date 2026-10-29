@@ -247,6 +247,14 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     .stage {
       position: fixed;
     }
+    /* 2026-10-29: 10% black over the showreel on phones. */
+    .stage::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgb(0 0 0 / 0.1);
+      pointer-events: none;
+    }
     /* The list now starts near the top, so the label would sit on it. */
     .reel-label {
       display: none;
