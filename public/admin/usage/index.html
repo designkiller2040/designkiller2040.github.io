@@ -141,6 +141,7 @@
           <article class="tile">
             <h3>Minutes watched this month</h3>
             <p class="big" id="watched"></p>
+            <div class="meter" id="watchedMeter" hidden><span></span></div>
             <p class="note" id="watchedNote"></p>
           </article>
           <article class="tile">
@@ -236,13 +237,19 @@
           $('costNote').textContent = u.planPrice != null ? 'The storage plan. Minutes watched not counted yet.' : '';
           $('daily').hidden = true;
         } else {
-          $('watched').textContent = num(u.watched);
           const inc = u.watchedIncluded || PLAN_WATCHED;
-          $('watchedNote').textContent = inc
-            ? u.watched <= inc
-              ? `Included in your plan (${num(inc)} a month), ${num(inc - u.watched)} left.`
-              : `${num(inc)} included in your plan, ${num(u.watched - inc)} over.`
-            : 'Each 1,000 minutes watched costs $1.';
+          const share = u.watched / inc;
+          $('watched').replaceChildren(`${num(u.watched)} min `, el('small', { textContent: `of ${num(inc)}` }));
+          $('watchedMeter').hidden = false;
+          $('watchedMeter').className = `meter${share >= 1 ? ' full' : share >= 0.85 ? ' warn' : ''}`;
+          $('watchedMeter').firstChild.style.width = `${Math.min(100, share * 100)}%`;
+          $('watchedNote').replaceChildren(
+            share >= 1
+              ? el('span', { className: 'bad', textContent: `${num(u.watched - inc)} min over the plan: each extra 1,000 minutes costs $1.` })
+              : share >= 0.85
+                ? el('span', { className: 'warn-text', textContent: `Almost used up: ${num(inc - u.watched)} min left this month.` })
+                : el('span', { className: 'ok', textContent: `Included in your plan, ${num(inc - u.watched)} min left this month.` }),
+          );
           const extra = (Math.max(0, u.watched - inc) / 1000) * 1;
           if (extra < 0.005) {
             $('cost').replaceChildren(u.planPrice != null ? usd(u.planPrice) : '$0', u.planPrice != null ? el('small', { textContent: ' plan' }) : null);
