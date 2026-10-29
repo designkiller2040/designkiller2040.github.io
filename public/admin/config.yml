@@ -85,7 +85,7 @@ collections:
           - { name: title, label: Title, widget: string }
           - name: slug
             label: Page address
-            hint: 'Lowercase words joined by dashes, e.g. maana-homes. The page lives at /work/<this>/. Don’t change it for existing projects.'
+            hint: 'Lowercase words joined by dashes, e.g. maana-homes. The page lives at /<this>/. Don’t change it for existing projects.'
             widget: string
             pattern: ['^[a-z0-9]+(-[a-z0-9]+)*$', 'Only lowercase letters, numbers and dashes']
           - name: order

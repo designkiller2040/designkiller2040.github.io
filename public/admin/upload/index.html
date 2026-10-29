@@ -419,7 +419,7 @@
           if (p) p.stream = id;
           showCurrent();
           const link = document.createElement('a');
-          link.href = `/work/${slug}/`;
+          link.href = `/${slug}/`;
           link.textContent = 'Open the project page';
           showStep('Done. The film is on Cloudflare and connected. ', 'The site updates within about two minutes. ');
           $('status').querySelector('small').append(link);

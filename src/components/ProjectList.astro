@@ -29,7 +29,7 @@ const groups = GROUPS.map((g) => ({ ...g, items: projects.filter((p) => p.group 
           {g.items.map((p) => (
             <li>
               <a
-                href={`/work/${p.slug}/`}
+                href={`/${p.slug}/`}
                 aria-current={p.slug === current ? 'page' : undefined}
                 data-preview={previews ? previewSrc(p) : undefined}
                 data-thumb={previews && previewSrc(p) ? posterSrc(p) : undefined}

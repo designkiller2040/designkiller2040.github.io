@@ -904,8 +904,8 @@
       });
       $('slug').addEventListener('change', () => ($('slug').value = model.slug));
       function showAddress() {
-        $('address').querySelector('span').textContent = `Page address: ${location.host}/work/${model.slug || '…'}`;
-        $('view').href = `/work/${model.slug}/`;
+        $('address').querySelector('span').textContent = `Page address: ${location.host}/${model.slug || '…'}`;
+        $('view').href = `/${model.slug}/`;
       }
 
       function setField(k, v) {
@@ -950,8 +950,11 @@
         mark('title', !model.title.trim());
         if (!model.title.trim()) out.push('The project needs a name.');
         if (isNew) {
-          mark('slug', !model.slug);
+          // Project pages sit next to the site's own pages (e.g. /about/), so these names are taken.
+          const taken = ['about', 'contact', 'legal', 'stills', 'terms', 'privacy', 'admin', 'work', 'images', 'video', 'index', 'favicon'].includes(model.slug);
+          mark('slug', !model.slug || taken);
           if (!model.slug) out.push('The page address is empty.');
+          if (taken) out.push(`“${model.slug}” is already a page on the site. Choose another page address.`);
         }
         const badOrder = model.order !== '' && !(Number.isInteger(Number(model.order)) && Number(model.order) >= 1);
         mark('order', badOrder);

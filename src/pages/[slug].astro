@@ -1,0 +1,38 @@
+---
+/*
+ * One page per project in src/data/projects/, at /<slug>/ (e.g. /maana-homes/).
+ * The layout itself is in src/components/ProjectPage.astro.
+ * Old /work/<slug>/ links forward here (src/pages/work/).
+ */
+import { readdirSync } from 'node:fs';
+import ProjectPage from '../components/ProjectPage.astro';
+import { projects, type Project } from '../data/projects';
+
+export function getStaticPaths() {
+  /**
+   * Project pages share the top level with the site's own pages and folders, so
+   * a project called "about" would clash with the about page. Stop the build
+   * instead: the live site then keeps its last good version until it's renamed.
+   */
+  const RESERVED = new Set([
+    'work',
+    '_astro',
+    'privacy', // redirects in astro.config.mjs
+    'terms',
+    ...readdirSync('src/pages').map((f) => f.replace(/\.(astro|md|mdx|html|ts|js)$/, '')),
+    ...readdirSync('public').map((f) => f.replace(/\.[^.]+$/, '')),
+  ]);
+  const clashes = projects.filter((p) => RESERVED.has(p.slug.toLowerCase()));
+  if (clashes.length) {
+    throw new Error(
+      `Project page address clashes with a site page or folder: ${clashes.map((p) => `"${p.slug}"`).join(', ')}. ` +
+        'Give the project a different page address (src/data/projects/<slug>.json).',
+    );
+  }
+  return projects.map((project) => ({ params: { slug: project.slug }, props: { project } }));
+}
+
+const { project } = Astro.props as { project: Project };
+---
+
+<ProjectPage project={project} />

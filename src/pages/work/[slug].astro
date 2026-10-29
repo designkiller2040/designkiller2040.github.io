@@ -1,16 +1,28 @@
 ---
 /*
- * One page per project in src/data/projects/, at /work/<slug>/.
- * The layout itself is in src/components/ProjectPage.astro.
+ * Project pages used to live at /work/<slug>/; they're now at /<slug>/.
+ * GitHub Pages can't send real redirects, so each old address is a tiny page
+ * that forwards straight away (and tells search engines the new address).
  */
-import ProjectPage from '../../components/ProjectPage.astro';
-import { projects, type Project } from '../../data/projects';
+import { projects } from '../../data/projects';
 
 export function getStaticPaths() {
-  return projects.map((project) => ({ params: { slug: project.slug }, props: { project } }));
+  return projects.map((p) => ({ params: { slug: p.slug }, props: { to: `/${p.slug}/` } }));
 }
 
-const { project } = Astro.props as { project: Project };
+const { to } = Astro.props as { to: string };
 ---
 
-<ProjectPage project={project} />
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Moved</title>
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href={to} />
+    <meta http-equiv="refresh" content={`0; url=${to}`} />
+    <script is:inline define:vars={{ to }}>location.replace(to + location.search + location.hash);</script>
+    <style>html { background: #000; }</style>
+  </head>
+  <body></body>
+</html>
