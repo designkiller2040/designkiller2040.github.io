@@ -61,7 +61,10 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     grid-template-rows: auto minmax(0, 1fr) auto;
     row-gap: var(--top);
     padding-block: var(--top) var(--margin);
-    overflow: hidden;
+    /* clip, not hidden: hidden made the hero its own scroll box, which pushed
+       the sticky menu down by an extra --top (2026-10-29: it now sits exactly
+       where it is on Contact and every other page). */
+    overflow: clip;
   }
 
   .stage {

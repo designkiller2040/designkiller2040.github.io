@@ -85,6 +85,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * 2026-10-29: no page scrollbar on desktop. A mouse-style scrollbar takes
+ * width only on pages that scroll, which slid the centred logo and the
+ * instagram link sideways between pages. Scrolling still works as normal.
+ */
+@media (min-width: 768px) {
+  html {
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Re-applied on every element so the tracking scales with each one's own size. */
 body * {
   letter-spacing: var(--tracking);
