@@ -933,6 +933,14 @@ const poster = posterSrc(project);
     height: 100%;
     border: 0;
   }
+  /* A clear layer over the film, so clicks and taps reach our controls and
+     never Vimeo's own player (which reacts to a click on its own, shrinking
+     the picture on pause and showing its buttons). */
+  .screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
   .screen :global(video) {
     object-fit: contain;
     background: #000;
@@ -986,6 +994,10 @@ const poster = posterSrc(project);
     display: flex;
     align-items: center;
     gap: calc(22 * var(--rm));
+  }
+  /* In full screen the bottom controls sit lower, about 22px from the edge. */
+  .player:fullscreen .bar {
+    bottom: calc(13 * var(--rm));
   }
   /* The progress line: white for what's played, faint for the rest. A taller
      invisible strip around it makes it easy to grab. */
