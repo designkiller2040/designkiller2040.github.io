@@ -24,6 +24,7 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
       <video class="reel" poster={poster} autoplay muted loop playsinline preload="auto">
         <source src={reel} type="video/mp4" />
       </video>
+      <div class="reel-cover" style={`background-image: url("${poster}")`}></div>
       <div class="previews"></div>
     </div>
 
@@ -79,6 +80,18 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   .stage .reel.playing {
     opacity: 1;
   }
+  /* Safari can show its play button even on an invisible video, so the still
+     also lies on top of the reel (and its canvas) until the reel plays. */
+  .reel-cover {
+    position: absolute;
+    inset: 0;
+    background: #000 center / cover no-repeat;
+    pointer-events: none;
+    transition: opacity 200ms linear;
+  }
+  .stage:has(.reel.playing) .reel-cover {
+    opacity: 0;
+  }
   .stage :global(video),
   .stage :global(.preview),
   .stage :global(.preview img) {
@@ -97,6 +110,14 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   }
   /* Until its clip plays, a preview shows only the thumbnail underneath. */
   .stage :global(.preview:not(.ready) :is(video, .video-canvas)) {
+    visibility: hidden;
+  }
+  /* ...and the thumbnail lies on top of the clip until then, for the same
+     Safari play-button reason as the reel. */
+  .stage :global(.preview img) {
+    z-index: 1;
+  }
+  .stage :global(.preview.ready img) {
     visibility: hidden;
   }
 
