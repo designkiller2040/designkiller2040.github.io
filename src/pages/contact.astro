@@ -75,6 +75,16 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
     object-fit: cover;
     pointer-events: none;
   }
+  /* Each clip (and Safari's canvas copy of it) stays hidden until it is
+     actually playing, so the browser's play button never flashes on load;
+     the black tile shows meanwhile. */
+  .tile :global(:is(video, .video-canvas)) {
+    opacity: 0;
+    transition: opacity 200ms linear;
+  }
+  .tile.playing :global(:is(video, .video-canvas)) {
+    opacity: 1;
+  }
   .say {
     position: absolute;
     inset: 0;
@@ -165,6 +175,11 @@ const tiles = [...WALL.map((slug) => projects.find((p) => p.slug === slug)!), ..
 
   // Some browsers block autoplay until the visitor interacts.
   const clips = [...document.querySelectorAll<HTMLVideoElement>('.tile video')];
+  for (const v of clips) {
+    const show = () => v.parentElement!.classList.add('playing');
+    if (!v.paused && v.readyState > 2) show();
+    else v.addEventListener('playing', show, { once: true });
+  }
   for (const v of clips) v.play().catch(() => {});
   addEventListener('pointerdown', () => clips.forEach((v) => v.paused && v.play().catch(() => {})), { once: true });
 </script>
