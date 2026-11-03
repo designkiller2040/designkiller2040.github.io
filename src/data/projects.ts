@@ -126,11 +126,13 @@ export const previewSrc = (p: Project) => {
 };
 
 /**
- * Big thumbnail for a project page: the uploaded "Thumbnail image", else the
- * frame at 1 second of its preview clip (made by scripts/preview-frames.sh for
+ * Big thumbnail for a project page: Still 1 (alona's rule, 2026-11-03), else
+ * the old uploaded "Thumbnail image", else the frame at 1 second of its preview clip (made by scripts/preview-frames.sh for
  * HD clips), else the old slug-based poster, else none.
  */
 export const posterSrc = (p: Project) => {
+  const still = p.stills?.[0];
+  if (still && existsSync(`public${still}`)) return withVersion(still);
   if (p.poster && existsSync(`public${p.poster}`)) return withVersion(p.poster);
   const clip = clipOf(p);
   const frame = `/images/frames/${clip.split('/').pop()!.replace(/\.[^.]+$/, '')}.jpg`;

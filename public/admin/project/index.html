@@ -141,7 +141,11 @@
       /* More videos */
       .videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
       .videos .add { aspect-ratio: auto; min-height: 220px; }
-      .stills-off { opacity: 0.45; }
+      .stills-off > :not(:first-child) { opacity: 0.45; }
+      .drag { position: absolute; top: 8px; right: 8px; z-index: 2; width: 32px; height: 32px; border-radius: 8px; background: rgb(255 255 255 / 0.85); color: #111; display: flex; align-items: center; justify-content: center; cursor: grab; }
+      .drag:active { cursor: grabbing; }
+      .card.dragging { opacity: 0.4; }
+      .card.over { outline: 2px solid #111; outline-offset: 2px; }
 
       /* Stills */
       .stills { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; }
@@ -151,6 +155,7 @@
       .still:hover .tools, .still:focus-within .tools { opacity: 1; }
       .still .tools .btn { width: 32px; height: 32px; }
       .still figcaption { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .tag.thumbTag { left: 38px; top: 10px; background: #fff; color: #111; }
       .tag.num { width: 22px; padding: 0; justify-content: center; top: 10px; left: 10px; }
       .add { aspect-ratio: 16 / 9; border: 1px dashed #bdbdbd; border-radius: 10px; background: #f8f8f8; font: inherit; font-size: 13px; color: #444; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
       .add.drop { outline: 2px dashed #111; outline-offset: -8px; }
@@ -180,6 +185,7 @@
       body.b .previewBar .start { display: flex; align-items: center; gap: 8px; }
       body.b .previewBar .start .lbl { margin: 0; }
       body.b .split { gap: 32px; }
+      body.b .videos-order { display: none; }
       body.b .fields { flex: 1 1 340px; max-width: 420px; }
       body.b #about { min-height: 260px; }
       body.b .credits { flex: 1 1 520px; }
@@ -276,7 +282,7 @@
             <div class="body">
               <div>
                 <h3>Thumbnail image</h3>
-                <p class="note">Full-screen image at the top of the project page.</p>
+                <p class="note">Full-screen image at the top of the project page, used only when there are no stills (Still 1 wins).</p>
               </div>
               <dl class="meta" id="posterMeta"></dl>
               <div class="row">
@@ -350,7 +356,7 @@
       <section>
         <div class="head">
           <h2>Stills</h2>
-          <p class="note" id="stillsNote">Up to 4, shown in this order in the row on the project page. Drag to reorder.</p>
+          <p class="note" id="stillsNote">Up to 4, shown in this order in the row on the project page. Still 1 is also the big thumbnail. Drag to reorder.</p>
         </div>
         <div class="stills" id="stills"></div>
       </section>
@@ -618,13 +624,13 @@
       }
       function dropZone(node, kind, onFiles) {
         node.addEventListener('dragover', (e) => {
-          if (![...e.dataTransfer.types].includes('Files')) return;
+          if (dragFrom || ![...e.dataTransfer.types].includes('Files')) return;
           e.preventDefault();
           node.classList.add('drop');
         });
         node.addEventListener('dragleave', () => node.classList.remove('drop'));
         node.addEventListener('drop', (e) => {
-          if (!e.dataTransfer.files.length) return;
+          if (dragFrom || !e.dataTransfer.files.length) return;
           e.preventDefault();
           node.classList.remove('drop');
           onFiles(accept(kind, [...e.dataTransfer.files]));
@@ -877,7 +883,7 @@
           // The picture: its own image, else a frame from its Cloudflare film.
           const src = v.image ? srcOf(v.image) : id ? `https://${streamHost(v.stream) || 'videodelivery.net'}/${id}/thumbnails/thumbnail.jpg?time=2s&height=480` : '';
           if (src) {
-            const img = el('img', { alt: '' });
+            const img = el('img', { alt: '', draggable: false });
             img.onerror = async () => (v.image && (await fallbackToGitHub(img, v.image))) || img.remove();
             img.src = src;
             media.append(img, tag);
@@ -898,6 +904,9 @@
             });
           } else if (src) tag.textContent = `Video ${n} · ${v.vimeo ? 'Vimeo' : 'no film yet'}`;
           dropZone(media, 'image', ([k]) => k && ((v.image = k), renderVideos(), changed()));
+          // Drag handle: grab it to move the video earlier or later (the whole card moves).
+          const handle = el('span', { className: 'drag', title: 'Drag to change the order' }, grip());
+          media.append(handle);
 
           const film = el('button', { className: 'btn', type: 'button' });
           setBtn(film, 'up', id ? 'Replace film' : 'Upload film');
@@ -944,7 +953,7 @@
 
           const meta = el('p', { className: 'note' });
           meta.textContent = v.image ? `Image: ${fileOf(v.image)?.name ?? baseName(v.image)}${isLocal(v.image) ? ' (not saved yet)' : ''}` : id ? 'Image: a frame from the Cloudflare film (upload one to choose it yourself).' : 'Image: the first still, until there is a Cloudflare film or an uploaded image.';
-          return el(
+          const card = el(
             'article',
             { className: 'card' },
             media,
@@ -954,9 +963,14 @@
               el('div', {}, el('h3', { textContent: `Video ${n}` }), meta),
               el('div', { className: 'row' }, film, image, noImage),
               el('div', { className: 'extra' }, el('label', { className: 'lbl', htmlFor: `vimeo-${i}`, textContent: 'Vimeo (plays if there is no Cloudflare film, or it is not working)' }), vimeo),
-              el('div', { className: 'row' }, earlier, later, remove),
+              el('div', { className: 'row' }, el('span', { className: 'row videos-order' }, earlier, later), remove),
             ),
           );
+          card.dataset.handle = '1';
+          handle.onpointerdown = () => (card.draggable = true);
+          handle.onpointerup = () => (card.draggable = false);
+          sortable(card, model.videos, i, renderVideos);
+          return card;
         });
         const add = el('button', { className: 'add', type: 'button' }, svg(ICON.plus, 20), LAYOUT_B ? 'Add more videos' : model.videos.length ? 'Add another video' : 'Add a video');
         add.onclick = () => {
@@ -969,15 +983,15 @@
         const off = model.videos.some((v) => v.stream.trim() || v.vimeo.trim());
         $('stills').classList.toggle('stills-off', off);
         $('stillsNote').textContent = off
-          ? 'Not shown on the site while this project has more videos (they stay saved here).'
-          : 'Up to 4, shown in this order in the row on the project page. Drag to reorder.';
+          ? 'Still 1 is the big thumbnail. The others are not shown on the site while this project has more videos (they stay saved here).'
+          : 'Up to 4, shown in this order in the row on the project page. Still 1 is also the big thumbnail. Drag to reorder.';
       }
 
       // ---------- Stills ----------
       function renderStills() {
         const grid = $('stills');
         const items = model.stills.map((v, i) => {
-          const img = el('img', { alt: `Still ${i + 1}` });
+          const img = el('img', { alt: `Still ${i + 1}`, draggable: false });
           img.onerror = async () => (await fallbackToGitHub(img, v)) || (img.hidden = true);
           img.src = srcOf(v);
           const replace = el('button', { className: 'btn icon', type: 'button', ariaLabel: `Replace still ${i + 1}` }, svg(ICON.up));
@@ -994,7 +1008,10 @@
             renderStills();
             changed();
           };
-          const media = el('div', { className: 'media' }, img, el('span', { className: 'tag num', textContent: String(i + 1) }), el('div', { className: 'tools' }, replace, remove));
+          const num = el('span', { className: 'tag num', textContent: String(i + 1) });
+          // Still 1 is always the big thumbnail at the top of the project page.
+          const thumb = i === 0 ? el('span', { className: 'tag thumbTag', textContent: 'Thumbnail' }) : null;
+          const media = el('div', { className: 'media' }, img, num, thumb, el('div', { className: 'tools' }, replace, remove));
           const cap = el('figcaption', { textContent: fileOf(v)?.name ?? baseName(v) });
           fileInfo(v).then((info) => (cap.textContent = `${info.name} · ${info.pending ? 'not saved yet' : mb(info.size)}`));
           const fig = el('figure', { className: 'still', draggable: true }, media, cap);
