@@ -53,6 +53,11 @@ const fullTitle = title ? `${title} | Jonah George` : 'Jonah George';
         });
       })();
     </script>
+    <!-- Keeps a saved copy of preview clips and images, so a reload shows them
+         right away (public/sw.js). -->
+    <script is:inline>
+      if ('serviceWorker' in navigator) addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+    </script>
     <slot name="head" />
   </head>
   <body class={theme}>
