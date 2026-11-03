@@ -27,6 +27,16 @@ export interface Project {
   previewStart?: number;
   poster?: string;
   stills?: string[];
+  /** More full films (any number). When there are any, they replace the stills on the project page. */
+  videos?: ExtraVideo[];
+}
+
+/** One extra film: Cloudflare Stream and/or Vimeo (as for the main film), plus the image shown for it. */
+export interface ExtraVideo {
+  stream?: string;
+  vimeo?: string;
+  /** Falls back to a frame from its Cloudflare film, then the project's first still. */
+  image?: string;
 }
 
 export type GroupKey = 'commercial' | 'music' | 'concept';
@@ -47,7 +57,7 @@ const groupIndex = (p: Project) => GROUPS.findIndex((g) => g.key === p.group);
 /** File paths from the editor sometimes lack the leading slash; add it. */
 const rooted = (src?: string) => (src && !/^(\/|https?:)/.test(src) ? `/${src}` : src);
 export const projects = Object.values(files)
-  .map((p) => ({ ...p, preview: rooted(p.preview), poster: rooted(p.poster), stills: p.stills?.map((s) => rooted(s)!) }))
+  .map((p) => ({ ...p, preview: rooted(p.preview), poster: rooted(p.poster), videos: p.videos?.map((v) => ({ ...v, image: rooted(v.image) })), stills: p.stills?.map((s) => rooted(s)!) }))
   .sort(
   (a, b) => groupIndex(a) - groupIndex(b) || (a.order ?? 999) - (b.order ?? 999) || a.title.localeCompare(b.title),
 );
@@ -63,13 +73,28 @@ export const menuLabel = (p: Project) => p.menuLabel ?? p.title;
  * The page plays the Stream film in its own player and switches to Vimeo if
  * Cloudflare can't play it (still processing, failed, or down).
  */
-export function filmEmbed(p: Project): { hls?: string; vimeo?: string } | undefined {
+export function filmEmbed(p: { stream?: string; vimeo?: string }): { hls?: string; vimeo?: string; thumb?: string } | undefined {
   const vimeo = vimeoEmbed(p.vimeo);
   const stream = p.stream?.trim();
   const id = stream?.match(/\b[0-9a-f]{32}\b/i)?.[0];
   const host = stream?.match(/customer-[a-z0-9]+\.cloudflarestream\.com/i)?.[0] ?? 'videodelivery.net';
   const hls = stream && id ? `https://${host}/${id}/manifest/video.m3u8` : undefined;
-  return hls || vimeo ? { hls, vimeo } : undefined;
+  const thumb = stream && id ? `https://${host}/${id}/thumbnails/thumbnail.jpg?time=2s&height=1080` : undefined;
+  return hls || vimeo ? { hls, vimeo, thumb } : undefined;
+}
+
+/**
+ * The project's extra films (empty ones skipped), each with the image shown
+ * for it on the page: the uploaded image, else a frame from its Cloudflare
+ * film, else the project's first still.
+ */
+export function extraFilms(p: Project) {
+  return (p.videos ?? []).flatMap((v) => {
+    const embed = filmEmbed(v);
+    if (!embed) return [];
+    const own = v.image && existsSync(`public${v.image}`) ? withVersion(v.image) : undefined;
+    return [{ ...embed, image: own ?? embed.thumb ?? stillSrcs(p)[0] }];
+  });
 }
 
 /** Vimeo player address from a Vimeo number, "number/code" (unlisted films) or a pasted Vimeo link. */

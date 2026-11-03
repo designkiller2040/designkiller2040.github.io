@@ -10,7 +10,7 @@
 import Base from '../layouts/Base.astro';
 import Header from './Header.astro';
 import ProjectList from './ProjectList.astro';
-import { filmEmbed, posterSrc, stillSrcs, type Project } from '../data/projects';
+import { filmEmbed, posterSrc, extraFilms, stillSrcs, type Project } from '../data/projects';
 
 interface Props {
   project: Project;
@@ -22,6 +22,8 @@ const credits = Object.entries(project.credits ?? {})
   .map(([l, v]) => ({ label: l.toLowerCase(), value: v! }));
 const embed = filmEmbed(project);
 const poster = posterSrc(project);
+// Extra films, when the project has any, take the place of the stills.
+const films = extraFilms(project);
 ---
 
 <Base title={project.title} theme="dark">
@@ -54,7 +56,16 @@ const poster = posterSrc(project);
         </div>
 
         <div class="shots grid">
-          {stillSrcs(project).map((src) => <img class="shot" src={src} alt="" />)}
+          {films.length ? (
+            films.map((f) => (
+              <button class="shot film2 play" type="button" data-hls={f.hls} data-vimeo={f.vimeo} data-title={project.title}>
+                {f.image && <img src={f.image} alt="" />}
+                <span class="play-label">Play full</span>
+              </button>
+            ))
+          ) : (
+            stillSrcs(project).map((src) => <img class="shot" src={src} alt="" />)
+          )}
         </div>
       </div>
     </div>
@@ -254,23 +265,27 @@ const poster = posterSrc(project);
 
   // The "Play full" label replaces the mouse pointer over the thumbnail.
   const cursor = document.querySelector<HTMLElement>('.cursor');
-  const playArea = document.querySelector<HTMLElement>('.play');
-  if (cursor && playArea) {
+  // (Also over the extra films' frames, when the project has any.)
+  if (cursor) {
     const follow = (e: PointerEvent) => {
       if (e.pointerType !== 'mouse') return;
       cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
       cursor.classList.add('on');
+      // An extra film's label doesn't fade with the thumbnail.
+      cursor.classList.toggle('second', !!(e.currentTarget as Element).closest('.film2'));
     };
-    playArea.addEventListener('pointerenter', follow);
-    playArea.addEventListener('pointermove', follow);
-    playArea.addEventListener('pointerleave', () => cursor.classList.remove('on'));
+    for (const area of document.querySelectorAll<HTMLElement>('.play')) {
+      area.addEventListener('pointerenter', follow);
+      area.addEventListener('pointermove', follow);
+      area.addEventListener('pointerleave', () => cursor.classList.remove('on'));
+    }
   }
 
   // "Play full" opens the film over the whole window, in our own player:
   // Cloudflare Stream plays in a <video> (Safari natively, other browsers via
   // hls.js); if it can't play within 6 s, or there's no Stream film, the
   // Vimeo player is used instead, with Vimeo's own controls hidden.
-  const play = document.querySelector<HTMLButtonElement>('.play');
+  let play: HTMLButtonElement | undefined; // the Play button that opened the film
   const player = document.querySelector<HTMLElement>('.player');
   const screen = player?.querySelector<HTMLElement>('.screen');
   const toggle = player?.querySelector<HTMLButtonElement>('.toggle');
@@ -415,9 +430,10 @@ const poster = posterSrc(project);
     player.hidden = true;
     document.body.classList.remove('watching');
   };
-  play?.addEventListener('click', () => {
+  const open = (button: HTMLButtonElement) => {
     if (!player) return;
-    const { hls, vimeo } = play.dataset;
+    play = button;
+    const { hls, vimeo } = button.dataset;
     show({ playing: true, t: 0, d: 0, muted: false, ended: false });
     const toVimeo = () => {
       film?.destroy();
@@ -429,7 +445,8 @@ const poster = posterSrc(project);
     wake();
     document.body.classList.add('watching');
     cursor?.classList.remove('on');
-  });
+  };
+  document.querySelectorAll<HTMLButtonElement>('.play').forEach((b) => b.addEventListener('click', () => open(b)));
   player?.querySelector('.close')?.addEventListener('click', close);
   toggle?.addEventListener('click', () => film?.toggle());
   screen?.addEventListener('click', () => film?.toggle());
@@ -826,7 +843,7 @@ const poster = posterSrc(project);
     font-weight: 400;
     white-space: nowrap;
   }
-  .play .play-label {
+  .hero .play .play-label {
     opacity: calc(1 - var(--p) * 4);
   }
   .cursor {
@@ -838,6 +855,10 @@ const poster = posterSrc(project);
     display: none;
     /* Fades as the thumbnail slides away. */
     opacity: calc(1 - var(--p) * 4);
+  }
+  /* Over an extra film the label stays, wherever the slide is. */
+  .cursor.second {
+    opacity: 1;
   }
   .cursor .play-label {
     /* Centred on the pointer. */
@@ -879,6 +900,29 @@ const poster = posterSrc(project);
     grid-column: 19 / -1;
   }
   /*
+   * Extra films, in place of the stills: one big frame each, in a row, with
+   * "Play full" on them like the thumbnail. The image is a frame from the film
+   * (or the one uploaded for it), darkened a little like the thumbnail.
+   */
+  .shot.film2 {
+    position: relative;
+    width: auto;
+    height: auto;
+    overflow: hidden;
+    grid-column: 11 / -1;
+  }
+  .film2 img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.85);
+  }
+  .film2 .play-label {
+    position: relative;
+  }
+  /*
    * Desktop: the stills sit in one row instead and slide in one by one as
    * you scroll. Each is as tall as the info column on the left (from "about
    * film" to the last credit) and starts level with it; the script measures
@@ -898,6 +942,13 @@ const poster = posterSrc(project);
          not-yet-loaded image out at zero width, leaving nothing to scroll. */
       height: var(--shots-h, calc(106 * var(--rm)));
       width: calc(var(--shots-h, calc(106 * var(--rm))) * 16 / 9);
+    }
+    /* An extra film is bigger than a still: from the same top down to the
+       bottom margin, 16:9, but never wider than the window minus the margins. */
+    .shot.film2 {
+      height: min(calc(100svh - var(--shots-top, 45svh) - var(--margin)), calc((100vw - 2 * var(--margin)) * 9 / 16));
+      width: auto;
+      aspect-ratio: 16 / 9;
     }
   }
 

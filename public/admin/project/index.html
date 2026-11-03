@@ -138,6 +138,11 @@
       .grip { cursor: grab; color: #9a9a9a; display: flex; }
       #addCredit { margin: 4px 0 0 28px; align-self: flex-start; }
 
+      /* More videos */
+      .videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+      .videos .add { aspect-ratio: auto; min-height: 220px; }
+      .stills-off { opacity: 0.45; }
+
       /* Stills */
       .stills { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; }
       .still { display: flex; flex-direction: column; gap: 8px; cursor: grab; }
@@ -315,8 +320,16 @@
 
       <section>
         <div class="head">
+          <h2>More videos</h2>
+          <p class="note">Optional, as many as needed. When a project has any, they replace the stills: one big frame each, click to play.</p>
+        </div>
+        <div class="videos" id="videos"></div>
+      </section>
+
+      <section>
+        <div class="head">
           <h2>Stills</h2>
-          <p class="note">Up to 4, shown in this order in the row on the project page. Drag to reorder.</p>
+          <p class="note" id="stillsNote">Up to 4, shown in this order in the row on the project page. Drag to reorder.</p>
         </div>
         <div class="stills" id="stills"></div>
       </section>
@@ -424,6 +437,7 @@
           previewStart: d.previewStart ?? '',
           poster: d.poster || '',
           stills: [...(d.stills || [])],
+          videos: (d.videos || []).map((v) => ({ stream: v.stream || '', vimeo: v.vimeo || '', image: v.image || '' })),
           about: d.about || '',
           credits: rows,
           todo: d.todo || '',
@@ -432,7 +446,7 @@
 
       // The JSON file, same shape as the old editor wrote it (empty optional fields left out).
       function toData(m) {
-        const known = ['title', 'slug', 'order', 'menuLabel', 'group', 'stream', 'vimeo', 'preview', 'previewStart', 'poster', 'stills', 'about', 'credits', 'todo'];
+        const known = ['title', 'slug', 'order', 'menuLabel', 'group', 'stream', 'vimeo', 'preview', 'previewStart', 'poster', 'stills', 'videos', 'about', 'credits', 'todo'];
         const out = {};
         const put = (k, v) => {
           if (v === '' || v === undefined || v === null || (Array.isArray(v) && !v.length)) return;
@@ -449,6 +463,18 @@
         put('previewStart', m.previewStart === '' ? undefined : Number(m.previewStart));
         put('poster', m.poster);
         put('stills', m.stills);
+        put(
+          'videos',
+          m.videos
+            .map((v) => {
+              const o = {};
+              if (v.stream.trim()) o.stream = v.stream.trim();
+              if (v.vimeo.trim()) o.vimeo = v.vimeo.trim();
+              if (v.image) o.image = v.image;
+              return o;
+            })
+            .filter((o) => o.stream || o.vimeo),
+        );
         put('about', m.about.trim());
         const credits = {};
         for (const { role, names } of m.credits) if (role.trim() && names.trim()) credits[role.trim()] = names.trim();
@@ -709,10 +735,13 @@
         if (key) setField('poster', key);
       }
 
-      function openUpload() {
+      // Which film the upload window fills: the main one (null) or a video in "More videos" (its index).
+      let uploadFor = null;
+      function openUpload(i = null) {
+        uploadFor = typeof i === 'number' ? i : null;
         const modal = el('div', { className: 'modal' });
         const box = el('div');
-        const frame = el('iframe', { title: 'Upload film', src: `/admin/upload/?embed=1&slug=${encodeURIComponent(model.slug || 'new')}` });
+        const frame = el('iframe', { title: 'Upload film', src: `/admin/upload/?embed=1&slug=${encodeURIComponent((model.slug || 'new') + (uploadFor === null ? '' : `-${uploadFor + 2}`))}` });
         const close = el('button', { className: 'close', type: 'button', ariaLabel: 'Close', textContent: '×' });
         close.onclick = () => {
           const busy = /Step [12] of/.test(frame.contentDocument?.getElementById('status')?.textContent ?? '');
@@ -724,7 +753,11 @@
       }
       window.addEventListener('message', (e) => {
         if (e.origin !== location.origin || e.data?.type !== 'jg-film' || !/^[0-9a-f]{32}$/i.test(e.data.id)) return;
-        setField('stream', e.data.id);
+        if (uploadFor !== null && model.videos[uploadFor]) {
+          model.videos[uploadFor].stream = e.data.id;
+          renderVideos();
+          changed();
+        } else setField('stream', e.data.id);
         setTimeout(() => document.querySelector('.modal')?.remove(), 2500);
       });
       function openPlayer(id, host) {
@@ -805,6 +838,113 @@
         changed();
         $('creditRows').lastChild.querySelector('input').focus();
       };
+
+      // ---------- More videos ----------
+      function renderVideos() {
+        const box = $('videos');
+        const cards = model.videos.map((v, i) => {
+          const n = i + 2; // the main film is video 1
+          const id = streamId(v.stream);
+          const media = el('div', { className: 'media' });
+          const tag = el('span', { className: 'tag', textContent: `Video ${n}` });
+          // The picture: its own image, else a frame from its Cloudflare film.
+          const src = v.image ? srcOf(v.image) : id ? `https://${streamHost(v.stream) || 'videodelivery.net'}/${id}/thumbnails/thumbnail.jpg?time=2s&height=480` : '';
+          if (src) {
+            const img = el('img', { alt: '' });
+            img.onerror = async () => (v.image && (await fallbackToGitHub(img, v.image))) || img.remove();
+            img.src = src;
+            media.append(img, tag);
+          } else {
+            media.className = 'media empty';
+            media.append(svg(ICON.film, 28), el('span', { textContent: 'Upload the film' }), el('small', { textContent: 'H.264 MP4, up to 1 GB. It goes to Cloudflare. Or paste a Vimeo link below.' }));
+            media.onclick = () => openUpload(i);
+          }
+          if (id) {
+            const play = el('button', { className: 'play', type: 'button', ariaLabel: 'Play the film' });
+            play.append(svg('<path d="M8 5v14l11-7z" fill="#111" stroke="none"/>', 18));
+            play.onclick = (e) => (e.stopPropagation(), openPlayer(id, streamHost(v.stream)));
+            media.append(play);
+            loadStreamInfo(id).then((info) => {
+              if (streamId(v.stream) !== id) return;
+              tag.textContent = `Video ${n} · ` + (info.ready ? 'Cloudflare · Ready' : info.state === 'error' ? 'Cloudflare · Failed' : info.state ? `Cloudflare · Processing ${Math.floor(info.percent || 0)}%` : 'Cloudflare');
+              if (info.duration > 0) media.append(el('span', { className: 'time', textContent: clock(info.duration) }));
+            });
+          } else if (src) tag.textContent = `Video ${n} · ${v.vimeo ? 'Vimeo' : 'no film yet'}`;
+          dropZone(media, 'image', ([k]) => k && ((v.image = k), renderVideos(), changed()));
+
+          const film = el('button', { className: 'btn', type: 'button' });
+          setBtn(film, 'up', id ? 'Replace film' : 'Upload film');
+          film.onclick = () => openUpload(i);
+          const image = el('button', { className: 'btn ghost', type: 'button' });
+          setBtn(image, 'image', v.image ? 'Replace image' : 'Upload image');
+          image.onclick = async () => {
+            const [k] = accept('image', await pick('image'));
+            if (!k) return;
+            v.image = k;
+            renderVideos();
+            changed();
+          };
+          const noImage = el('button', { className: 'btn ghost', type: 'button', textContent: 'Remove image', hidden: !v.image });
+          noImage.onclick = () => ((v.image = ''), renderVideos(), changed());
+
+          const vimeo = el('input', { className: 'in', type: 'text', value: v.vimeo, placeholder: 'Paste the Vimeo link or its number', id: `vimeo-${i}` });
+          vimeo.oninput = () => {
+            const vid = vimeoId(vimeo.value);
+            if (vid && vid !== vimeo.value) vimeo.value = vid;
+            v.vimeo = vimeo.value;
+            changed();
+          };
+          vimeo.onchange = () => renderVideos();
+
+          const move = (d) => {
+            const [x] = model.videos.splice(i, 1);
+            model.videos.splice(i + d, 0, x);
+            renderVideos();
+            changed();
+          };
+          const earlier = el('button', { className: 'btn ghost', type: 'button', textContent: '← Earlier', disabled: i === 0 });
+          earlier.onclick = () => move(-1);
+          const later = el('button', { className: 'btn ghost', type: 'button', textContent: 'Later →', disabled: i === model.videos.length - 1 });
+          later.onclick = () => move(1);
+          const remove = el('button', { className: 'btn ghost red', type: 'button' });
+          setBtn(remove, 'trash', 'Remove video');
+          remove.onclick = () => {
+            if (!confirm(`Remove video ${n} from this project? Its Cloudflare film stays in Cloudflare.`)) return;
+            model.videos.splice(i, 1);
+            renderVideos();
+            changed();
+          };
+
+          const meta = el('p', { className: 'note' });
+          meta.textContent = v.image ? `Image: ${fileOf(v.image)?.name ?? baseName(v.image)}${isLocal(v.image) ? ' (not saved yet)' : ''}` : id ? 'Image: a frame from the Cloudflare film (upload one to choose it yourself).' : 'Image: the first still, until there is a Cloudflare film or an uploaded image.';
+          return el(
+            'article',
+            { className: 'card' },
+            media,
+            el(
+              'div',
+              { className: 'body' },
+              el('div', {}, el('h3', { textContent: `Video ${n}` }), meta),
+              el('div', { className: 'row' }, film, image, noImage),
+              el('div', { className: 'extra' }, el('label', { className: 'lbl', htmlFor: `vimeo-${i}`, textContent: 'Vimeo (plays if there is no Cloudflare film, or it is not working)' }), vimeo),
+              el('div', { className: 'row' }, earlier, later, remove),
+            ),
+          );
+        });
+        const add = el('button', { className: 'add', type: 'button' }, svg(ICON.plus, 20), model.videos.length ? 'Add another video' : 'Add a video');
+        add.onclick = () => {
+          model.videos.push({ stream: '', vimeo: '', image: '' });
+          renderVideos();
+          changed();
+        };
+        box.replaceChildren(...cards, add);
+        // The stills stay saved but don't show on the site while there are more videos.
+        const off = model.videos.some((v) => v.stream.trim() || v.vimeo.trim());
+        $('stills').classList.toggle('stills-off', off);
+        $('stillsNote').textContent = off
+          ? 'Not shown on the site while this project has more videos (they stay saved here).'
+          : 'Up to 4, shown in this order in the row on the project page. Drag to reorder.';
+      }
 
       // ---------- Stills ----------
       function renderStills() {
@@ -918,7 +1058,7 @@
         if (k === 'poster') renderPoster();
         changed();
       }
-      $('filmUpload').onclick = openUpload;
+      $('filmUpload').onclick = () => openUpload();
       $('filmRemove').onclick = () => confirm('Remove the film from this project? It stays in Cloudflare, so it can be connected again.') && setField('stream', '');
       $('previewUpload').onclick = choosePreview;
       $('previewRemove').onclick = () => setField('preview', '');
@@ -965,6 +1105,11 @@
         const badVimeo = !!model.vimeo.trim() && !vimeoId(model.vimeo);
         mark('vimeo', badVimeo);
         if (badVimeo) out.push('Vimeo backup: paste the film’s Vimeo link (or the number at its end).');
+        model.videos.forEach((v, i) => {
+          const bad = !!v.vimeo.trim() && !vimeoId(v.vimeo);
+          document.getElementById(`vimeo-${i}`)?.classList.toggle('bad', bad);
+          if (bad) out.push(`Video ${i + 2}: paste its Vimeo link (or the number at its end).`);
+        });
         return out;
       }
 
@@ -1019,7 +1164,7 @@
 
           const entries = [];
           const taken = new Set();
-          const uploads = [...new Set([model.preview, model.poster, ...model.stills].filter(isLocal))];
+          const uploads = [...new Set([model.preview, model.poster, ...model.stills, ...model.videos.map((v) => v.image)].filter(isLocal))];
           const final = new Map();
           for (const [n, key] of uploads.entries()) {
             const file = locals.get(key);
@@ -1031,7 +1176,7 @@
             final.set(key, sitePath);
           }
           const swap = (v) => final.get(v) ?? v;
-          const data = toData({ ...model, preview: swap(model.preview), poster: swap(model.poster), stills: model.stills.map(swap) });
+          const data = toData({ ...model, preview: swap(model.preview), poster: swap(model.poster), stills: model.stills.map(swap), videos: model.videos.map((v) => ({ ...v, image: swap(v.image) })) });
           const text = JSON.stringify(data, null, 2) + '\n';
           setState('Saving…');
           const json = await gh('git/blobs', { method: 'POST', body: { content: text, encoding: 'utf-8' } });
@@ -1047,6 +1192,7 @@
           model.preview = swap(model.preview);
           model.poster = swap(model.poster);
           model.stills = model.stills.map(swap);
+          for (const v of model.videos) v.image = swap(v.image);
           original = data;
           sha = json.sha;
           savedSnapshot = snapshot();
@@ -1060,6 +1206,7 @@
           renderPreview();
           renderPoster();
           renderStills();
+          renderVideos();
           checkLive();
         } catch (e) {
           saving = false;
@@ -1145,6 +1292,7 @@
         renderGroup();
         renderCredits();
         renderStills();
+        renderVideos();
         renderFilm();
         renderPreview();
         renderPoster();

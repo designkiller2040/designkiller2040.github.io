@@ -11,6 +11,16 @@
     "/images/work/nike-snkrs-newsstand/shot-2.jpg",
     "/images/work/nike-snkrs-newsstand/shot-3.jpg"
   ],
+  "videos": [
+    {
+      "vimeo": "1109701274",
+      "image": "/images/work/nike-snkrs-newsstand/shot-2.jpg"
+    },
+    {
+      "vimeo": "1109686584",
+      "image": "/images/work/nike-snkrs-newsstand/shot-3.jpg"
+    }
+  ],
   "about": "A summer afternoon in the city, where two young women drift between boredom, freedom and the quiet feeling that something is about to change. A short film about youth, intimacy, and the fleeting moments that become memories before we even realize it.",
   "credits": {
     "Location": "South Korea",
