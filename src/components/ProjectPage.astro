@@ -60,7 +60,7 @@ const films = extraFilms(project);
             films.map((f) => (
               <button class="shot film2 play" type="button" data-hls={f.hls} data-vimeo={f.vimeo} data-title={project.title}>
                 {f.image && <img src={f.image} alt="" />}
-                <span class="play-label">Play full</span>
+                <span class="play-label">Play</span>
               </button>
             ))
           ) : (
@@ -276,7 +276,8 @@ const films = extraFilms(project);
       // An extra film's label doesn't fade with the thumbnail.
       cursor.classList.toggle('second', !!(e.currentTarget as Element).closest('.film2'));
     };
-    for (const area of document.querySelectorAll<HTMLElement>('.play')) {
+    // Extra films show their own "Play" button in the middle instead (alona, 2026-11-03).
+    for (const area of document.querySelectorAll<HTMLElement>('.hero .play')) {
       area.addEventListener('pointerenter', follow);
       area.addEventListener('pointermove', follow);
       area.addEventListener('pointerleave', () => cursor.classList.remove('on'));
@@ -882,6 +883,17 @@ const films = extraFilms(project);
     }
     .play .play-label {
       visibility: hidden;
+    }
+    /* Extra films: a visible "Play" button in the middle, normal pointer. */
+    .film2.play {
+      cursor: pointer;
+    }
+    .film2.play .play-label {
+      visibility: visible;
+      transition: background 0.2s;
+    }
+    .film2.play:hover .play-label {
+      background: #fff;
     }
     .cursor.on {
       display: block;
