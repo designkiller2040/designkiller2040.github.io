@@ -697,13 +697,19 @@
         const video = el('video', { muted: true, loop: true, playsInline: true, preload: 'metadata' });
         video.onerror = async () => (await fallbackToGitHub(video, v)) || (video.hidden = true);
         video.onloadedmetadata = () => {
-          if (video.paused) video.currentTime = Math.min(1, video.duration / 2);
+          if (video.paused && !LAYOUT_B) video.currentTime = Math.min(1, video.duration / 2);
           if (!media.querySelector('.time') && video.duration) media.append(el('span', { className: 'time', textContent: `${clock(video.duration)} · loop` }));
         };
         video.src = srcOf(v);
-        media.onmouseenter = () => video.play().catch(() => {});
-        media.onmouseleave = () => video.pause();
-        media.append(video, el('span', { className: 'tag', textContent: LAYOUT_B ? 'Preview video · hover to play' : 'Hover to play' }));
+        if (LAYOUT_B) {
+          // Trial layout: the big preview plays on a loop all the time.
+          video.autoplay = true;
+          video.onloadeddata = () => video.play().catch(() => {});
+        } else {
+          media.onmouseenter = () => video.play().catch(() => {});
+          media.onmouseleave = () => video.pause();
+        }
+        media.append(video, el('span', { className: 'tag', textContent: LAYOUT_B ? 'Preview video' : 'Hover to play' }));
         fillMeta($('previewMeta'), { name: fileOf(v)?.name ?? baseName(v), size: null, date: null, pending: isLocal(v) });
         const info = await fileInfo(v);
         if (model.preview === v) fillMeta($('previewMeta'), info);
