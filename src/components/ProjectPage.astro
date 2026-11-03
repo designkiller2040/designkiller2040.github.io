@@ -105,6 +105,8 @@ const films = extraFilms(project);
     <div class="controls">
       <button class="close" type="button">Close</button>
       <button class="toggle" type="button">Pause</button>
+      <!-- Once a film ends, the next one on the page (if any) is one click away. -->
+      <button class="next" type="button" hidden>Play next</button>
       <div class="bar">
         <div class="progress" role="slider" aria-label="Seek" tabindex="0"><span></span></div>
         <span class="time">0:00 / 0:00</span>
@@ -289,6 +291,10 @@ const films = extraFilms(project);
   const player = document.querySelector<HTMLElement>('.player');
   const screen = player?.querySelector<HTMLElement>('.screen');
   const toggle = player?.querySelector<HTMLButtonElement>('.toggle');
+  const nextBtn = player?.querySelector<HTMLButtonElement>('.next');
+  // Every film on the page in order: the main one first, then the extra videos.
+  const films = [...document.querySelectorAll<HTMLButtonElement>('.play')];
+  const nextFilm = () => (play ? films[films.indexOf(play) + 1] : undefined);
   const fill = player?.querySelector<HTMLElement>('.progress span');
   const bar = player?.querySelector<HTMLElement>('.progress');
   const time = player?.querySelector<HTMLElement>('.time');
@@ -321,6 +327,7 @@ const films = extraFilms(project);
     // "End" once the film has finished, "Pause" when it's stopped before.
     if (state.playing) state.ended = false;
     if (toggle) toggle.textContent = state.ended ? 'End' : 'Pause';
+    if (nextBtn) nextBtn.hidden = !(state.ended && nextFilm());
     player?.classList.toggle('paused', !state.playing);
   };
 
@@ -432,6 +439,7 @@ const films = extraFilms(project);
   };
   const open = (button: HTMLButtonElement) => {
     if (!player) return;
+    film?.destroy();
     play = button;
     const { hls, vimeo } = button.dataset;
     show({ playing: true, t: 0, d: 0, muted: false, ended: false });
@@ -449,6 +457,10 @@ const films = extraFilms(project);
   document.querySelectorAll<HTMLButtonElement>('.play').forEach((b) => b.addEventListener('click', () => open(b)));
   player?.querySelector('.close')?.addEventListener('click', close);
   toggle?.addEventListener('click', () => film?.toggle());
+  nextBtn?.addEventListener('click', () => {
+    const n = nextFilm();
+    if (n) open(n);
+  });
   screen?.addEventListener('click', () => film?.toggle());
   audio?.addEventListener('click', () => {
     film?.setMuted(!state.muted);
@@ -1036,6 +1048,19 @@ const films = extraFilms(project);
     left: 50%;
     translate: -50% -50%;
     mix-blend-mode: difference;
+  }
+  /* "Play next": same size, just under "End". */
+  .controls .next {
+    font-size: calc(var(--text) * 1.65);
+    line-height: 1;
+    position: absolute;
+    top: calc(50% + var(--text) * 2.6);
+    left: 50%;
+    translate: -50% -50%;
+    mix-blend-mode: difference;
+  }
+  .controls .next[hidden] {
+    display: none;
   }
   .bar {
     position: absolute;
