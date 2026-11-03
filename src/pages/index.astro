@@ -87,6 +87,12 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     position: absolute;
     inset: 0;
     background: #000 center / cover no-repeat;
+    /* Everything inside (reel, hover clips, their thumbnails) stays a layer
+       below the menu and list, whatever z-index it uses inside. Without
+       this, a hover thumbnail at full opacity rose above the list: the list
+       vanished, the mouse "left" the title, the thumbnail faded, the list
+       came back, the mouse was on the title again... the blinking loop. */
+    isolation: isolate;
   }
   .stage .reel {
     opacity: 0;
@@ -333,15 +339,32 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     return v;
   }
 
+  // Switching from one project to the next never passes through the
+  // showreel: the new clip fades in on top of the old one, and the old one
+  // is only taken away once the new one covers it. (Before, the old clip
+  // faded out while the new one faded in, so the reel flashed through in
+  // between: the "blink". Fewer fades at once also means less work for the
+  // difference-blended list above, which Safari sometimes dropped mid-fade.)
+  let top = 0;
   function show(v: HTMLVideoElement) {
-    for (const other of clips.values()) if (other !== v) hide(other);
+    clearTimeout(offTimer);
+    offTimer = undefined;
+    // Back on the same project within a moment: just keep playing.
+    if (hovered === v && v.parentElement!.classList.contains('on')) return;
     hovered = v;
     // The clip itself stays hidden until it is actually playing; meanwhile
     // the thumbnail shows, as soon as it has loaded. (Check before
     // rewinding: rewinding briefly resets readyState.)
     const box = v.parentElement!;
+    box.style.zIndex = String(++top);
     const img = box.querySelector('img');
-    const on = () => hovered === v && box.classList.add('on');
+    const on = () => {
+      if (hovered !== v) return;
+      box.classList.add('on');
+      setTimeout(() => {
+        for (const other of clips.values()) if (other !== hovered) hide(other);
+      }, 160);
+    };
     if (v.readyState >= 2) {
       box.classList.add('ready');
       on();
@@ -358,6 +381,19 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
     if (hovered === v) hovered = null;
     v.parentElement!.classList.remove('on');
     setTimeout(() => hovered !== v && v.pause(), 150);
+  }
+
+  // Leaving a title doesn't take its clip away straight away: the titles
+  // have hairline gaps between them, and crossing one used to hide the clip
+  // and then restart it on the next title. A short grace period covers the
+  // gap; leaving the list for real still hides it.
+  let offTimer: ReturnType<typeof setTimeout> | undefined;
+  function hideSoon() {
+    clearTimeout(offTimer);
+    offTimer = setTimeout(() => {
+      offTimer = undefined;
+      hideAll();
+    }, 90);
   }
 
   // Thumbnails first (small, so a hover shows at least the thumbnail right
@@ -408,6 +444,9 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   // Safety net: if a mouseleave gets missed (fast moves, coming back to the
   // page), no clip may stay over the showreel.
   function hideAll() {
+    clearTimeout(offTimer);
+    offTimer = undefined;
+    hovered = null;
     for (const v of clips.values()) hide(v);
   }
 
@@ -458,18 +497,20 @@ const poster = withVersion(fromStream && existsSync('public/video/stream/reel.jp
   if (canHover) {
     for (const a of links) {
       const enter = () => show(clipFor(a.dataset.preview!, a.dataset.thumb));
-      const leave = () => hide(clipFor(a.dataset.preview!));
+      const leave = hideSoon;
       a.addEventListener('mouseenter', enter);
       a.addEventListener('mouseleave', leave);
       a.addEventListener('focus', enter);
       a.addEventListener('blur', leave);
     }
 
-    document.querySelector('.menu')?.addEventListener('mouseleave', hideAll);
+    document.querySelector('.menu')?.addEventListener('mouseleave', hideSoon);
     document.documentElement.addEventListener('mouseleave', hideAll);
     addEventListener('pageshow', hideAll);
     addEventListener('pointermove', (e) => {
-      if (hovered && !(e.target as Element).closest?.('[data-preview]')) hideAll();
+      if (hovered && !(e.target as Element).closest?.('[data-preview]')) {
+        if (offTimer === undefined) hideSoon();
+      }
     }, { passive: true });
 
     let started = false;
