@@ -22,11 +22,15 @@ node -e '
   const dir = process.argv[1];
   for (const f of fs.readdirSync(dir).filter((f) => f.endsWith(".json"))) {
     const p = JSON.parse(fs.readFileSync(`${dir}/${f}`, "utf8"));
-    if (p.preview || !p.stream) continue;
-    const id = p.stream.match(/\b[0-9a-f]{32}\b/i)?.[0];
-    if (!id) continue;
-    const host = p.stream.match(/customer-[a-z0-9]+\.cloudflarestream\.com/i)?.[0] ?? "videodelivery.net";
-    console.log([p.slug, `https://${host}/${id}/manifest/video.m3u8`, Math.max(0, Number(p.previewStart) || 0), id].join(" "));
+    // The main film (<slug>.mp4) and each extra video (<slug>-2.mp4, -3, ...).
+    const items = [[p.slug, p], ...(p.videos || []).map((v, i) => [`${p.slug}-${i + 2}`, v])];
+    for (const [name, v] of items) {
+      if (v.preview || !v.stream) continue;
+      const id = v.stream.match(/\b[0-9a-f]{32}\b/i)?.[0];
+      if (!id) continue;
+      const host = v.stream.match(/customer-[a-z0-9]+\.cloudflarestream\.com/i)?.[0] ?? "videodelivery.net";
+      console.log([name, `https://${host}/${id}/manifest/video.m3u8`, Math.max(0, Number(v.previewStart) || 0), id].join(" "));
+    }
   }
 ' "$ROOT/src/data/projects" | while read -r slug url start id; do
   key="$id-$start"

@@ -142,6 +142,8 @@
       .videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
       .videos .add { aspect-ratio: auto; min-height: 220px; }
       .stills-off > :not(:first-child) { opacity: 0.45; }
+      .media .hoverclip { opacity: 0; transition: opacity 0.2s; }
+      .media .hoverclip.on { opacity: 1; }
       .drag { position: absolute; top: 8px; right: 8px; z-index: 2; width: 32px; height: 32px; border-radius: 8px; background: rgb(255 255 255 / 0.85); color: #111; display: flex; align-items: center; justify-content: center; cursor: grab; }
       .drag:active { cursor: grabbing; }
       .card.dragging { opacity: 0.4; }
@@ -464,7 +466,7 @@
           previewStart: d.previewStart ?? '',
           poster: d.poster || '',
           stills: [...(d.stills || [])],
-          videos: (d.videos || []).map((v) => ({ stream: v.stream || '', vimeo: v.vimeo || '', image: v.image || '' })),
+          videos: (d.videos || []).map((v) => ({ stream: v.stream || '', vimeo: v.vimeo || '', image: v.image || '', preview: v.preview || '' })),
           about: d.about || '',
           credits: rows,
           todo: d.todo || '',
@@ -498,6 +500,7 @@
               if (v.stream.trim()) o.stream = v.stream.trim();
               if (v.vimeo.trim()) o.vimeo = v.vimeo.trim();
               if (v.image) o.image = v.image;
+              if (v.preview) o.preview = v.preview;
               return o;
             })
             .filter((o) => o.stream || o.vimeo),
@@ -876,10 +879,10 @@
       function renderVideos() {
         const box = $('videos');
         const cards = model.videos.map((v, i) => {
-          const n = i + 2; // the main film is video 1
+          const n = i + 1; // shown as "Play Clip #n" on the page (the main film is the Full video)
           const id = streamId(v.stream);
           const media = el('div', { className: 'media' });
-          const tag = el('span', { className: 'tag', textContent: `Video ${n}` });
+          const tag = el('span', { className: 'tag', textContent: `Clip #${n}` });
           // The picture: its own image, else a frame from its Cloudflare film.
           const src = v.image ? srcOf(v.image) : id ? `https://${streamHost(v.stream) || 'videodelivery.net'}/${id}/thumbnails/thumbnail.jpg?time=2s&height=480` : '';
           if (src) {
@@ -899,10 +902,10 @@
             media.append(play);
             loadStreamInfo(id).then((info) => {
               if (streamId(v.stream) !== id) return;
-              tag.textContent = `Video ${n} · ` + (info.ready ? 'Cloudflare · Ready' : info.state === 'error' ? 'Cloudflare · Failed' : info.state ? `Cloudflare · Processing ${Math.floor(info.percent || 0)}%` : 'Cloudflare');
+              tag.textContent = `Clip #${n} · ` + (info.ready ? 'Cloudflare · Ready' : info.state === 'error' ? 'Cloudflare · Failed' : info.state ? `Cloudflare · Processing ${Math.floor(info.percent || 0)}%` : 'Cloudflare');
               if (info.duration > 0) media.append(el('span', { className: 'time', textContent: clock(info.duration) }));
             });
-          } else if (src) tag.textContent = `Video ${n} · ${v.vimeo ? 'Vimeo' : 'no film yet'}`;
+          } else if (src) tag.textContent = `Clip #${n} · ${v.vimeo ? 'Vimeo' : 'no film yet'}`;
           dropZone(media, 'image', ([k]) => k && ((v.image = k), renderVideos(), changed()));
           // Drag handle: grab it to move the video earlier or later (the whole card moves).
           const handle = el('span', { className: 'drag', title: 'Drag to change the order' }, grip());
@@ -922,6 +925,33 @@
           };
           const noImage = el('button', { className: 'btn ghost', type: 'button', textContent: 'Remove image', hidden: !v.image });
           noImage.onclick = () => ((v.image = ''), renderVideos(), changed());
+
+          // Hover clip: plays (first 3 s, on a loop) when someone hovers this video on the page.
+          const clipBtn = el('button', { className: 'btn', type: 'button' });
+          setBtn(clipBtn, 'up', v.preview ? 'Replace clip' : 'Upload clip');
+          clipBtn.onclick = async () => {
+            const [k] = accept('preview', await pick('preview'));
+            if (!k) return;
+            v.preview = k;
+            renderVideos();
+            changed();
+          };
+          const noClip = el('button', { className: 'btn ghost', type: 'button', textContent: 'Remove clip', hidden: !v.preview });
+          noClip.onclick = () => ((v.preview = ''), renderVideos(), changed());
+          const clipNote = el('p', { className: 'note' });
+          clipNote.textContent = v.preview
+            ? `Clip: ${fileOf(v.preview)?.name ?? baseName(v.preview)}${isLocal(v.preview) ? ' (not saved yet)' : ''}`
+            : id ? 'No clip: 3 s from its Cloudflare film are used.' : 'No clip yet, so nothing plays on hover.';
+          const clipBox = el('div', { className: 'extra' }, el('span', { className: 'lbl', textContent: 'Hover preview (first 3 s play when someone hovers this video)' }), clipNote, el('div', { className: 'row', style: 'margin-top:8px' }, clipBtn, noClip));
+          if (v.preview) {
+            const hv = el('video', { muted: true, loop: true, playsInline: true, preload: 'metadata', className: 'hoverclip' });
+            hv.onerror = async () => (await fallbackToGitHub(hv, v.preview)) || hv.remove();
+            hv.src = srcOf(v.preview);
+            hv.ontimeupdate = () => hv.currentTime >= 3 && (hv.currentTime = 0);
+            media.append(hv);
+            media.onmouseenter = () => ((hv.currentTime = 0), hv.play().catch(() => {}), hv.classList.add('on'));
+            media.onmouseleave = () => (hv.pause(), hv.classList.remove('on'));
+          }
 
           const vimeo = el('input', { className: 'in', type: 'text', value: v.vimeo, placeholder: 'Paste the Vimeo link or its number', id: `vimeo-${i}` });
           vimeo.oninput = () => {
@@ -945,7 +975,7 @@
           const remove = el('button', { className: 'btn ghost red', type: 'button' });
           setBtn(remove, 'trash', 'Remove video');
           remove.onclick = () => {
-            if (!confirm(`Remove video ${n} from this project? Its Cloudflare film stays in Cloudflare.`)) return;
+            if (!confirm(`Remove clip #${n} from this project? Its Cloudflare film stays in Cloudflare.`)) return;
             model.videos.splice(i, 1);
             renderVideos();
             changed();
@@ -960,8 +990,9 @@
             el(
               'div',
               { className: 'body' },
-              el('div', {}, el('h3', { textContent: `Video ${n}` }), meta),
+              el('div', {}, el('h3', { textContent: `Clip #${n}` }), meta),
               el('div', { className: 'row' }, film, image, noImage),
+              clipBox,
               el('div', { className: 'extra' }, el('label', { className: 'lbl', htmlFor: `vimeo-${i}`, textContent: 'Vimeo (plays if there is no Cloudflare film, or it is not working)' }), vimeo),
               el('div', { className: 'row' }, el('span', { className: 'row videos-order' }, earlier, later), remove),
             ),
@@ -974,7 +1005,7 @@
         });
         const add = el('button', { className: 'add', type: 'button' }, svg(ICON.plus, 20), LAYOUT_B ? 'Add more videos' : model.videos.length ? 'Add another video' : 'Add a video');
         add.onclick = () => {
-          model.videos.push({ stream: '', vimeo: '', image: '' });
+          model.videos.push({ stream: '', vimeo: '', image: '', preview: '' });
           renderVideos();
           changed();
         };
@@ -1152,7 +1183,7 @@
         model.videos.forEach((v, i) => {
           const bad = !!v.vimeo.trim() && !vimeoId(v.vimeo);
           document.getElementById(`vimeo-${i}`)?.classList.toggle('bad', bad);
-          if (bad) out.push(`Video ${i + 2}: paste its Vimeo link (or the number at its end).`);
+          if (bad) out.push(`Clip #${i + 1}: paste its Vimeo link (or the number at its end).`);
         });
         return out;
       }
@@ -1208,11 +1239,12 @@
 
           const entries = [];
           const taken = new Set();
-          const uploads = [...new Set([model.preview, model.poster, ...model.stills, ...model.videos.map((v) => v.image)].filter(isLocal))];
+          const clipKeys = new Set([model.preview, ...model.videos.map((v) => v.preview)].filter(isLocal));
+          const uploads = [...new Set([model.preview, model.poster, ...model.stills, ...model.videos.flatMap((v) => [v.image, v.preview])].filter(isLocal))];
           const final = new Map();
           for (const [n, key] of uploads.entries()) {
             const file = locals.get(key);
-            const kind = key === model.preview ? 'preview' : 'image';
+            const kind = clipKeys.has(key) ? 'preview' : 'image';
             setState(`Uploading ${n + 1} of ${uploads.length}: ${file.name}…`);
             const sitePath = await freePath(KINDS[kind].dir, file.name, taken);
             const blob = await gh('git/blobs', { method: 'POST', body: { content: await fileBase64(file), encoding: 'base64' } });
@@ -1220,7 +1252,7 @@
             final.set(key, sitePath);
           }
           const swap = (v) => final.get(v) ?? v;
-          const data = toData({ ...model, preview: swap(model.preview), poster: swap(model.poster), stills: model.stills.map(swap), videos: model.videos.map((v) => ({ ...v, image: swap(v.image) })) });
+          const data = toData({ ...model, preview: swap(model.preview), poster: swap(model.poster), stills: model.stills.map(swap), videos: model.videos.map((v) => ({ ...v, image: swap(v.image), preview: swap(v.preview) })) });
           const text = JSON.stringify(data, null, 2) + '\n';
           setState('Saving…');
           const json = await gh('git/blobs', { method: 'POST', body: { content: text, encoding: 'utf-8' } });
@@ -1236,7 +1268,7 @@
           model.preview = swap(model.preview);
           model.poster = swap(model.poster);
           model.stills = model.stills.map(swap);
-          for (const v of model.videos) v.image = swap(v.image);
+          for (const v of model.videos) (v.image = swap(v.image)), (v.preview = swap(v.preview));
           original = data;
           sha = json.sha;
           savedSnapshot = snapshot();

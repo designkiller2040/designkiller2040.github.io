@@ -37,6 +37,10 @@ export interface ExtraVideo {
   vimeo?: string;
   /** Falls back to a frame from its Cloudflare film, then the project's first still. */
   image?: string;
+  /** Hover clip (first 3 s play on hover). Without one, the build cuts 3 s from its Cloudflare film. */
+  preview?: string;
+  /** Where that automatic clip starts in the Cloudflare film, in seconds. */
+  previewStart?: number;
 }
 
 export type GroupKey = 'commercial' | 'music' | 'concept';
@@ -57,7 +61,7 @@ const groupIndex = (p: Project) => GROUPS.findIndex((g) => g.key === p.group);
 /** File paths from the editor sometimes lack the leading slash; add it. */
 const rooted = (src?: string) => (src && !/^(\/|https?:)/.test(src) ? `/${src}` : src);
 export const projects = Object.values(files)
-  .map((p) => ({ ...p, preview: rooted(p.preview), poster: rooted(p.poster), videos: p.videos?.map((v) => ({ ...v, image: rooted(v.image) })), stills: p.stills?.map((s) => rooted(s)!) }))
+  .map((p) => ({ ...p, preview: rooted(p.preview), poster: rooted(p.poster), videos: p.videos?.map((v) => ({ ...v, image: rooted(v.image), preview: rooted(v.preview) })), stills: p.stills?.map((s) => rooted(s)!) }))
   .sort(
   (a, b) => groupIndex(a) - groupIndex(b) || (a.order ?? 999) - (b.order ?? 999) || a.title.localeCompare(b.title),
 );
@@ -89,11 +93,15 @@ export function filmEmbed(p: { stream?: string; vimeo?: string }): { hls?: strin
  * film, else the project's first still.
  */
 export function extraFilms(p: Project) {
-  return (p.videos ?? []).flatMap((v) => {
+  return (p.videos ?? []).flatMap((v, i) => {
     const embed = filmEmbed(v);
     if (!embed) return [];
     const own = v.image && existsSync(`public${v.image}`) ? withVersion(v.image) : undefined;
-    return [{ ...embed, image: own ?? embed.thumb ?? stillSrcs(p)[0] }];
+    // Hover clip: the uploaded one, else the 3 s cut from its Cloudflare film (scripts/stream-previews.sh).
+    const auto = `/video/previews/auto/${p.slug}-${i + 2}.mp4`;
+    const clip = v.preview && existsSync(`public${v.preview}`) ? v.preview : existsSync(`public${auto}`) ? auto : undefined;
+    const preview = clip && withVersion(clip).replace(/\.(mov|m4v|mkv|webm|mxf)(?=\?|$)/i, '.mp4');
+    return [{ ...embed, image: own ?? embed.thumb ?? stillSrcs(p)[0], preview }];
   });
 }
 

@@ -60,6 +60,7 @@ const films = extraFilms(project);
             films.map((f, i) => (
               <button class="shot film2 play" type="button" data-hls={f.hls} data-vimeo={f.vimeo} data-title={project.title}>
                 {f.image && <img src={f.image} alt="" />}
+                {f.preview && <video class="hover-clip" src={f.preview} muted loop playsinline preload="none" />}
                 <span class="play-label">Play Clip #{i + 1}</span>
               </button>
             ))
@@ -282,6 +283,22 @@ const films = extraFilms(project);
       area.addEventListener('pointermove', follow);
       area.addEventListener('pointerleave', () => cursor.classList.remove('on'));
     }
+  }
+
+  // Hovering an extra film plays the first 3 s of its clip on a loop (alona, 2026-11-04).
+  for (const clip of document.querySelectorAll<HTMLVideoElement>('.film2 .hover-clip')) {
+    const frame = clip.closest('.film2')!;
+    clip.addEventListener('timeupdate', () => clip.currentTime >= 3 && (clip.currentTime = 0));
+    clip.addEventListener('playing', () => clip.classList.add('on'));
+    frame.addEventListener('pointerenter', (e) => {
+      if ((e as PointerEvent).pointerType !== 'mouse') return;
+      clip.currentTime = 0;
+      clip.play().catch(() => {});
+    });
+    frame.addEventListener('pointerleave', () => {
+      clip.pause();
+      clip.classList.remove('on');
+    });
   }
 
   // "Play full" opens the film over the whole window, in our own player:
@@ -942,6 +959,19 @@ const films = extraFilms(project);
     height: 100%;
     object-fit: cover;
     filter: brightness(0.85);
+  }
+  .film2 .hover-clip {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.85);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .film2 .hover-clip.on {
+    opacity: 1;
   }
   /* "Play Clip #N" in the exact middle of the frame (alona, 2026-11-04). */
   .film2 .play-label {

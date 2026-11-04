@@ -9,15 +9,18 @@
   "videos": [
     {
       "vimeo": "1109701274",
-      "image": "/images/work/nike-snkrs-newsstand/shot-1.jpg"
+      "image": "/images/work/nike-snkrs-newsstand/shot-1.jpg",
+      "preview": "/video/previews/nike-snkrs-wait-is-over-web-1.mov"
     },
     {
       "vimeo": "1109686584",
-      "image": "/images/work/nike-snkrs-newsstand/shot-2.jpg"
+      "image": "/images/work/nike-snkrs-newsstand/shot-2.jpg",
+      "preview": "/video/previews/backbone-x-xbox-sunriver-web.mov"
     },
     {
       "vimeo": "1109697666",
-      "image": "/images/work/nike-snkrs-newsstand/shot-3.jpg"
+      "image": "/images/work/nike-snkrs-newsstand/shot-3.jpg",
+      "preview": "/video/previews/lauv-hey-ari-web.mov"
     }
   ],
   "about": "Placeholder description. A quiet, observational take on the product, built around movement, light and a few unscripted moments.",
