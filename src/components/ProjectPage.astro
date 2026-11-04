@@ -57,10 +57,10 @@ const films = extraFilms(project);
 
         <div class="shots grid">
           {films.length ? (
-            films.map((f) => (
+            films.map((f, i) => (
               <button class="shot film2 play" type="button" data-hls={f.hls} data-vimeo={f.vimeo} data-title={project.title}>
                 {f.image && <img src={f.image} alt="" />}
-                <span class="play-label">Play</span>
+                <span class="play-label">Play Clip #{i + 1}</span>
               </button>
             ))
           ) : (
@@ -943,8 +943,14 @@ const films = extraFilms(project);
     object-fit: cover;
     filter: brightness(0.85);
   }
+  /* "Play Clip #N" in the exact middle of the frame (alona, 2026-11-04). */
   .film2 .play-label {
-    position: relative;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    width: auto;
+    padding: 0 10px;
   }
   /*
    * Desktop: the stills sit in one row instead and slide in one by one as
